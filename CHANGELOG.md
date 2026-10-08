@@ -1,0 +1,63 @@
+# Changelog
+
+Notable user-visible changes, grouped by application version. Version headings
+identify the application version; they do not imply a published Git tag.
+
+## Unreleased
+
+- Added encrypted-input editing for Standard revisions 2–6: RC4, AES-128 and
+  AES-256, including empty, opening, owner and Unicode passwords.
+- Added Adobe.PubSec recipient encryption: open with a local PKCS#12 identity
+  and export AES-256 protection for selected RSA/ECDH recipient certificates.
+- Preserve original encrypted bytes alongside decrypted working sources in
+  version-2 editing projects. Credentials remain transient. Decrypted local
+  drafts require consent and unprotected project saves require confirmation.
+- Fixed permission-only PDFs being rejected, passive form buttons blocking
+  import, authentication before encrypted object streams, legacy password
+  encoding, and RSA-OAEP/ECDH CMS interoperability.
+- Added independent OpenSSL/qpdf/Poppler/PDFBox regressions and a Docker test
+  toolchain; application processing remains entirely in the browser.
+
+## v1.0.0 - 2026-10-08
+
+### Editing and forms
+
+- Added native form filling and positioned text, dates, checkmarks and crosses
+  for static or scanned forms.
+- Added drawn, typed and imported signatures/initials, images, stamps, ink,
+  shapes, arrows and text/area highlights.
+- Added fillable-field authoring, object transforms, alignment, keyboard editing,
+  multi-selection and undo/redo.
+
+### Pages and saving
+
+- Added page rotation, reorder, duplication, deletion, merge, insertion,
+  extraction and page-number splitting with individual or ZIP downloads.
+- Added retained-field and flattened PDF export, portable editable projects,
+  PNG page export, printing and optional direct file saving.
+- Added per-tab local recovery, optional remembered signatures and explicit
+  local-data clearing, plus cached application assets and update prompts.
+- Published the browser editor at `pdf.ahara.io` through Ahara.
+
+### Signing and protection
+
+- Added local RSA/ECDSA PKCS#12 certificate signing and all three DocMDP
+  certification policies, including sign and lock.
+- Added AES-256 opening/owner passwords and reader permissions, combined with
+  certificate signing in the same export.
+
+### Bug fixes
+
+- Fixed field/widget copying, radio appearance identity, choice label/value
+  preservation and clearing, and rotated/cropped page geometry.
+- Fixed stale editor/clipboard state, concurrent draft/signature storage and
+  clear-data fencing across tabs.
+- Fixed project reference/size validation, filename boundaries, text validation,
+  opacity rendering and excessive raster allocations.
+- Fixed cancellation during secured export preparation, dangling flattened
+  widget references and generated signature compatibility with older readers.
+
+### Documentation
+
+- Consolidated user, architecture, security, testing and deployment guidance,
+  recorded architectural decisions, and archived implementation/release evidence.

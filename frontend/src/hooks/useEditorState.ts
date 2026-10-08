@@ -4,6 +4,7 @@ import { historyReducer } from "../core/history";
 import { openFiles, insertImported } from "../services/openFiles";
 import { useTask } from "./useTask";
 import { useEditorUi } from "./useEditorUi";
+import { usePdfPassword } from "./usePdfPassword";
 import { selectedPageIds as selection, updatePlacedObject } from "../core/editorOperations";
 
 export function useEditorState() {
@@ -14,6 +15,7 @@ export function useEditorState() {
     revision: 0,
   });
   const ui = useEditorUi(),
+    password = usePdfPassword(),
     task = useTask(),
     document = history.present;
   const page = document.pages.find((item) => item.id === ui.activeId) ?? document.pages[0] ?? null;
@@ -38,7 +40,13 @@ export function useEditorState() {
         replaceCurrent || files.some((file) => file.name.toLowerCase().endsWith(".pdfree"));
       if (!allowReplace(replacing, document.pages.length, ui.savedRevision !== history.revision))
         return;
-      const loaded = await openFiles(files, replacing ? emptyDocument() : document);
+      const signal = password.begin();
+      const loaded = await openFiles(
+        files,
+        replacing ? emptyDocument() : document,
+        password.ask,
+        signal
+      );
       const next = insertAfter
         ? insertImported(loaded, document.pages.length, activePageId)
         : loaded;
@@ -64,6 +72,7 @@ export function useEditorState() {
     importFiles,
     updateObject,
     selectedPageIds,
+    password,
   };
 }
 function pageIdAt(document: EditorDocument, index: number) {

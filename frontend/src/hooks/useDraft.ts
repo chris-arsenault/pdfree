@@ -11,7 +11,7 @@ import {
   type DraftSession,
 } from "../services/drafts";
 import { clearSignatures } from "../services/signatures";
-import { emptyDocument, type EditorDocument } from "../core/model";
+import { emptyDocument, type EditorDocument, canSaveDraft } from "../core/model";
 import { releaseViewers } from "../services/viewer";
 
 export function useDraft() {
@@ -101,7 +101,14 @@ function useDraftSync(
   );
   useEffect(() => {
     if (!doc.pages.length || paused.current === doc) return;
+    if (!canSaveDraft(doc)) {
+      setStatus(
+        "Encrypted input: decrypted drafts are disabled. Enable them in Document details or save a project."
+      );
+      return;
+    }
     const writer = (session.current ??= draftSession());
+    const permitted = () => canSaveDraft(current.current);
     const recovery = adopted.current;
     const timer = setTimeout(() => {
       setStatus("Saving draft…");
@@ -109,7 +116,9 @@ function useDraftSync(
         .catch(() => {})
         .then(async () => {
           const active = await writer;
-          if (!(await saveDraft(doc, active))) {
+          if (!canSaveDraft(current.current)) return;
+          if (!(await saveDraft(doc, active, permitted))) {
+            if (!canSaveDraft(current.current)) return;
             paused.current = current.current;
             session.current = draftSession();
             setStatus(

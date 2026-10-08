@@ -1,18 +1,35 @@
-frontend/node_modules/
-frontend/dist/
-frontend/public/pdfjs/
-frontend/src/__screenshots__/
-frontend/src/**/__screenshots__/
-frontend/coverage/
-frontend/test-results/
-frontend/.vitest-attachments/
+# Private local inputs
+/.sulion-paste/
+
+# Dependencies, builds and generated test output
+node_modules/
+.pnpm-store/
+/frontend/dist/
+/frontend/public/pdfjs/
+/frontend/src/**/__screenshots__/
+/frontend/coverage/
+/frontend/test-results/
+/frontend/.vitest-attachments/
+/frontend/.vite/
+*.tsbuildinfo
+
+# Local environment and credentials (keep example configuration)
 .env
 .env.*
 !.env.example
+
+# Terraform working data (keep .terraform.lock.hcl for reproducible providers)
 **/.terraform/
-.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 *.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Logs and operating system metadata
 *.log
 .DS_Store

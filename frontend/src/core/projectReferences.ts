@@ -8,6 +8,8 @@ import {
 import { objectRotationError } from "./editorValidation";
 
 export function validateProjectReferences(document: EditorDocument) {
+  if (document.sources.some((source) => !!source.encryption !== !!source.decryptedBytes))
+    throw new Error("Encrypted sources need their original and decrypted working bytes.");
   const items = [
     ...document.sources,
     ...document.pages,

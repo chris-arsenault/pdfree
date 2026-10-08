@@ -37,7 +37,7 @@ function copySecurityLicenses(target: string) {
       join(dependencies, name, file),
       join(target, `LICENSE_${name.replaceAll(/[@/]/g, "_")}.txt`)
     );
-  for (const name of ["pkijs", "asn1js"]) {
+  for (const name of ["pkijs", "asn1js", "node-forge"]) {
     const root = dirname(require.resolve(`${name}/package.json`));
     cpSync(join(root, "LICENSE"), join(target, `LICENSE_${name}.txt`));
   }

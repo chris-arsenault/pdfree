@@ -7,6 +7,7 @@ import { Modal } from "./Modal";
 import { filePicker } from "../services/fileSave";
 import { defaultSecuritySettings, hasSecurity } from "../core/securitySettings";
 import { ExportSecurity } from "./ExportSecurity";
+import { hasEncryptedSources } from "../core/model";
 export function ExportDialog() {
   const editor = useEditor(),
     [flatten, setFlatten] = useState(false),
@@ -45,6 +46,12 @@ export function ExportDialog() {
         project to continue moving added objects.
       </p>
       <RequiredFields />
+      {hasEncryptedSources(editor.document) && (
+        <p className="inline-warning">
+          This document was encrypted. Enable protection below to encrypt the new PDF. Editing
+          projects, images, print and Split downloads contain decrypted content.
+        </p>
+      )}
       <ExportSecurity value={security} onChange={setSecurity} disabled={!!editor.task.busy} />
       <OtherFormats actions={actions} />
       <div className="modal-actions">

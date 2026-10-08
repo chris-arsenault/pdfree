@@ -10,6 +10,8 @@ import {
 export type SigningMode = "none" | "approval" | "1" | "2" | "3";
 export type SecuritySettings = {
   protect: boolean;
+  protectionMode: "password" | "recipients";
+  recipients: File[];
   userPassword: string;
   userConfirmation: string;
   ownerPassword: string;
@@ -23,6 +25,8 @@ export type SecuritySettings = {
 };
 export const defaultSecuritySettings = (): SecuritySettings => ({
   protect: false,
+  protectionMode: "password",
+  recipients: [],
   userPassword: "",
   userConfirmation: "",
   ownerPassword: "",
@@ -38,19 +42,7 @@ export const hasSecurity = (settings: SecuritySettings) =>
   settings.protect || settings.mode !== "none";
 
 export async function securityCredentials(settings: SecuritySettings): Promise<PdfSecurity> {
-  if (
-    settings.protect &&
-    (settings.userPassword !== settings.userConfirmation ||
-      settings.ownerPassword !== settings.ownerConfirmation)
-  )
-    throw new Error("The opening and owner password confirmations must match.");
-  const protection = settings.protect
-    ? {
-        userPassword: settings.userPassword,
-        ownerPassword: settings.ownerPassword,
-        permissions: settings.permissions,
-      }
-    : null;
+  const protection = await protectionCredentials(settings);
   validatePdfSecurity({ protection, signing: null });
   let signing: PdfSecurity["signing"] = null;
   if (settings.mode !== "none") {
@@ -68,4 +60,38 @@ export async function securityCredentials(settings: SecuritySettings): Promise<P
   const result = { protection, signing };
   validatePdfSecurity(result);
   return result;
+}
+async function protectionCredentials(
+  settings: SecuritySettings
+): Promise<PdfSecurity["protection"]> {
+  if (!settings.protect) return null;
+  if (settings.protectionMode === "recipients") {
+    if (
+      !settings.recipients.length ||
+      settings.recipients.length > 32 ||
+      settings.recipients.some((file) => !file.size || file.size > certificateSizeLimit)
+    )
+      throw new Error(
+        "Choose between 1 and 32 X.509 recipient certificates, each no larger than 2 MiB."
+      );
+    return {
+      recipients: await Promise.all(
+        settings.recipients.map(async (file) => new Uint8Array(await file.arrayBuffer()))
+      ),
+      permissions: settings.permissions,
+    };
+  }
+  if (
+    settings.protect &&
+    (settings.userPassword !== settings.userConfirmation ||
+      settings.ownerPassword !== settings.ownerConfirmation)
+  )
+    throw new Error("The opening and owner password confirmations must match.");
+  return settings.protect
+    ? {
+        userPassword: settings.userPassword,
+        ownerPassword: settings.ownerPassword,
+        permissions: settings.permissions,
+      }
+    : null;
 }

@@ -4,16 +4,19 @@ import { fieldKey, type Source, type Page } from "./model";
 // Source-derived descriptors are regenerated when opening archives and older
 // drafts. Stored page IDs, object PDF coordinates and edited values stay intact.
 export async function refreshSources(
-  stored: Pick<Source, "id" | "name" | "bytes">[],
+  stored: Pick<Source, "id" | "name" | "bytes" | "decryptedBytes" | "encryption">[],
   pages: Page[]
 ) {
   const sources: Source[] = [],
     boxes = new Map<string, Page[]>();
   for (const item of stored) {
-    const imported = await importPdf(item.bytes, item.name);
+    const imported = await importPdf(item.decryptedBytes ?? item.bytes, item.name);
     sources.push({
       ...imported.source,
       id: item.id,
+      bytes: item.bytes,
+      decryptedBytes: item.decryptedBytes ?? null,
+      encryption: item.encryption ?? null,
       fields: imported.source.fields.map((field) => ({
         ...field,
         id: fieldKey(item.id, field.name),

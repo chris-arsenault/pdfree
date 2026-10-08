@@ -1,10 +1,10 @@
 import { createStore, entries, get, promisifyRequest } from "idb-keyval";
-import { newId, type EditorDocument } from "../core/model";
+import { newId, type EditorDocument, canSaveDraft } from "../core/model";
 import { refreshSources } from "../core/refreshSources";
 
 export type Draft = {
   version: 1;
-  modelRevision: 2;
+  modelRevision: 3;
   id: string;
   revision: string;
   document: EditorDocument;
@@ -38,14 +38,15 @@ export async function loadDrafts(): Promise<Draft[]> {
       )
       .map(async ([key, draft]) => ({
         ...draft,
-        modelRevision: 2 as const,
-        document:
-          draft.modelRevision === 2
+        modelRevision: 3 as const,
+        document: normalizeDraft(
+          draft.modelRevision >= 2
             ? draft.document
             : {
                 ...draft.document,
                 ...(await refreshSources(draft.document.sources, draft.document.pages)),
-              },
+              }
+        ),
         id: key === legacyKey ? "legacy" : key.slice(prefix.length),
         revision: typeof draft.revision === "string" ? draft.revision : "",
       }))
@@ -58,18 +59,35 @@ export async function loadDrafts(): Promise<Draft[]> {
 }
 
 export const loadDraft = async () => (await loadDrafts())[0] ?? null;
+function normalizeDraft(document: EditorDocument): EditorDocument {
+  return {
+    ...document,
+    allowDecryptedDrafts: document.allowDecryptedDrafts === true,
+    sources: document.sources.map((source) => ({
+      ...source,
+      decryptedBytes: source.decryptedBytes ?? null,
+      encryption: source.encryption ?? null,
+    })),
+  };
+}
 
-export async function saveDraft(document: EditorDocument, session: DraftSession | null = null) {
+export async function saveDraft(
+  document: EditorDocument,
+  session: DraftSession | null = null,
+  permitted = () => true
+) {
+  if (!canSaveDraft(document))
+    throw new Error("Enable decrypted local drafts before saving this document.");
   const current = session ?? (await draftSession());
   return store("readwrite", (objects) => {
     let saved = false;
     const generation = objects.get(generationKey);
     generation.onsuccess = () => {
-      if ((generation.result ?? 0) !== current.generation) return;
+      if ((generation.result ?? 0) !== current.generation || !permitted()) return;
       objects.put(
         {
           version: 1,
-          modelRevision: 2,
+          modelRevision: 3,
           id: current.id,
           revision: newId(),
           document,

@@ -1,0 +1,178 @@
+diff --git a/dist/index.d.mts b/dist/index.d.mts
+index 833ff4a3211cca0ef3f818977777a4f5180e4af0..16d9696102b3320e2a919f22ebef80dd4a800f9b 100644
+--- a/dist/index.d.mts
++++ b/dist/index.d.mts
+@@ -7636,6 +7636,8 @@ interface FlattenLayersResult {
+  * Options for document parsing.
+  */
+ interface ParseOptions {
++  /** Browser-local PubSec key derivation, supplied before any encrypted object is resolved. */
++  publicKeyDecrypt?: (dictionary: PdfDict) => { encryption: EncryptionDict; key: Uint8Array; filterKeys?: Map<string, Uint8Array> };
+   /** Enable lenient parsing for malformed PDFs (default: true) */
+   lenient?: boolean;
+   /**
+@@ -9248,6 +9250,8 @@ interface FlattenAllResult {
+  * Options for saving a PDF.
+  */
+ interface SaveOptions {
++  /** PDFree's browser-local public-key security configuration, prepared from recipient certificates. */
++  publicKeyProtection?: { dictionary: PdfDict; configuration: ReturnType<NonNullable<ParseOptions["publicKeyDecrypt"]>> };
+   /** Save incrementally (append only). Default: false */
+   incremental?: boolean;
+   /** Use XRef stream instead of table. Default: matches original format */
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 27ae20847211562a874f02c165d58e6edf6637f7..f91dd44e6c6ee281ff949a85d82d4ab5f4eb3551 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -31708,15 +31708,11 @@ function aesEncrypt(key, plaintext) {
+ function aesDecrypt(key, data) {
+ 	validateAesKey(key);
+ 	if (data.length < 16) throw new Error(`AES ciphertext too short: expected at least 16 bytes for IV`);
+-	if (data.length === 16) return new Uint8Array(0);
++	if (data.length === 16) throw new Error("AES ciphertext is missing its padding block");
+ 	const iv = data.subarray(0, 16);
+ 	let ciphertext = data.subarray(16);
+ 	if (ciphertext.length % 16 !== 0) {
+-		const remainder = ciphertext.length % 16;
+-		const aligned = ciphertext.length - remainder;
+-		console.warn(`AES ciphertext length (${ciphertext.length}) is not a multiple of 16, truncating ${remainder} trailing bytes`);
+-		if (aligned === 0) return new Uint8Array(0);
+-		ciphertext = ciphertext.subarray(0, aligned);
++		throw new Error("AES ciphertext length is not a multiple of 16");
+ 	}
+ 	return cbc(key, iv).decrypt(ciphertext);
+ }
+@@ -32618,6 +32614,13 @@ var StandardSecurityHandler = class {
+ 	* Authenticate with a string password (convenience method).
+ 	*/
+ 	authenticateWithString(password) {
++		if (this.revision <= 4) {
++			const legacy = encodePdfDocEncoding(password);
++			if (legacy) {
++				const result = this.authenticate(legacy);
++				if (result.authenticated) return result;
++			}
++		}
+ 		return this.authenticate(new TextEncoder().encode(password));
+ 	}
+ 	/**
+@@ -34172,7 +34175,8 @@ var DocumentParser = class {
+ 		this.scanner = scanner;
+ 		this.options = {
+ 			lenient: options.lenient ?? true,
+-			credentials: options.credentials
++			credentials: options.credentials,
++			publicKeyDecrypt: options.publicKeyDecrypt
+ 		};
+ 	}
+ 	/**
+@@ -34359,15 +34363,27 @@ var DocumentParser = class {
+ 				}
+ 			} else encryptDictObj = trailer.getDict("Encrypt") ?? null;
+ 			if (encryptDictObj) {
+-				encryptionDict = parseEncryptionDict(encryptDictObj);
+-				const fileId = this.getFileId(trailer);
+-				if (fileId) {
++				if (encryptDictObj.getName("Filter")?.value === "Adobe.PubSec" && this.options.publicKeyDecrypt) {
++					const result = this.options.publicKeyDecrypt(encryptDictObj);
++					encryptionDict = result.encryption;
++					securityHandler = new StandardSecurityHandler(encryptionDict, new Uint8Array(0));
++					securityHandler.setAuthenticated(result.key, false);
++					if (result.filterKeys) {
++						const handlerFor = (name) => createHandlerForFilter(name, encryptionDict.cryptFilters, encryptionDict.algorithm, result.filterKeys.get(name) ?? result.key);
++						securityHandler.handlers = { stringHandler: handlerFor(encryptionDict.stringFilter), streamHandler: handlerFor(encryptionDict.streamFilter), embeddedFileHandler: handlerFor(encryptionDict.embeddedFileFilter) };
++						securityHandler.cryptHandlerFor = handlerFor;
++					}
++				} else {
++					encryptionDict = parseEncryptionDict(encryptDictObj);
++					const fileId = this.getFileId(trailer);
++					if (fileId) {
+ 					securityHandler = new StandardSecurityHandler(encryptionDict, fileId);
+ 					if (this.options.credentials !== void 0) {
+ 						const credential = normalizeCredential(this.options.credentials);
+ 						securityHandler.authenticateWithCredential(credential);
+ 					} else tryEmptyPassword(securityHandler);
+-				} else this.warnings.push("Encrypted PDF missing /ID in trailer");
++					} else this.warnings.push("Encrypted PDF missing /ID in trailer");
++				}
+ 			}
+ 		} catch (error) {
+ 			if (error instanceof EncryptionDictError) this.warnings.push(`Encryption error: ${error.message}`);
+@@ -34422,11 +34438,30 @@ var DocumentParser = class {
+ 				if (obj instanceof PdfStream) {
+ 					const streamType = obj.getName("Type")?.value;
+ 					if (!securityHandler.shouldEncryptStream(streamType)) return obj;
+-					const newStream = new PdfStream(obj, securityHandler.decryptStream(obj.data, objNum, genNum));
++					const filters = obj.getArray("Filter") ? Array.from(obj.getArray("Filter")) : [obj.getName("Filter")].filter((value) => value !== undefined);
++					const cryptIndex = filters.findIndex((filter) => filter instanceof PdfName && filter.value === "Crypt");
++					if (cryptIndex > 0) throw new Error("Crypt must be the first stream filter");
++					let streamHandler = streamType === "EmbeddedFile" ? securityHandler.handlers.embeddedFileHandler : securityHandler.handlers.streamHandler;
++					if (cryptIndex === 0) {
++						const params = obj.getArray("DecodeParms")?.at(0) ?? obj.getDict("DecodeParms");
++						const name = params instanceof PdfDict ? params.getName("Name")?.value ?? "Identity" : "Identity";
++						if (name !== "Identity" && !encryptionDict.cryptFilters?.has(name)) throw new Error("Missing named crypt filter");
++						streamHandler = securityHandler.cryptHandlerFor ? securityHandler.cryptHandlerFor(name) : createHandlerForFilter(name, encryptionDict.cryptFilters, encryptionDict.algorithm, securityHandler.encryptionKey);
++					}
++					const newStream = new PdfStream(obj, streamHandler.decryptStream(obj.data, objNum, genNum));
+ 					for (const [key, value] of obj) {
+ 						const decryptedValue = decryptObject(value, objNum, genNum);
+ 						if (decryptedValue !== value) newStream.set(key.value, decryptedValue);
+ 					}
++					if (cryptIndex === 0) {
++						if (filters.length === 1) { newStream.delete("Filter"); newStream.delete("DecodeParms"); }
++						else {
++							newStream.set("Filter", new PdfArray(filters.slice(1)));
++							const params = newStream.getArray("DecodeParms");
++							if (params) newStream.set("DecodeParms", new PdfArray(Array.from(params).slice(1)));
++							else newStream.delete("DecodeParms");
++						}
++					}
+ 					return newStream;
+ 				}
+ 				if (obj instanceof PdfDict) {
+@@ -34436,6 +34471,7 @@ var DocumentParser = class {
+ 				}
+ 				return obj;
+ 			} catch (error) {
++				if (!lenient) throw error;
+ 				console.warn(`Failed to decrypt object ${objNum} ${genNum}:`, error);
+ 				return obj;
+ 			}
+@@ -43037,6 +43073,13 @@ var PDF = class PDF {
+ 	static async load(bytes, options) {
+ 		const scanner = new Scanner(bytes);
+ 		const parsed = new DocumentParser(scanner, options).parse();
++		if (parsed.isEncrypted && !parsed.isAuthenticated) {
++			const error = new Error(parsed.securityHandler
++				? "The PDF password is missing or incorrect."
++				: "The PDF encryption handler is unsupported or invalid.");
++			error.code = parsed.securityHandler ? "PDF_PASSWORD" : "PDF_ENCRYPTION_HANDLER";
++			throw error;
++		}
+ 		const registry = new ObjectRegistry(parsed.xref);
+ 		let isLinearized = false;
+ 		try {
+@@ -45088,7 +45131,7 @@ var PDF = class PDF {
+ 		const blocker = this.canSaveIncrementally();
+ 		if (wantsIncremental && blocker !== null) this.ctx.registry.addWarning(`Incremental save not possible (${blocker}), performing full save`);
+ 		const useIncremental = wantsIncremental && blocker === null;
+-		const hasSecurityChanges = this._pendingSecurity.action !== "none";
++		const hasSecurityChanges = this._pendingSecurity.action !== "none" || !!options.publicKeyProtection;
+ 		if (!this.hasChanges() && !this.fonts.hasEmbeddedFonts && !hasSecurityChanges) return {
+ 			bytes: this.originalBytes,
+ 			xrefOffset: this.originalXRefOffset
+@@ -45099,7 +45142,13 @@ var PDF = class PDF {
+ 		let encryptRef;
+ 		let fileId;
+ 		let securityHandler;
+-		if (this._pendingSecurity.action === "encrypt" && this._pendingSecurity.options) {
++		if (options.publicKeyProtection) {
++			if (wantsIncremental) throw new Error("Adding public-key protection requires a full save");
++			const { dictionary, configuration } = options.publicKeyProtection;
++			encryptRef = this.ctx.registry.register(dictionary);
++			securityHandler = new StandardSecurityHandler(configuration.encryption, new Uint8Array(0));
++			securityHandler.setAuthenticated(configuration.key, false);
++		} else if (this._pendingSecurity.action === "encrypt" && this._pendingSecurity.options) {
+ 			const encryption = generateEncryption(this._pendingSecurity.options);
+ 			encryptRef = this.ctx.registry.register(encryption.encryptDict);
+ 			fileId = encryption.fileId;

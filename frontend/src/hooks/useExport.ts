@@ -6,6 +6,7 @@ import { pageImages } from "../services/pageImages";
 import { printPdf } from "../services/print";
 import { type SecuritySettings } from "../core/securitySettings";
 import { useExportPdf } from "./useExportPdf";
+import { hasEncryptedSources } from "../core/model";
 export function useExport(
   name: string,
   selected: boolean,
@@ -17,6 +18,13 @@ export function useExport(
   const pdfBytes = useExportPdf(pageIds, flatten, security);
   const saveProject = () =>
     editor.task.run("Saving editing project", async () => {
+      if (
+        hasEncryptedSources(editor.document) &&
+        !window.confirm(
+          "This editing project includes decrypted document content without password protection. Save it?"
+        )
+      )
+        return;
       download(
         await runPdfWorker<Uint8Array>({ kind: "project-save", document: editor.document }),
         `${name.replace(/\.(pdf|pdfree)$/i, "")}.pdfree`,

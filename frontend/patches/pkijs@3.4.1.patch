@@ -1,0 +1,50 @@
+diff --git a/build/index.es.js b/build/index.es.js
+index d4ff7c163656436064b522276c82dca8b0dc8435..0557efc7e52f07a0f8dacb52aa6a9892332d5c4f 100644
+--- a/build/index.es.js
++++ b/build/index.es.js
+@@ -12391,10 +12391,7 @@ class RSAESOAEPParams extends PkiObject {
+                 return new AlgorithmIdentifier({
+                     algorithmId: "1.2.840.113549.1.1.9",
+                     algorithmParams: new asn1js.OctetString({
+-                        valueHex: new Uint8Array([
+-                            0xda, 0x39, 0xa3, 0xee, 0x5e, 0x6b, 0x4b, 0x0d, 0x32, 0x55, 0xbf, 0xef, 0x95, 0x60,
+-                            0x18, 0x90, 0xaf, 0xd8, 0x07, 0x09
+-                        ]).buffer
++                        valueHex: new ArrayBuffer(0)
+                     })
+                 });
+             default:
+@@ -12519,7 +12516,7 @@ class ECCCMSSharedInfo extends PkiObject {
+     constructor(parameters = {}) {
+         super();
+         this.keyInfo = pvutils.getParametersValue(parameters, KEY_INFO, ECCCMSSharedInfo.defaultValues(KEY_INFO));
+-        if (ENTITY_U_INFO in parameters) {
++        if (parameters.entityUInfo !== undefined) {
+             this.entityUInfo = pvutils.getParametersValue(parameters, ENTITY_U_INFO, ECCCMSSharedInfo.defaultValues(ENTITY_U_INFO));
+         }
+         this.suppPubInfo = pvutils.getParametersValue(parameters, SUPP_PUB_INFO, ECCCMSSharedInfo.defaultValues(SUPP_PUB_INFO));
+diff --git a/build/index.js b/build/index.js
+index 2a9bb641b3550c5075a3828a3ee7195b2a806df5..5c277c1e692598bd004466b21c77a7c4c959990c 100644
+--- a/build/index.js
++++ b/build/index.js
+@@ -12414,10 +12414,7 @@ class RSAESOAEPParams extends PkiObject {
+                 return new AlgorithmIdentifier({
+                     algorithmId: "1.2.840.113549.1.1.9",
+                     algorithmParams: new asn1js__namespace.OctetString({
+-                        valueHex: new Uint8Array([
+-                            0xda, 0x39, 0xa3, 0xee, 0x5e, 0x6b, 0x4b, 0x0d, 0x32, 0x55, 0xbf, 0xef, 0x95, 0x60,
+-                            0x18, 0x90, 0xaf, 0xd8, 0x07, 0x09
+-                        ]).buffer
++                        valueHex: new ArrayBuffer(0)
+                     })
+                 });
+             default:
+@@ -12542,7 +12539,7 @@ class ECCCMSSharedInfo extends PkiObject {
+     constructor(parameters = {}) {
+         super();
+         this.keyInfo = pvutils__namespace.getParametersValue(parameters, KEY_INFO, ECCCMSSharedInfo.defaultValues(KEY_INFO));
+-        if (ENTITY_U_INFO in parameters) {
++        if (parameters.entityUInfo !== undefined) {
+             this.entityUInfo = pvutils__namespace.getParametersValue(parameters, ENTITY_U_INFO, ECCCMSSharedInfo.defaultValues(ENTITY_U_INFO));
+         }
+         this.suppPubInfo = pvutils__namespace.getParametersValue(parameters, SUPP_PUB_INFO, ECCCMSSharedInfo.defaultValues(SUPP_PUB_INFO));

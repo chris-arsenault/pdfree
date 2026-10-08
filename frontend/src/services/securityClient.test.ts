@@ -1,5 +1,7 @@
 import { expect, it, vi, beforeEach, afterEach } from "vitest";
-import { runSecurityWorker } from "./securityClient";
+import { runSecurityWorker, runImportWorker } from "./securityClient";
+import { PdfPasswordError } from "../core/unlockPdf";
+import { PdfRecipientError } from "../core/pdfCredentials";
 
 class TestWorker {
   static readonly instances: TestWorker[] = [];
@@ -80,5 +82,42 @@ it("terminates on a transfer failure instead of retaining credentials", async ()
   await expect(runSecurityWorker(new Uint8Array([1]), security())).rejects.toThrow(
     "could not start"
   );
+  expect(TestWorker.instances[0].terminate).toHaveBeenCalledOnce();
+});
+it("preserves the password-required error code across the worker boundary and terminates the worker", async () => {
+  const output = runImportWorker(new Uint8Array([1]), "locked.pdf");
+  const check = expect(output).rejects.toBeInstanceOf(PdfPasswordError);
+  TestWorker.instances[0].onmessage?.({
+    data: { error: "Enter PDF password", code: "PDF_PASSWORD" },
+  } as MessageEvent);
+  await check;
+  expect(TestWorker.instances[0].terminate).toHaveBeenCalledOnce();
+});
+it("cancels an import and releases its password before its result can replace a document", async () => {
+  const controller = new AbortController();
+  const output = runImportWorker(
+    new Uint8Array([1]),
+    "locked.pdf",
+    "reader-fixture",
+    controller.signal
+  );
+  const check = expect(output).rejects.toThrow("current document is unchanged");
+  controller.abort();
+  await check;
+  expect(TestWorker.instances[0].terminate).toHaveBeenCalledOnce();
+});
+it("transfers a recipient identity and preserves its retry error without retaining a worker", async () => {
+  const bytes = new Uint8Array([1]);
+  const identity = new Uint8Array([2]);
+  const post = vi.spyOn(TestWorker.prototype, "postMessage");
+  const output = runImportWorker(bytes, "recipient.pdf", { bytes: identity, password: "fixture" });
+  const check = expect(output).rejects.toBeInstanceOf(PdfRecipientError);
+  expect(post).toHaveBeenCalledWith(expect.objectContaining({ kind: "import" }), {
+    transfer: [bytes.buffer, identity.buffer],
+  });
+  TestWorker.instances[0].onmessage?.({
+    data: { error: "Choose a matching recipient", code: "PDF_RECIPIENT" },
+  } as MessageEvent);
+  await check;
   expect(TestWorker.instances[0].terminate).toHaveBeenCalledOnce();
 });

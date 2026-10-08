@@ -1,8 +1,18 @@
-import { PDFDocument, PDFName, PDFSignature, PDFDict, PDFPage, PDFNumber } from "pdf-lib";
+import {
+  PDFDocument,
+  PDFName,
+  PDFSignature,
+  PDFButton,
+  PDFDict,
+  PDFPage,
+  PDFNumber,
+} from "pdf-lib";
 import { describeFields, fieldKind } from "./nativeFields";
 import { newId, fieldKey, type EditorDocument, type Page, type Source } from "./model";
 import { visiblePageBox } from "./visiblePage";
 import { hasCertificateSignature } from "./signedPdf";
+import { unlockPdf } from "./unlockPdf";
+import { type PdfCredential } from "./pdfCredentials";
 
 function validateControls(pdf: PDFDocument) {
   if (pdf.catalog.lookupMaybe(PDFName.of("AcroForm"), PDFDict)?.has(PDFName.of("XFA")))
@@ -15,7 +25,8 @@ function validateControls(pdf: PDFDocument) {
       "This PDF has certificate signature fields. Editing could invalidate signatures; use an unsigned copy."
     );
   const unsupported = fields.filter(
-    (field) => !(field instanceof PDFSignature) && !fieldKind(field)
+    (field) =>
+      !(field instanceof PDFSignature) && !(field instanceof PDFButton) && !fieldKind(field)
   );
   if (unsupported.length)
     throw new Error(
@@ -63,15 +74,12 @@ function inspect(pdf: PDFDocument) {
   structuralWarnings.push(...pageLinks(pdf));
   return { warnings, structuralWarnings: [...new Set(structuralWarnings)] };
 }
-export async function importPdf(bytes: Uint8Array, name: string) {
+export async function importPdf(bytes: Uint8Array, name: string, credential?: PdfCredential) {
+  const unlocked = await unlockPdf(bytes, credential);
   let pdf: PDFDocument;
   try {
-    pdf = await PDFDocument.load(bytes, { updateMetadata: false });
-  } catch (error) {
-    if (String(error).includes("encrypted"))
-      throw new Error(
-        "Password-protected PDFs cannot be edited safely here. Open an unencrypted copy."
-      );
+    pdf = await PDFDocument.load(unlocked.bytes, { updateMetadata: false });
+  } catch {
     throw new Error("This file could not be read as a PDF. It may be damaged or unsupported.");
   }
   const id = newId();
@@ -90,6 +98,8 @@ export async function importPdf(bytes: Uint8Array, name: string) {
     id,
     name,
     bytes,
+    decryptedBytes: unlocked.encryption ? unlocked.bytes : null,
+    encryption: unlocked.encryption ?? null,
     pageCount: pdf.getPageCount(),
     fields: describeFields(pdf, id),
     ...inspection,

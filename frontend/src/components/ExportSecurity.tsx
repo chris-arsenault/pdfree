@@ -34,7 +34,30 @@ export function ExportSecurity(props: Props) {
         />
         Protect PDF with passwords and permissions
       </label>
-      {value.protect && <ProtectionSettings {...props} />}
+      {value.protect && (
+        <>
+          <label>
+            Encryption credentials
+            <select
+              value={value.protectionMode}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  protectionMode: event.target.value as SecuritySettings["protectionMode"],
+                })
+              }
+            >
+              <option value="password">Opening and owner passwords</option>
+              <option value="recipients">Recipient certificates</option>
+            </select>
+          </label>
+          {value.protectionMode === "password" ? (
+            <ProtectionSettings {...props} />
+          ) : (
+            <RecipientSettings {...props} />
+          )}
+        </>
+      )}
       {hasSecurity(value) && (
         <p className="field-note">
           Protection applies to this PDF download and direct PDF save. Editing projects, images,
@@ -43,6 +66,30 @@ export function ExportSecurity(props: Props) {
         </p>
       )}
     </fieldset>
+  );
+}
+function RecipientSettings(props: Props) {
+  const { value, onChange } = props;
+  return (
+    <div className="security-fields">
+      <label>
+        Recipient certificates (.cer, .crt or .pem)
+        <input
+          type="file"
+          multiple
+          accept=".cer,.crt,.pem,application/pkix-cert"
+          onChange={(event) =>
+            onChange({ ...value, recipients: Array.from(event.target.files ?? []) })
+          }
+        />
+      </label>
+      <p className="field-note">
+        AES-256 certificate encryption. Choose 1–32 public X.509 certificates. Every recipient must
+        keep their matching private identity to open the download. Keep a recipient certificate for
+        yourself if you need access. Reader permissions can be ignored.
+      </p>
+      <Permissions {...props} />
+    </div>
   );
 }
 

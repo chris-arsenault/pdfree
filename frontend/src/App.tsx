@@ -32,6 +32,11 @@ export default function App() {
           <div className="busy-banner" role="status">
             <span className="spinner" />
             {editor.task.busy}…
+            {editor.task.busy === "Opening files" && (
+              <button className="button secondary" onClick={editor.password.cancel}>
+                Cancel opening
+              </button>
+            )}
           </div>
         )}
         {editor.task.error && (

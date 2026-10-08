@@ -4,6 +4,7 @@ import { useEditor } from "../hooks/editorContext";
 import { splitGroups, outputName, type SplitMode } from "../core/pageRanges";
 import { useSplitExport } from "../hooks/useSplitExport";
 import { Modal } from "./Modal";
+import { hasEncryptedSources } from "../core/model";
 
 export function SplitDialog() {
   const editor = useEditor(),
@@ -26,6 +27,12 @@ export function SplitDialog() {
         Use physical page numbers from the sidebar. Your current fields and edits are included in
         every output.
       </p>
+      {hasEncryptedSources(editor.document) && (
+        <p className="inline-warning">
+          Split downloads contain decrypted content without encryption. To protect an output, open
+          it and choose protection in Export.
+        </p>
+      )}
       <label>
         Split method
         <select value={mode} onChange={(event) => setMode(event.target.value as SplitMode)}>

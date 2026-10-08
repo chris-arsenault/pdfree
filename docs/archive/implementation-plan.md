@@ -1,5 +1,16 @@
 # PDFree: browser PDF filler plan
 
+> Historical record, archived 2026-10-08. This preserves the original proposal,
+> implementation/review sequence and the authorization that applied at each step.
+> Earlier blocked phases, module pins and publication gates are snapshots, not
+> current requirements. Implementation and deployment are complete. Use the
+> [current architecture](../architecture.md), [ADRs](../adr/README.md),
+> [backlog](../backlog.md) and [development](../development.md)
+> for current contracts and executable checks. Offline support was retained by user
+> instruction; the browser-only requirement alone does not require it.
+> File paths and root document names in the historical prose retain their original
+> context; navigable source links have been adjusted for this archive location.
+
 Prepared 2026-10-07. Implementation is authorized and underway.
 Updated after reviewing the local Ahara integration guide, language standards,
 shared workflow, and website module on the same date.
@@ -269,18 +280,18 @@ outside the current browser filler proposal.
 - [MuPDF JavaScript/WebAssembly introduction](https://mupdf.readthedocs.io/en/latest/guide/using-with-javascript.html)
 - [Tesseract.js scope and browser operation](https://github.com/naptha/tesseract.js)
 - [Browser file-system APIs](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API)
-- [Ahara integration guide](../ahara/INTEGRATION.md)
-- [Ahara CI workflow guide](../ahara/CI-WORKFLOW.md)
-- [Actual shared workflow](../ahara/.github/workflows/ci.yml)
-- [TypeScript/React standards](../ahara-standards/standards/typescript.md)
-- [Project layout](../ahara-standards/standards/project-structure.md)
-- [Terraform conventions](../ahara-standards/standards/terraform.md)
-- [Script conventions](../ahara-standards/standards/scripts.md)
-- [Testing conventions](../ahara-standards/standards/testing.md)
-- [CSS conventions and computed geometry](../ahara-standards/patterns/css-architecture.md)
-- [Actual shared website module](../ahara-tf-patterns/modules/website/main.tf)
-- [Website module inputs](../ahara-tf-patterns/modules/website/variables.tf)
-- [Static-project deployer example](../ahara-infra/infrastructure/terraform/control/project-ahara-portal.tf)
+- [Ahara integration guide](../../../ahara/INTEGRATION.md)
+- [Ahara CI workflow guide](../../../ahara/CI-WORKFLOW.md)
+- [Actual shared workflow](../../../ahara/.github/workflows/ci.yml)
+- [TypeScript/React standards](../../../ahara-standards/standards/typescript.md)
+- [Project layout](../../../ahara-standards/standards/project-structure.md)
+- [Terraform conventions](../../../ahara-standards/standards/terraform.md)
+- [Script conventions](../../../ahara-standards/standards/scripts.md)
+- [Testing conventions](../../../ahara-standards/standards/testing.md)
+- [CSS conventions and computed geometry](../../../ahara-standards/patterns/css-architecture.md)
+- [Actual shared website module](../../../ahara-tf-patterns/modules/website/main.tf)
+- [Website module inputs](../../../ahara-tf-patterns/modules/website/variables.tf)
+- [Static-project deployer example](../../../ahara-infra/infrastructure/terraform/control/project-ahara-portal.tf)
 
 ## Initial implementation state (2026-10-07)
 
@@ -388,7 +399,7 @@ checks pass in Chromium, Firefox and WebKit. The scan measurement mounted six
 canvases for a 92 MB, 64-page PDF. XFA dictionary detection was moved before
 pdf-lib's destructive getForm accessor. Explicit export-range order is preserved;
 individual split downloads and omitted-page notices complete the split preview.
-See RELEASE-REPORT.md for measurements and the WebKit emulator workaround.
+The current development guide describes the WebKit test environment.
 Final touch checks also exercise page reordering; mobile thumbnail controls fit
 inside the fixed virtual rows and retain page identity after moving a page.
 Linux WebKit substitutes for unavailable Apple hardware; actual Safari, Acrobat,
@@ -539,8 +550,8 @@ and its absence from the last split output. These are local observations.
 Strict typing, zero-warning shared lint, formatting, Terraform formatting, build
 and `make ci` pass. Core unit coverage is 88.74% statements, 90.81% lines and
 83.09% branches; browser behavior is verified separately. Temporary servers and
-containers are stopped. Actual Apple Safari and the manual checks in
-RELEASE-REPORT.md remain unverified. No commit, push, publication or credential
+containers are stopped. Actual Apple Safari and the manual reader/device checks
+remain unverified. No commit, push, publication or credential
 retry occurred; the original M6 gates remain in place.
 
 ## Digital signing and protection extension
@@ -568,8 +579,8 @@ The suite contains 345 unit tests, 40 browser checks and 11 native security
 verifier tests. Production checks include two certificate exports per engine;
 the total is nine for Chromium and eight for Firefox/WebKit, with only the large
 scan workload skipped outside Chromium. Core unit coverage measures 90.15%
-statements, 91.97% lines and 85.02% branches. See RELEASE-REPORT.md for final gates,
-test setup repairs and manual verification limits.
+statements, 91.97% lines and 85.02% branches. The current development guide and
+backlog describe executable gates and manual verification limits.
 
 State: completed locally. `make ci`, production build, core unit coverage and
 the native verifier suite pass. Chromium passes 40 browser and nine production

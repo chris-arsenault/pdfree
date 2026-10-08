@@ -5,9 +5,11 @@ import { ExportDialog } from "./ExportDialog";
 import { Modal } from "./Modal";
 import { SplitDialog } from "./SplitDialog";
 import { DocumentDialog } from "./DocumentDialog";
+import { PdfPasswordDialog } from "./PdfPasswordDialog";
 export function Dialogs() {
   const editor = useEditor();
   const close = useCloseDialog();
+  if (editor.password.request) return <PdfPasswordDialog />;
   if (editor.dialog === "signature" || editor.dialog === "initials") return <SignatureDialog />;
   if (editor.dialog === "export") return <ExportDialog />;
   if (editor.dialog === "split") return <SplitDialog />;

@@ -126,3 +126,60 @@ it.each(["signer.p12", "ec-signer.p12"])(
     }
   }
 );
+it.each(["R2-empty.pdf", "pubsec-256.pdf"])(
+  "edits encrypted input %s through production workers and CSP",
+  async (fixture) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const errors: string[] = [],
+      requests: { url: string; method: string }[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("request", (request) =>
+      requests.push({ url: request.url(), method: request.method() })
+    );
+    try {
+      await page.goto(server.url);
+      await page
+        .locator(".drop-card input")
+        .setInputFiles(`tooling/fixtures/encryption/${fixture}`);
+      if (fixture.startsWith("pubsec")) {
+        await page.getByRole("dialog", { name: "Unlock PDF" }).waitFor();
+        await page
+          .locator('input[accept=".p12,.pfx"]')
+          .setInputFiles("tooling/fixtures/encryption/recipient.p12");
+        await page.getByLabel("Identity password", { exact: true }).fill("identity-fixture");
+        await page.getByRole("button", { name: "Unlock PDF", exact: true }).click();
+      }
+      await page
+        .getByRole("textbox", { name: "name", exact: true })
+        .fill("Production encrypted Ada");
+      await page.getByRole("button", { name: "Export", exact: true }).click();
+      const download = page.waitForEvent("download");
+      await page.getByRole("button", { name: "Download PDF", exact: true }).click();
+      const path = await (await download).path();
+      if (!path) throw new Error("The edited PDF did not download");
+      const pdf = await getDocument({ data: new Uint8Array(await readFile(path)) }).promise;
+      try {
+        expect(pdf.numPages).toBe(3);
+        expect(
+          (await (await pdf.getPage(1)).getAnnotations()).find(
+            (field) => field.fieldName === "name"
+          )?.fieldValue
+        ).toBe("Production encrypted Ada");
+      } finally {
+        await pdf.destroy();
+      }
+      expect(errors).toEqual([]);
+      expect(
+        requests.filter(
+          (request) =>
+            request.method !== "GET" ||
+            (!request.url.startsWith(server.url) && !request.url.startsWith("blob:"))
+        )
+      ).toEqual([]);
+      await expectFixtureAbsent("encryption/recipient.p12");
+    } finally {
+      await context.close();
+    }
+  }
+);

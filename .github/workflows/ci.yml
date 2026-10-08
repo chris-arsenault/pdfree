@@ -39,17 +39,14 @@ jobs:
       - name: Install test browser
         run: pnpm exec playwright install --with-deps "$PDFREE_BROWSER"
       - name: Browser interactions and writer fidelity
-        run: pnpm test:browser
-      - name: Install independent PDF security verifiers
-        if: matrix.engine == 'chromium'
-        run: sudo apt-get update && sudo apt-get install -y openssl qpdf poppler-utils
+        run: make -C .. test-browser BROWSER="$PDFREE_BROWSER"
       - name: Verify signatures, certification and encryption independently
         if: matrix.engine == 'chromium'
-        run: pnpm test:security
+        run: make -C .. security-check
       - name: Build production bundle
         run: pnpm build
       - name: Offline, CSP, accessibility and download checks
-        run: pnpm test:release
+        run: make -C .. test-release BROWSER="$PDFREE_BROWSER"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

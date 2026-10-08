@@ -1,0 +1,3 @@
+patchedDependencies:
+  "@libpdf/core@0.5.2": patches/@libpdf__core@0.5.2.patch
+  pkijs@3.4.1: patches/pkijs@3.4.1.patch

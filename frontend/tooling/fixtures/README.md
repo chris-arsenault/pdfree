@@ -16,3 +16,11 @@ set `keyUsage=digitalSignature`, and use `pkcs12 -export` with the public fixtur
 password above. Delete the intermediate raw key after creating the PKCS#12 file.
 Update both the PKCS#12 and matching PEM certificate together. These files are
 imported by tests only and must never appear in the production bundle.
+
+The [encryption fixtures](encryption/README.md) add public synthetic qpdf/PDFBox
+inputs and recipient identities. Their provenance and test passwords are recorded
+separately; private user PDFs and identities must never be added to either set.
+
+See the repository [security guide](../../../docs/security.md) for production
+identity boundaries and [development guide](../../../docs/development.md) for
+independent verifier commands and regression expectations.

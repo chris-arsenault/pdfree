@@ -8,11 +8,13 @@ export type PdfPermissions = {
   fillForms: boolean;
   assemble: boolean;
 };
-export type PdfProtection = {
+export type PdfPasswordProtection = {
   userPassword: string;
   ownerPassword: string;
   permissions: PdfPermissions;
 };
+export type PdfRecipientProtection = { recipients: Uint8Array[]; permissions: PdfPermissions };
+export type PdfProtection = PdfPasswordProtection | PdfRecipientProtection;
 export type PdfSigning = {
   certificate: Uint8Array;
   password: string;
@@ -34,6 +36,18 @@ export const defaultPermissions = (): PdfPermissions => ({
 });
 
 function validateProtection(protection: PdfProtection) {
+  if ("recipients" in protection) {
+    if (
+      !protection.recipients.length ||
+      protection.recipients.length > 32 ||
+      protection.recipients.some(
+        (certificate) => !certificate.length || certificate.length > certificateSizeLimit
+      )
+    )
+      throw new Error("Choose between 1 and 32 recipient certificates, each no larger than 2 MiB.");
+    validatePermissions(protection.permissions);
+    return;
+  }
   if (!protection.ownerPassword)
     throw new Error("Enter an owner password to control PDF permissions.");
   if (protection.userPassword === protection.ownerPassword)
@@ -45,9 +59,12 @@ function validateProtection(protection: PdfProtection) {
       throw new Error("PDF passwords must be no longer than 127 UTF-8 bytes.");
     if (password.includes("\0")) throw new Error("PDF passwords cannot contain a null character.");
   }
+  validatePermissions(protection.permissions);
+}
+function validatePermissions(permissions: PdfPermissions) {
   if (
     Object.keys(defaultPermissions()).some(
-      (key) => typeof protection.permissions[key as keyof PdfPermissions] !== "boolean"
+      (key) => typeof permissions[key as keyof PdfPermissions] !== "boolean"
     )
   )
     throw new Error("Choose valid PDF permissions.");

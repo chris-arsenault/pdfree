@@ -25,6 +25,7 @@ export default defineConfig({
       "@libpdf/core",
       "pkijs",
       "asn1js",
+      "node-forge",
     ],
   },
   test: {

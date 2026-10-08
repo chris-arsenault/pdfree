@@ -24,7 +24,7 @@ it("recovers legacy choice descriptors and visible boxes without changing edits 
   const snapshot = { version: 1, revision: "old-revision", document: doc, savedAt: 123 };
   await set("pdfree-draft-v1", snapshot);
   const [draft] = await loadDrafts();
-  expect(draft.modelRevision).toBe(2);
+  expect(draft.modelRevision).toBe(3);
   expect(draft.id).toBe("legacy");
   expect(draft.revision).toBe("old-revision");
   expect(draft.document.pages[0].box).toEqual({ x: 0, y: 0, width: 450, height: 550 });
@@ -38,4 +38,22 @@ it("recovers legacy choice descriptors and visible boxes without changing edits 
     { value: "NY", label: "New York" },
   ]);
   expect(await get("pdfree-draft-v1")).toEqual(snapshot);
+});
+it("normalizes revision 2 drafts without refreshing geometry or mutating stored data", async () => {
+  const doc = appendSource(
+    emptyDocument(),
+    await importPdf(await choiceFixture("dropdown"), "old.pdf")
+  );
+  Reflect.deleteProperty(doc, "allowDecryptedDrafts");
+  Reflect.deleteProperty(doc.sources[0], "encryption");
+  Reflect.deleteProperty(doc.sources[0], "decryptedBytes");
+  doc.pages[0].objects.push({ ...defaultObject("text", { x: 20, y: 200 }), text: "Retained edit" });
+  const snapshot = { version: 1, modelRevision: 2, revision: "prior", document: doc, savedAt: 123 };
+  await set("pdfree-draft-v2:prior", snapshot);
+  const [draft] = await loadDrafts();
+  expect(draft.document.allowDecryptedDrafts).toBe(false);
+  expect(draft.document.sources[0].encryption).toBe(null);
+  expect(draft.document.sources[0].decryptedBytes).toBe(null);
+  expect(draft.document.pages).toEqual(doc.pages);
+  expect(await get("pdfree-draft-v2:prior")).toEqual(snapshot);
 });

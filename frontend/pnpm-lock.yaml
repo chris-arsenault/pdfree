@@ -4,6 +4,14 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@libpdf/core@0.5.2':
+    hash: 0c8ee152de54cd47a8eca811b32042b9edcfc46bb8b9be8b82648b45debf37e3
+    path: patches/@libpdf__core@0.5.2.patch
+  pkijs@3.4.1:
+    hash: 7c478eed3138849d07bc30c0f2a29c5ae3fb19cec79d471438ef404a3c70cdf6
+    path: patches/pkijs@3.4.1.patch
+
 importers:
 
   .:
@@ -16,7 +24,7 @@ importers:
         version: 5.3.0
       '@libpdf/core':
         specifier: 0.5.2
-        version: 0.5.2
+        version: 0.5.2(patch_hash=0c8ee152de54cd47a8eca811b32042b9edcfc46bb8b9be8b82648b45debf37e3)
       '@pdf-lib/fontkit':
         specifier: ^1.1.1
         version: 1.1.1
@@ -32,6 +40,9 @@ importers:
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@19.3.0)
+      node-forge:
+        specifier: 1.4.0
+        version: 1.4.0
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
@@ -40,7 +51,7 @@ importers:
         version: 5.7.284
       pkijs:
         specifier: 3.4.1
-        version: 3.4.1
+        version: 3.4.1(patch_hash=7c478eed3138849d07bc30c0f2a29c5ae3fb19cec79d471438ef404a3c70cdf6)
       react:
         specifier: ^19.2.4
         version: 19.3.0
@@ -66,6 +77,9 @@ importers:
       '@types/node':
         specifier: ^24.12.0
         version: 24.19.1
+      '@types/node-forge':
+        specifier: 1.3.14
+        version: 1.3.14
       '@types/pngjs':
         specifier: ^6.0.5
         version: 6.0.5
@@ -1272,6 +1286,9 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
+  '@types/node-forge@1.3.14':
+    resolution: {integrity: sha512-mhVF2BnD4BO+jtOp7z1CdzaK4mbuK0LLQYAvdOLqHTavxFNq4zA1EmYkpnFjP8HOUzedfQkRnp0E2ulSAYSzAw==}
+
   '@types/node@24.19.1':
     resolution: {integrity: sha512-aS3/DG0oM05K0RIXXP+hKjinGG5IgSSVGzswZxW3O0sS3pH4/fycXundUC9XsszgKCk4gHXylTEK6hyFxVxnoQ==}
 
@@ -2310,6 +2327,10 @@ packages:
   node-exports-info@1.6.2:
     resolution: {integrity: sha512-kXs9Go0cah0qHVV2v389IXQLdLCeE1xfFtjOAF+iobu0OIoG1pje8At2vMHyaPMiPMnG/LWP50twML21eMcAag==}
     engines: {node: '>= 0.4'}
+
+  node-forge@1.4.0:
+    resolution: {integrity: sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==}
+    engines: {node: '>= 6.13.0'}
 
   node-releases@2.0.57:
     resolution: {integrity: sha512-kQK9LGGFiHtrWiNhZtA7Qbw17AQz+dmsEKODRIVTXA9+e5MS/2gZEBhYJt13GrAz5/IOZKddH/0Z3TP/Zgo+yw==}
@@ -3886,7 +3907,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@libpdf/core@0.5.2':
+  '@libpdf/core@0.5.2(patch_hash=0c8ee152de54cd47a8eca811b32042b9edcfc46bb8b9be8b82648b45debf37e3)':
     dependencies:
       '@noble/ciphers': 2.4.0
       '@noble/hashes': 2.4.0
@@ -3894,7 +3915,7 @@ snapshots:
       asn1js: 3.0.10
       lru-cache: 11.5.3
       pako: 2.2.0
-      pkijs: 3.4.1
+      pkijs: 3.4.1(patch_hash=7c478eed3138849d07bc30c0f2a29c5ae3fb19cec79d471438ef404a3c70cdf6)
 
   '@napi-rs/canvas-android-arm64@0.1.100':
     optional: true
@@ -4130,6 +4151,10 @@ snapshots:
   '@types/estree@1.0.9': {}
 
   '@types/json-schema@7.0.15': {}
+
+  '@types/node-forge@1.3.14':
+    dependencies:
+      '@types/node': 24.19.1
 
   '@types/node@24.19.1':
     dependencies:
@@ -5394,6 +5419,8 @@ snapshots:
       object.entries: 1.1.9
       semver: 6.3.1
 
+  node-forge@1.4.0: {}
+
   node-releases@2.0.57: {}
 
   object-assign@4.1.1: {}
@@ -5496,7 +5523,7 @@ snapshots:
 
   picomatch@4.0.7: {}
 
-  pkijs@3.4.1:
+  pkijs@3.4.1(patch_hash=7c478eed3138849d07bc30c0f2a29c5ae3fb19cec79d471438ef404a3c70cdf6):
     dependencies:
       '@noble/hashes': 1.8.0
       asn1js: 3.0.10

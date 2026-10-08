@@ -10,14 +10,18 @@ export function writeProject(document: EditorDocument) {
   const sources = document.sources.map((source, index) => {
     const path = `sources/${index}.pdf`;
     files[path] = source.bytes;
-    return { id: source.id, name: source.name, path };
+    if (!source.decryptedBytes) return { id: source.id, name: source.name, path };
+    const workingPath = `working/${index}.pdf`;
+    files[workingPath] = source.decryptedBytes;
+    return { id: source.id, name: source.name, path, workingPath, encryption: source.encryption };
   });
   const assets = document.assets.map((asset, index) => {
     const path = `assets/${index}.${asset.mime === "image/jpeg" ? "jpg" : "png"}`;
     files[path] = asset.data;
     return { id: asset.id, name: asset.name, mime: asset.mime, path };
   });
-  const parsed = projectSchema.safeParse({ ...document, sources, assets });
+  const version = document.sources.some((source) => !!source.decryptedBytes) ? 2 : 1;
+  const parsed = projectSchema.safeParse({ ...document, version, sources, assets });
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     throw new Error(`Cannot save this editing project: ${issue.path.join(".")} — ${issue.message}`);
@@ -50,7 +54,8 @@ function projectFiles(bytes: Uint8Array) {
         entries: count,
       });
       return (
-        entry.name === "manifest.json" || /^(sources|assets)\/\d+\.(pdf|png|jpg)$/.test(entry.name)
+        entry.name === "manifest.json" ||
+        /^(sources|working|assets)\/\d+\.(pdf|png|jpg)$/.test(entry.name)
       );
     },
   });
@@ -62,18 +67,21 @@ function bytesFor(files: Record<string, Uint8Array>, path: string) {
 export async function readProject(bytes: Uint8Array): Promise<EditorDocument> {
   const files = projectFiles(bytes),
     parsed = projectSchema.safeParse(parseManifest(bytesFor(files, "manifest.json")));
-  if (!parsed.success) throw new Error("This is not a supported PDFree version 1 project.");
+  if (!parsed.success) throw new Error("This is not a supported PDFree version 1 or 2 project.");
   const manifest = parsed.data;
   const refreshed = await refreshSources(
     manifest.sources.map((item) => ({
       id: item.id,
       name: item.name,
       bytes: bytesFor(files, item.path),
+      decryptedBytes: item.workingPath ? bytesFor(files, item.workingPath) : null,
+      encryption: item.encryption ?? null,
     })),
     manifest.pages
   );
   const document: EditorDocument = {
     ...manifest,
+    version: 1,
     ...refreshed,
     assets: manifest.assets.map((asset) => ({
       id: asset.id,

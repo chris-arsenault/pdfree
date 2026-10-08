@@ -1,5 +1,5 @@
 import { PDFDocument, degrees, PDFName, PDFRadioGroup, PDFRef } from "pdf-lib";
-import { type EditorDocument, type Page, fieldKey } from "./model";
+import { type EditorDocument, type Page, fieldKey, sourceBytes } from "./model";
 import { copyPagesWithForms, removeOrphanWidgets } from "./copyForms";
 import { writeValue } from "./nativeFields";
 import { drawObjects, embedFonts, type FontData } from "./drawObjects";
@@ -22,7 +22,7 @@ function preservedSource(document: EditorDocument, pages: Page[]) {
 }
 async function preserveDocument(document: EditorDocument, pages: Page[]) {
   const source = preservedSource(document, pages)!;
-  const pdf = await PDFDocument.load(source.bytes, { updateMetadata: false });
+  const pdf = await PDFDocument.load(sourceBytes(source), { updateMetadata: false });
   const originalPages = pdf.getPages();
   for (let i = pdf.getPageCount() - 1; i >= 0; i--) pdf.removePage(i);
   for (const page of pages) {
@@ -52,7 +52,7 @@ async function composeDocument(
       );
     let original = sourceCache.get(source.id);
     if (!original) {
-      original = await PDFDocument.load(source.bytes);
+      original = await PDFDocument.load(sourceBytes(source));
       sourceCache.set(source.id, original);
     }
     loaded.set(source.id, original);

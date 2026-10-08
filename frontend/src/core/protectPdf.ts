@@ -1,7 +1,9 @@
 import { PDF } from "@libpdf/core";
 import { type PdfProtection } from "./pdfSecurity";
+import { recipientProtection } from "./recipientProtection";
 
 export async function protectPdf(bytes: Uint8Array, protection: PdfProtection) {
+  if ("recipients" in protection) return recipientProtection(bytes, protection);
   const pdf = await PDF.load(bytes);
   pdf.setProtection({
     ...protection,

@@ -1,3 +1,4 @@
+import { type SourceEncryption } from "./unlockPdf";
 export type Maybe<T> = T | null;
 export type FieldValue = string | string[] | boolean;
 export type FieldKind = "text" | "checkbox" | "radio" | "dropdown" | "list";
@@ -39,6 +40,8 @@ export type Source = {
   id: string;
   name: string;
   bytes: Uint8Array;
+  decryptedBytes: Maybe<Uint8Array>;
+  encryption: Maybe<SourceEncryption>;
   pageCount: number;
   fields: NativeField[];
   warnings: string[];
@@ -79,7 +82,13 @@ export type EditorDocument = {
   pages: Page[];
   values: Record<string, FieldValue>;
   assets: Asset[];
+  allowDecryptedDrafts: boolean;
 };
+export const sourceBytes = (source: Source) => source.decryptedBytes ?? source.bytes;
+export const hasEncryptedSources = (document: EditorDocument) =>
+  document.sources.some((source) => !!source.encryption);
+export const canSaveDraft = (document: EditorDocument) =>
+  !hasEncryptedSources(document) || document.allowDecryptedDrafts === true;
 export const newId = () => crypto.randomUUID();
 export const emptyDocument = (): EditorDocument => ({
   version: 1,
@@ -88,6 +97,7 @@ export const emptyDocument = (): EditorDocument => ({
   pages: [],
   values: {},
   assets: [],
+  allowDecryptedDrafts: false,
 });
 export const fieldKey = (sourceId: string, name: string) => `${sourceId}:${name}`;
 export const defaultObject = (kind: PlacedObject["kind"], point: Point): PlacedObject => ({
