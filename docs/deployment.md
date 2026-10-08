@@ -17,15 +17,31 @@ S3. Runtime PDFs, drafts and signing credentials remain on the device.
 
 The shared module is pinned in
 [`website.tf`](../infrastructure/terraform/website.tf) to published revision
-`6804de4fa112375eaa1c459cb7347871ce168c71`. That revision includes `.mjs`
+`3b311dcc621a8cb5e82a775660dee916a3650e73`. That revision includes `.mjs`
 JavaScript workers, `.bcmap` character maps, `.pfb` binary fonts and `.icc`
-profiles in the MIME map. [ADR 0001](adr/0001-browser-only-static-delivery.md)
+profiles in the MIME map. Static sites skip the dynamic OpenGraph renderer's
+single-entry discovery, so application and worker dependency chunks can retain
+Vite's normal filenames. [ADR 0001](adr/0001-browser-only-static-delivery.md)
 records the hosting choice and the demonstrated MIME failure that required repair.
 
 `encrypt = false` disables the module's optional new KMS key; a separate bucket
 configuration explicitly uses S3-managed AES256 encryption for assets. This
 website provisions no WAF, application service or database. Deployment IAM
 bundles remain the platform's existing controls.
+
+OpenGraph and Twitter card metadata live in `frontend/index.html`. The static
+HTML identifies `https://pdf.ahara.io/` and references the public 1200×630 PNG
+at `/og-image.png`; crawlers can read it without running JavaScript. PDFree does
+not enable the shared module's dynamic OpenGraph Lambda because its public
+metadata describes the application, with no server-side document routes.
+The image source is `frontend/tooling/og-image.svg`. Render it locally after
+changing the artwork:
+
+```bash
+cd frontend
+pnpm exec playwright screenshot --browser chromium --viewport-size="1200,630" \
+  "file://$(pwd)/tooling/og-image.svg" public/og-image.png
+```
 
 ## Registration and workflow
 

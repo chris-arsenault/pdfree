@@ -29,14 +29,5 @@ export default defineConfig({
     }),
   ],
   worker: { format: "es" },
-  build: {
-    target: "es2022",
-    chunkSizeWarningLimit: 1800,
-    rollupOptions: {
-      output: {
-        // The website module discovers the entry through assets/index-*.js.
-        chunkFileNames: "assets/chunk-[name]-[hash].js",
-      },
-    },
-  },
+  build: { target: "es2022", chunkSizeWarningLimit: 1800 },
 });

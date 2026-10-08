@@ -27,6 +27,12 @@ remain unchanged until an actual failure. The built-asset mocked plan failed for
 `.mjs`, `.bcmap`, `.pfb` and `.icc`; only those entries and regressions were added.
 The published dependency revision is pinned by PDFree's Terraform.
 
+The website module evaluates single-entry script and stylesheet discovery only
+for its dynamic OpenGraph renderer. Static delivery retains all build chunks
+without constraining their names. PDFree's OpenGraph and Twitter previews use
+metadata in its built HTML and a public preview image; they do not require a
+Lambda or expose local documents through public routes.
+
 ## Alternatives considered
 
 - **PDF processing service or upload endpoint:** violates the requested runtime
