@@ -7,7 +7,6 @@ import {
   PDFArray,
   PDFDict,
   PDFRef,
-  PDFWidgetAnnotation,
 } from "pdf-lib";
 import { type PdfSigning } from "./pdfSecurity";
 import { hasCertificateSignature, signatureFields } from "./signedPdf";
@@ -16,11 +15,13 @@ function addInvisibleWidget(pdf: PDFDocument, field: PDFDict, reference: PDFRef)
   if (field.has(PDFName.of("Subtype")) || field.lookupMaybe(PDFName.of("Kids"), PDFArray)?.size())
     return;
   const page = pdf.getPage(0);
-  const widget = PDFWidgetAnnotation.create(pdf.context, reference);
-  widget.setP(page.ref);
-  const widgetReference = pdf.context.register(widget.dict);
-  field.set(PDFName.of("Kids"), pdf.context.obj([widgetReference]));
-  page.node.addAnnot(widgetReference);
+  // A combined field/widget also exposes the signature value to older readers.
+  field.delete(PDFName.of("Kids"));
+  field.set(PDFName.of("Type"), PDFName.of("Annot"));
+  field.set(PDFName.of("Subtype"), PDFName.of("Widget"));
+  field.set(PDFName.of("Rect"), pdf.context.obj([0, 0, 0, 0]));
+  field.set(PDFName.of("P"), page.ref);
+  page.node.addAnnot(reference);
 }
 
 function signingField(pdf: PDFDocument, marker: string) {

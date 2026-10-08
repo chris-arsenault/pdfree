@@ -651,3 +651,19 @@ Local `make ci` passes 350 unit and 40 browser tests, and the rebuilt production
 bundle passes nine Chromium release checks. The repaired release is published
 through the same standard workflow and requires another live export check.
 Its unit coverage is 90.38% statements, 92.15% lines and 85.25% branches.
+
+Follow-up commit `3f3b2b32d841f23cecbe6ab9e397035bf419f716` deployed through
+run `37722812856`; standard CI/reporting and Firefox/WebKit passed, but Chromium's
+native verifier failed. The actual log showed Poppler 24.02 describing separate
+signature-field/widget dictionaries as unsigned despite successful OpenSSL
+verification. A temporary Ubuntu 24.04 container with the exact Poppler package
+reproduced it. Generated/widgetless signature fields now use the combined
+field/widget representation already supported by the PDF engine. Existing
+widgets remain intact. All eight signed regression outputs validate without
+diagnostics in Poppler 24.02, and all eleven native tests pass in the current
+local reader. The temporary container was removed after testing. Tracking
+prerequisite: `888b24f6-795f-4ccd-8899-44433cffc4c0`.
+Final local CI passes 350 unit/40 browser tests, eleven native verifiers and
+nine production checks. Coverage: 90.38% statements, 92.16% lines, 85.25% branches.
+The workspace resolver now resolves the hostname normally, so final live testing
+uses ordinary DNS.

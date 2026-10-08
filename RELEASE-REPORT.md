@@ -14,7 +14,7 @@ codecs, security worker and service worker. Installation caches about 9.8 MiB of
 
 - Strict TypeScript and shared Ahara ESLint pass with zero warnings.
 - `make ci` and the shared CI-style unit coverage run pass. Core unit coverage
-  measures 90.38% statements, 92.15% lines and 85.25% branches; browser checks add behavioral
+  measures 90.38% statements, 92.16% lines and 85.25% branches; browser checks add behavioral
   evidence separately and are not included in those coverage percentages.
 - 350 unit tests exercise actual saved PDFs, field/widget copying, identical names
   across merged sources, flattening, authored fields, project validation,
@@ -221,3 +221,17 @@ The new widget-linkage/flattened-annotation assertions and tightened native chec
 failed on the original code and pass after repair. Five added unit cases also
 cover preserved geometry and comments. Local CI, eleven native verifiers and nine Chromium
 production checks pass; the repaired release follows the standard deployment.
+
+The first widget repair's CI run (`37722812856`) exposed an older-reader
+compatibility issue: Ubuntu's Poppler 24.02 reported separate field/widget
+signatures as unsigned while OpenSSL and the newer local Poppler validated them.
+The exact Ubuntu package reproduced the failure in a temporary container.
+Generated and widgetless signature fields now combine field and widget entries;
+zero-size geometry and page relationships remain, and existing widgets retain
+their original structure. All eight signed outputs validate without diagnostics
+in Poppler 24.02, and the current local reader's eleven security checks pass.
+The temporary container was removed. CI retains its original verifier package
+and strict signature/parser assertions.
+The final local checks pass 350 unit tests, 40 browser tests, eleven native
+security tests and nine production checks. The workspace DNS resolver now also
+resolves `pdf.ahara.io` normally.

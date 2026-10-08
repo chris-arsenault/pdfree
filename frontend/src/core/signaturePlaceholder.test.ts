@@ -16,7 +16,7 @@ it.each([false, true])(
     const pdf = await PDFDocument.create();
     pdf.addPage();
     if (reuse) {
-      const field = pdf.context.obj({ FT: "Sig", T: PDFHexString.fromText("Approval") });
+      const field = pdf.context.obj({ FT: "Sig", T: PDFHexString.fromText("Approval"), Kids: [] });
       pdf.getForm().acroForm.addField(pdf.context.register(field));
     }
     const saved = await PDFDocument.load(
@@ -33,7 +33,9 @@ it.each([false, true])(
       width: 0,
       height: 0,
     });
-    expect(widget.get(PDFName.of("Parent"))).toEqual(field.ref);
+    expect(annotations!.get(0)).toEqual(field.ref);
+    expect(widget.get(PDFName.of("Parent"))).toBeUndefined();
+    expect(widget.get(PDFName.of("FT"))).toEqual(PDFName.of("Sig"));
     expect(widget.get(PDFName.of("P"))).toEqual(saved.getPage(0).ref);
     expect(field.acroField.getWidgets()).toHaveLength(1);
   }
