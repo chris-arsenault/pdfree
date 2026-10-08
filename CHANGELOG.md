@@ -5,6 +5,13 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Reorganized editor tools into stable icon groups with custom keyboard and
+  hover tooltips, explicit page-action scope and contextual object properties.
+- Moved page operations beside thumbnails, consolidated routine status, and
+  added labelled touch tool choices, a Pages drawer and a Properties sheet.
+- Clarified duplicate, merge/insert, highlight and field-order actions while
+  preserving local-only document processing and export behavior.
+
 - Added encrypted-input editing for Standard revisions 2–6: RC4, AES-128 and
   AES-256, including empty, opening, owner and Unicode passwords.
 - Added Adobe.PubSec recipient encryption: open with a local PKCS#12 identity

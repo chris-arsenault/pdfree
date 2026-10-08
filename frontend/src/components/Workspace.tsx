@@ -9,6 +9,8 @@ import { ObjectAppearance } from "./ObjectAppearance";
 import { TextLayer } from "./TextLayer";
 import { Navigator } from "./Navigator";
 import { useInitialZoom } from "../hooks/useInitialZoom";
+import { tools } from "./toolDefinitions";
+import { hasPlacementAsset } from "../core/editorOperations";
 
 export function Workspace() {
   const editor = useEditor(),
@@ -24,12 +26,6 @@ export function Workspace() {
       {!!source?.warnings.length && (
         <div className="inline-warning">{source.warnings.join(" ")}</div>
       )}
-      <div className="workspace-topline">
-        <span>
-          PAGE {editor.document.pages.indexOf(page) + 1} OF {editor.document.pages.length}
-        </span>
-        <span>All edits stay on your device</span>
-      </div>
       <div className="page-scroll" ref={scrollRef}>
         <div
           className={`page-surface tool-${editor.tool}`}
@@ -68,9 +64,13 @@ export function Workspace() {
           )}
         </div>
       </div>
-      <div className="workspace-hint">
-        Select a tool to add something. Fillable fields can be edited directly.
-      </div>
+      {editor.tool !== "select" && (
+        <div className="workspace-hint" role="status">
+          {editor.tool === "image" && hasPlacementAsset(editor.document, editor.pendingObject)
+            ? "Click the page to place your image."
+            : tools.find((tool) => tool.id === editor.tool)?.hint}
+        </div>
+      )}
     </main>
   );
 }

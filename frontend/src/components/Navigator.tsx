@@ -3,6 +3,10 @@ import { useEditor } from "../hooks/editorContext";
 import { searchDocument, documentOutline, type NavigationItem } from "../services/navigation";
 import { selectedHighlights } from "../core/selectionHighlights";
 import { replaceObjects } from "../core/objectOperations";
+import { Bookmark, Search, TextSelect, X } from "lucide-react";
+import { IconButton } from "./ui/IconButton";
+import { PageNavigation } from "./PageNavigation";
+import { PanelToggle } from "./PanelToggle";
 export function Navigator() {
   const editor = useEditor(),
     [query, setQuery] = useState(""),
@@ -32,6 +36,7 @@ export function Navigator() {
     });
   return (
     <div className="navigator">
+      <PanelToggle panel="pages" />
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -47,29 +52,29 @@ export function Navigator() {
             placeholder="Find text in document"
           />
         </label>
-        <button disabled={!query.trim() || !!editor.task.busy}>Find</button>
-      </form>
-      <button onClick={outline}>Bookmarks</button>
-      <button onPointerDown={(event) => event.preventDefault()} onClick={highlight}>
-        Highlight selected text
-      </button>
-      <label>
-        Page{" "}
-        <input
-          className="page-jump"
-          type="number"
-          min="1"
-          max={editor.document.pages.length}
-          value={editor.page ? editor.document.pages.indexOf(editor.page) + 1 : 1}
-          onChange={(event) => {
-            const page = editor.document.pages[Number(event.target.value) - 1];
-            if (page) {
-              editor.setActiveId(page.id);
-              editor.setObjectIds([]);
-            }
-          }}
+        <IconButton
+          label="Find"
+          icon={Search}
+          disabled={!query.trim() || !!editor.task.busy}
+          detail={query.trim() ? "Find text in this document." : "Enter text to search for."}
+          onClick={search}
         />
-      </label>
+      </form>
+      <IconButton
+        label="Bookmarks"
+        icon={Bookmark}
+        detail="Navigate the document outline."
+        onClick={outline}
+      />
+      <IconButton
+        label="Highlight selected text"
+        icon={TextSelect}
+        detail="Select original PDF text first. For scans, use the area highlight tool."
+        onPointerDown={(event) => event.preventDefault()}
+        onClick={highlight}
+      />
+      <PageNavigation />
+      <PanelToggle panel="properties" />
       {searched && <NavigationResults results={results} close={close} />}
     </div>
   );
@@ -78,9 +83,7 @@ function NavigationResults({ results, close }: { results: NavigationItem[]; clos
   const editor = useEditor();
   return (
     <div className="navigation-results">
-      <button className="text-button" onClick={close}>
-        Close results
-      </button>
+      <IconButton label="Close results" icon={X} onClick={close} />
       {results.length ? (
         results.map((result, index) => (
           <button

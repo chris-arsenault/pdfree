@@ -37,7 +37,7 @@ async function openFixture(page: Page) {
     buffer: Buffer.from(await formFixture()),
   });
   await page.getByText("PAGE 1 OF 3", { exact: true }).waitFor();
-  await page.getByText("Ready to work offline", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Ready to work offline", exact: true }).waitFor();
 }
 async function downloadPdf(page: Page) {
   await page.getByRole("button", { name: "Export", exact: true }).click();
@@ -118,8 +118,10 @@ it("supports a touch-sized workspace, drawn signatures, splitting and project do
     }),
     page = await context.newPage();
   await openFixture(page);
-  await page.getByTitle("Move page later").first().tap();
+  await page.getByRole("button", { name: "Pages", exact: true }).tap();
+  await page.getByRole("button", { name: "Move page later", exact: true }).first().tap();
   await page.getByText("PAGE 2 OF 3", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Hide pages", exact: true }).tap();
   await page.getByRole("button", { name: "Sign", exact: true }).click();
   const pad = await page.getByLabel("Draw your signature", { exact: true }).boundingBox();
   if (!pad) throw new Error("The signature pad is missing.");
@@ -131,6 +133,8 @@ it("supports a touch-sized workspace, drawn signatures, splitting and project do
   await page.getByRole("button", { name: "Use signature" }).click();
   await page.locator(".page-surface").tap({ position: { x: 70, y: 100 } });
   expect(await page.locator(".placed-object img").count()).toBe(1);
+  await page.getByRole("button", { name: "Pages", exact: true }).tap();
+  await page.getByRole("button", { name: "More", exact: true }).tap();
   await page.getByRole("button", { name: "Split", exact: true }).click();
   expect(await page.locator(".split-preview li").count()).toBe(2);
   const single = page.waitForEvent("download");
@@ -175,6 +179,7 @@ it.skipIf(engineName !== "chromium")(
     await page.getByRole("button", { name: "Text", exact: true }).click();
     await page.locator(".page-surface").click({ position: { x: 80, y: 100 } });
     await page.getByRole("textbox", { name: "Object text" }).fill("Large scan edit");
+    await page.getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("button", { name: "Extract", exact: true }).click();
     const ready = page.waitForEvent("download"),
       exported = performance.now();
@@ -200,6 +205,7 @@ it.skipIf(engineName !== "chromium")(
 );
 
 async function splitLargeScan(page: Page) {
+  await page.getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("button", { name: "Split", exact: true }).click();
   await page.getByRole("combobox", { name: /^Split method/ }).selectOption("individual");
   const started = performance.now();
@@ -240,6 +246,7 @@ it("detects a blocked main thread during the actual split worker interval", asyn
     page = await context.newPage();
   try {
     await openFixture(page);
+    await page.getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("button", { name: "Split", exact: true }).click();
     await installSplitProbe(page, 700);
     try {

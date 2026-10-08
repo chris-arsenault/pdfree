@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { registerSW } from "virtual:pwa-register";
 import { useEditor } from "../hooks/editorContext";
+import { CloudCheck, CloudDownload, RefreshCw } from "lucide-react";
+import { ActionPopover } from "./ui/ActionPopover";
 export function OfflineStatus() {
   const editor = useEditor(),
     [ready, setReady] = useState(false),
@@ -31,12 +33,29 @@ export function OfflineStatus() {
       .catch(() => setError("The update could not load. Your current editor remains available."));
   };
   return (
-    <div className="offline-status" role="status">
-      <span>{error || (ready ? "Ready to work offline" : "Installing offline assets…")}</span>
+    <div className={`offline-status ${error || waiting ? "status-notice" : ""}`} role="status">
+      {error ? (
+        <span>{error}</span>
+      ) : (
+        <ActionPopover
+          label={ready ? "Ready to work offline" : "Installing offline assets…"}
+          icon={ready ? CloudCheck : CloudDownload}
+          className="offline-indicator"
+        >
+          {() => (
+            <p>
+              {ready ? "Ready to work offline." : "Installing offline assets…"} Offline readiness
+              applies to application assets; your documents stay on your device.
+            </p>
+          )}
+        </ActionPopover>
+      )}
       {waiting && (
         <>
           <span>A new version is ready. Save your editing project before updating.</span>
-          <button onClick={apply}>Update</button>
+          <button onClick={apply}>
+            <RefreshCw size={14} aria-hidden="true" /> Update
+          </button>
         </>
       )}
     </div>

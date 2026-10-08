@@ -1,4 +1,5 @@
 @import url("./editor.css");
+@import url("./controls.css");
 @font-face {
   font-family: "Noto Sans";
   font-style: normal;
@@ -73,8 +74,8 @@ a {
   flex-shrink: 0;
 }
 .app-header {
-  height: 82px;
-  padding: 0 36px;
+  height: 64px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -84,16 +85,16 @@ a {
 }
 .brand {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
-  font-size: 25px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: -1.2px;
 }
 .brand-icon {
-  width: 40px;
-  height: 44px;
-  border-radius: 11px;
+  width: 34px;
+  height: 38px;
+  border-radius: 8px;
   background: var(--ink);
   color: #e4f0db;
   display: grid;
@@ -117,10 +118,17 @@ a {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.document-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .header-actions {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.mobile-document-menu {
+  display: none;
 }
 .button {
   display: inline-flex;
@@ -258,15 +266,16 @@ h1 span {
   margin-top: 28px;
 }
 .app-footer {
-  min-height: 42px;
-  padding: 8px 28px;
+  min-height: 44px;
+  padding: 6px 18px;
   background: #fff;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  font-size: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
   color: var(--muted);
 }
 .privacy-status {
@@ -279,21 +288,17 @@ h1 span {
 }
 .zoom-controls {
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  margin-left: auto;
   align-items: center;
-}
-.zoom-controls button {
-  border: 0;
-  background: transparent;
-  display: grid;
-  place-items: center;
-  padding: 4px;
 }
 .zoom-controls select {
   border: 0;
   background: transparent;
-  font-size: 10px;
+  font-size: 12px;
   width: 65px;
+  min-height: 36px;
+  font-variant-numeric: tabular-nums;
 }
 .document-dot {
   width: 6px;
@@ -359,12 +364,13 @@ h1 span {
 }
 @media (max-width: 760px) {
   .app-header {
-    height: 68px;
-    padding: 0 15px;
+    height: 62px;
+    padding: 0 12px;
     gap: 10px;
   }
   .brand {
-    font-size: 21px;
+    font-size: 20px;
+    gap: 8px;
   }
   .brand-icon {
     width: 34px;
@@ -377,6 +383,21 @@ h1 span {
   .header-actions {
     gap: 6px;
   }
+  .header-actions .document-action,
+  .header-actions .help-action {
+    display: none;
+  }
+  .mobile-document-menu {
+    display: inline-flex;
+    min-width: 44px;
+  }
+  .mobile-document-menu > span,
+  .mobile-document-menu > svg:last-child {
+    display: none;
+  }
+  .button {
+    min-height: 44px;
+  }
   .empty-workspace {
     padding-top: 52px;
   }
@@ -385,9 +406,24 @@ h1 span {
     gap: 15px;
   }
   .app-footer {
-    padding: 8px 12px;
+    padding: 4px 10px;
+    gap: 6px;
+  }
+  .app-footer .privacy-status > span {
+    display: none;
   }
   .save-status {
     display: none;
+  }
+}
+@media (max-width: 380px) {
+  .brand-wordmark {
+    display: none;
+  }
+  .header-actions {
+    gap: 4px;
+  }
+  .header-actions .button {
+    padding: 10px 12px;
   }
 }

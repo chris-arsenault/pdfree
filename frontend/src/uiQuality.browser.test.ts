@@ -44,6 +44,7 @@ async function download(buttonName: string, mime: string, action = "Export") {
     return create(object);
   });
   try {
+    if (action === "Extract") await page.getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("button", { name: action, exact: true }).click();
     await page.getByRole("button", { name: buttonName, exact: true }).click();
     await expect.poll(() => files.length, { timeout: 10_000 }).toBe(1);

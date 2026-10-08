@@ -31,7 +31,9 @@ export function ExportDialog() {
           checked={selected}
           onChange={(event) => setSelected(event.target.checked)}
         />
-        Export selected pages ({editor.selectedPageIds.length})
+        {editor.pageIds.length
+          ? `Export selected pages (${editor.selectedPageIds.length})`
+          : `Export current page (${editor.document.pages.findIndex((page) => page.id === editor.page?.id) + 1})`}
       </label>
       <label className="checkbox-label">
         <input

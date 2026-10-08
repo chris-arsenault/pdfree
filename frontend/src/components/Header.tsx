@@ -1,5 +1,16 @@
-import { ArrowUpRight, Download, FolderOpen, HelpCircle, FileText } from "lucide-react";
+import {
+  ArrowUpRight,
+  Download,
+  FolderOpen,
+  HelpCircle,
+  FileText,
+  FileCog,
+  MoreHorizontal,
+} from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
+import { IconButton } from "./ui/IconButton";
+import { FileButton } from "./ui/FileButton";
+import { ActionPopover } from "./ui/ActionPopover";
 
 export function Header() {
   const editor = useEditor();
@@ -9,60 +20,101 @@ export function Header() {
         <span className="brand-icon">
           <FileText size={22} />
         </span>
-        <span>
+        <span className="brand-wordmark">
           PDFree<span className="brand-by">by AHARA</span>
         </span>
       </a>
       <div className="header-document">
         {editor.document.pages.length ? (
           <>
-            <span className="document-dot" />
-            {editor.document.name}
-            <span className="local-badge">LOCAL FILE</span>
+            <span className="document-name">{editor.document.name}</span>
           </>
         ) : (
           <span>Your files. Your device.</span>
         )}
       </div>
-      <nav className="header-actions" aria-label="Document actions">
+      <HeaderActions />
+    </header>
+  );
+}
+
+function HeaderActions() {
+  const editor = useEditor();
+  const openFiles = (files: File[]) => editor.importFiles(files, true);
+  const showDocument = () => editor.setDialog("properties");
+  const showHelp = () => editor.setDialog("help");
+  return (
+    <nav className="header-actions" aria-label="Document actions">
+      {editor.document.pages.length > 0 && (
+        <IconButton
+          label="Document"
+          className="document-action"
+          icon={FileCog}
+          detail="Document details, source information and draft settings."
+          onClick={showDocument}
+        />
+      )}
+      <IconButton
+        label="Help"
+        className="help-action"
+        icon={HelpCircle}
+        detail="Help and keyboard shortcuts"
+        onClick={showHelp}
+      />
+      <FileButton
+        multiple
+        label="Open"
+        icon={FolderOpen}
+        accept="application/pdf,.pdf,.pdfree"
+        disabled={!!editor.task.busy}
+        onFiles={openFiles}
+      />
+      {editor.document.pages.length > 0 && (
         <button
-          className="icon-button"
-          title="Help and keyboard shortcuts"
-          onClick={() => editor.setDialog("help")}
+          className="button primary"
+          disabled={!!editor.task.busy}
+          onClick={() => {
+            editor.setExportSelected(false);
+            editor.setDialog("export");
+          }}
         >
-          <HelpCircle size={20} />
-          <span className="visually-hidden">Help</span>
+          <Download size={17} /> Export
         </button>
-        <label className="button secondary">
-          <FolderOpen size={17} /> Open
-          <input
-            className="visually-hidden"
-            type="file"
-            accept="application/pdf,.pdf,.pdfree"
-            multiple
-            disabled={!!editor.task.busy}
-            onChange={(e) => {
-              editor.importFiles(Array.from(e.target.files ?? []), true);
-              e.target.value = "";
-            }}
-          />
-        </label>
-        {editor.document.pages.length > 0 && (
+      )}
+      <MobileDocumentMenu />
+      <a className="ahara-link" href="https://ahara.io" target="_blank" rel="noreferrer">
+        AHARA <ArrowUpRight size={13} />
+      </a>
+    </nav>
+  );
+}
+
+function MobileDocumentMenu() {
+  const editor = useEditor();
+  return (
+    <ActionPopover label="Document actions" icon={MoreHorizontal} className="mobile-document-menu">
+      {(close) => (
+        <>
+          {editor.document.pages.length > 0 && (
+            <button
+              onClick={() => {
+                editor.setDialog("properties");
+                close();
+              }}
+            >
+              <FileCog size={17} aria-hidden="true" /> Document
+            </button>
+          )}
           <button
-            className="button primary"
-            disabled={!!editor.task.busy}
             onClick={() => {
-              editor.setExportSelected(false);
-              editor.setDialog("export");
+              editor.setDialog("help");
+              close();
             }}
           >
-            <Download size={17} /> Export
+            <HelpCircle size={17} aria-hidden="true" /> Help
           </button>
-        )}
-        <a className="ahara-link" href="https://ahara.io" target="_blank" rel="noreferrer">
-          AHARA <ArrowUpRight size={13} />
-        </a>
-      </nav>
-    </header>
+        </>
+      )}
+    </ActionPopover>
   );
 }

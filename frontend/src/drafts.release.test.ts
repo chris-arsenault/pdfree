@@ -46,6 +46,7 @@ it("keeps two tabs drafts separate across reload and clearing fences the other t
       "Second tab"
     );
     await second.getByText("Draft saved on this device", { exact: true }).waitFor();
+    await first.getByRole("button", { name: "Local data", exact: true }).click();
     await first.getByRole("button", { name: "Clear local data", exact: true }).click();
     await first
       .getByText("Stored browser drafts and signatures cleared", { exact: true })

@@ -1,10 +1,13 @@
-import { Plus, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, ChevronUp, ChevronDown, X } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { displaySize } from "../core/coordinates";
 import { type Page } from "../core/model";
 import { movePage, insertBlank } from "../core/pageOperations";
 import { PageCanvas } from "./PageCanvas";
 import { usePageWindow, thumbnailHeight } from "../hooks/usePageWindow";
+import { PageActions } from "./PageActions";
+import { IconButton } from "./ui/IconButton";
+import { SidePanel } from "./ui/SidePanel";
 export function PageSidebar() {
   const editor = useEditor();
   const {
@@ -13,11 +16,20 @@ export function PageSidebar() {
     visible,
   } = usePageWindow(editor.document.pages, editor.page?.id ?? "");
   return (
-    <aside className="page-sidebar" aria-label="Pages">
-      <div className="sidebar-heading">
+    <SidePanel
+      id="pages-panel"
+      label="Pages"
+      className="page-sidebar"
+      open={editor.pagesOpen}
+      onClose={() => editor.setPagesOpen(false)}
+      drawer
+    >
+      <div className="panel-heading">
         <strong>Pages</strong>
-        <span>{editor.document.pages.length}</span>
+        <span className="panel-count">{editor.document.pages.length}</span>
+        <IconButton label="Hide pages" icon={X} onClick={() => editor.setPagesOpen(false)} />
       </div>
+      <PageActions />
       <div className="thumbnail-list" ref={listRef}>
         <div
           className="thumbnail-space"
@@ -34,7 +46,7 @@ export function PageSidebar() {
       >
         <Plus size={15} /> Blank page
       </button>
-    </aside>
+    </SidePanel>
   );
 }
 function Thumbnail({ page, index }: { page: Page; index: number }) {
@@ -59,6 +71,7 @@ function Thumbnail({ page, index }: { page: Page; index: number }) {
         onClick={() => {
           editor.setActiveId(page.id);
           editor.setObjectIds([]);
+          if (window.matchMedia("(max-width: 760px)").matches) editor.setPagesOpen(false);
         }}
         aria-label={`Go to page ${index + 1}`}
         aria-current={page.id === editor.page?.id ? "page" : undefined}
@@ -82,20 +95,26 @@ function Thumbnail({ page, index }: { page: Page; index: number }) {
           {index + 1}
         </label>
         <div className="thumbnail-move">
-          <button
-            title="Move page earlier"
+          <IconButton
+            label="Move page earlier"
+            icon={ChevronUp}
+            detail={
+              index === 0 ? "This is already the first page." : `Move page ${index + 1} earlier.`
+            }
             disabled={index === 0}
             onClick={() => editor.commit(movePage(editor.document, page.id, index - 1))}
-          >
-            <ChevronUp size={13} />
-          </button>
-          <button
-            title="Move page later"
+          />
+          <IconButton
+            label="Move page later"
+            icon={ChevronDown}
+            detail={
+              index === editor.document.pages.length - 1
+                ? "This is already the last page."
+                : `Move page ${index + 1} later.`
+            }
             disabled={index === editor.document.pages.length - 1}
             onClick={() => editor.commit(movePage(editor.document, page.id, index + 1))}
-          >
-            <ChevronDown size={13} />
-          </button>
+          />
         </div>
       </div>
     </div>

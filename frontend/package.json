@@ -17,6 +17,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@floating-ui/react": "^0.27.20",
     "@fontsource/caveat": "^5.2.8",
     "@fontsource/noto-sans": "^5.2.10",
     "@libpdf/core": "0.5.2",

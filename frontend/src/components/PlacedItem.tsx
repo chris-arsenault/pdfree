@@ -52,9 +52,7 @@ export function PlacedItem({ object: original }: { object: PlacedObject }) {
         {selected && (
           <div
             className="resize-handle"
-            role="button"
-            tabIndex={-1}
-            aria-label="Resize object"
+            aria-hidden="true"
             onPointerDown={(event) => drag.start(event, true)}
             onPointerMove={drag.move}
             onPointerUp={drag.end}

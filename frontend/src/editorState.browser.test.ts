@@ -138,6 +138,7 @@ it("disables draft recovery and clearing while another document task is running"
   await expect
     .element(page.getByRole("button", { name: "Recover draft", exact: true }))
     .toBeDisabled();
+  await page.getByRole("button", { name: "Local data", exact: true }).click();
   await expect
     .element(page.getByRole("button", { name: "Clear local data", exact: true }))
     .toBeDisabled();
@@ -228,7 +229,7 @@ it("does not place an image prepared in a document that has been replaced", asyn
   });
   expect(document.querySelectorAll(".placed-object")).toHaveLength(0);
   await expect
-    .element(page.getByTitle("Select", { exact: true }))
+    .element(page.getByRole("button", { name: "Select", exact: true }))
     .toHaveAttribute("aria-pressed", "true");
 });
 

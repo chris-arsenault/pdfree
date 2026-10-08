@@ -23,6 +23,15 @@ separately in [Export](security.md).
 
 ## Edit and annotate
 
+Common editing tools sit in the top toolbar. Hover an icon or focus it with
+the keyboard for its name and instructions. On narrow screens, Select, Text
+and Sign stay visible; Add opens the other tools with labels.
+
+Properties opens for selected objects and closes without clearing the selection.
+Use the Properties button above the document to reopen it. Multiple selections
+show group actions; Duplicate creates another object immediately. On touch
+screens, properties occupies a scrollable sheet below the document.
+
 Drag, resize, rotate, duplicate and align added objects. Shift-click selects
 multiple objects; arrow keys nudge, Delete removes, Ctrl/⌘ Z undoes and Ctrl/⌘ C/V
 copies/pastes. Native text selection remains available for copying PDF text.
@@ -37,6 +46,12 @@ manual navigation. Zoom, fit width/page, thumbnails, page jump and available
 document outlines navigate the document.
 
 ## Organize and split pages
+
+Use Pages above the document to show thumbnails and page operations. On touch
+screens, it opens a drawer. The scope control says Current page when no page
+checkboxes are selected, or shows the selected count. It also offers all-page
+and range selection. More contains Extract, Split, Merge PDFs (append at the
+end), and Insert pages (insert after the current page).
 
 Thumbnails select, navigate and reorder pages. Rotate selected pages or the whole
 document; duplicate, delete or extract pages. Merge PDFs and insert PDFs,
@@ -89,6 +104,9 @@ drafts. Downloaded projects are separate files and are not removed by clearing.
 Clear local data removes stored drafts and remembered signatures after
 confirmation. Other open tabs retain their in-memory documents and pause
 autosaving until the next edit. Queued writes cannot restore cleared drafts.
+Open Local data in the bottom status strip to find this action and Document
+details. The offline indicator opens application-cache status. Storage failures,
+encrypted-input draft notices and update prompts remain visible in the strip.
 
 The retained PWA caches application assets. After “Ready to work offline,”
 editing and downloads can run without an origin connection. Updates prompt

@@ -1,4 +1,5 @@
 import { EditorContext } from "./hooks/editorContext";
+import "./styles.css";
 import { useEditorState } from "./hooks/useEditorState";
 import { Header } from "./components/Header";
 import { EmptyWorkspace } from "./components/EmptyWorkspace";
@@ -9,9 +10,6 @@ import { Toolbar } from "./components/Toolbar";
 import { Inspector } from "./components/Inspector";
 import { Dialogs } from "./components/Dialogs";
 import { useKeyboard } from "./hooks/useKeyboard";
-import { PageActions } from "./components/PageActions";
-import { DraftStatus } from "./components/DraftStatus";
-import { OfflineStatus } from "./components/OfflineStatus";
 
 export default function App() {
   const editor = useEditorState();
@@ -56,14 +54,11 @@ export default function App() {
           </div>
         )}
         <Keyboard />
-        <DraftStatus />
-        <OfflineStatus />
         {editor.document.pages.length ? (
           <div className="editor-content" inert={!!editor.task.busy}>
             <Toolbar />
-            <PageActions />
             <div className="editor-layout">
-              <PageSidebar />
+              {editor.pagesOpen && <PageSidebar />}
               <Workspace />
               <Inspector />
             </div>

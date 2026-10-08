@@ -88,7 +88,7 @@ export function useKeyboard() {
     const handle = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (
-        target.closest("input,textarea,select,[contenteditable=true]") ||
+        target.closest("input,textarea,select,[contenteditable=true],dialog,[role=dialog]") ||
         editor.dialog ||
         editor.task.busy
       )
