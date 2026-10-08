@@ -1,26 +1,38 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+  type RefObject,
+} from "react";
 import { useEditor } from "./editorContext";
 import {
   loadDrafts,
   saveDraft,
-  deleteDraft,
   draftSession,
-  onDraftsCleared,
-  removeRecoveredDraft,
+  activeDraft,
+  onDraftsRemoved,
   type Draft,
   type DraftSession,
 } from "../services/drafts";
-import { clearSignatures } from "../services/signatures";
-import { emptyDocument, type EditorDocument, canSaveDraft } from "../core/model";
+import { type EditorDocument, canSaveDraft } from "../core/model";
 import { releaseViewers } from "../services/viewer";
 
 export function useDraft() {
   const editor = useEditor();
   const [recoveries, setRecoveries] = useState<Draft[]>([]),
     [status, setStatus] = useState("");
-  const adopted = useRef<Draft | null>(null);
   const { document: doc, history, savedRevision } = editor;
-  const writes = useDraftSync(doc, setStatus, setRecoveries, adopted);
+  const opened = useRef<{ id: string; revision: string } | null>(null);
+  useDraftSync(
+    doc,
+    { id: editor.draftId, opened },
+    editor.documentEpoch,
+    setStatus,
+    setRecoveries,
+    editor.setDraftId
+  );
   useEffect(() => {
     let cancelled = false;
     loadDrafts()
@@ -48,60 +60,64 @@ export function useDraft() {
   useEffect(() => {
     releaseViewers(doc.sources.map((source) => source.id));
   }, [doc.sources]);
-  const restore = (draft: Draft) => {
-    if (editor.task.busy) return;
-    adopted.current = draft;
-    editor.replace(draft.document);
-    setRecoveries([]);
-  };
-  const discard = () =>
-    editor.task.run("Clearing local data", async () => {
+  const restore = (draft: Draft) =>
+    editor.task.run("Opening saved document", async () => {
       if (
+        doc.pages.length &&
+        editor.savedRevision !== editor.history.revision &&
         !(await editor.confirmation.ask({
-          title: "Clear local data?",
-          message:
-            "This clears the current document, all stored drafts and remembered signatures from this browser. Other open tabs keep their documents in memory. Download an editing project first to keep your work.",
-          confirmLabel: "Clear local data",
-          tone: "danger",
+          title: "Open a saved document?",
+          message: "Download an editing project first if you need to keep your current edits.",
+          confirmLabel: "Open document",
+          tone: "primary",
         }))
       )
         return;
-      editor.replace(emptyDocument());
-      adopted.current = null;
+      const saved = (await loadDrafts()).find((item) => item.id === draft.id);
+      if (!saved) throw new Error("This saved document was deleted. Choose another document.");
+      opened.current = { id: saved.id, revision: saved.revision };
+      editor.replace(saved.document);
+      editor.setDraftId(draft.id);
       setRecoveries([]);
-      await writes.current.catch(() => {});
-      await deleteDraft();
-      await clearSignatures();
-      setStatus("Stored browser drafts and signatures cleared");
     });
-  return { recoveries, status, restore, discard };
+  return { recoveries, status, restore };
 }
 
 function useDraftSync(
   doc: EditorDocument,
+  { id, opened }: { id: string; opened: RefObject<{ id: string; revision: string } | null> },
+  epoch: number,
   setStatus: Dispatch<SetStateAction<string>>,
   setRecoveries: Dispatch<SetStateAction<Draft[]>>,
-  adopted: { current: Draft | null }
+  setDraftId: Dispatch<SetStateAction<string>>
 ) {
   const writes = useRef<Promise<void>>(Promise.resolve());
   const session = useRef<Promise<DraftSession> | null>(null);
   const paused = useRef<EditorDocument | null>(null),
-    current = useRef(doc);
+    current = useRef({ document: doc, id, epoch });
   useEffect(() => {
-    current.current = doc;
-  }, [doc]);
+    current.current = { document: doc, id, epoch };
+  }, [doc, id, epoch]);
+  useEffect(() => {
+    session.current = draftSession(
+      id,
+      opened.current?.id === id ? opened.current.revision : undefined
+    );
+    activeDraft(id);
+    paused.current = null;
+  }, [id, epoch, opened]);
   useEffect(
     () =>
-      onDraftsCleared(() => {
-        paused.current = current.current;
-        session.current = draftSession();
-        adopted.current = null;
-        setRecoveries([]);
+      onDraftsRemoved((removed) => {
+        setRecoveries((saved) => remainingDrafts(saved, removed));
+        if (removed !== null && removed !== current.current.id) return;
+        paused.current = current.current.document;
+        session.current = draftSession(current.current.id);
         setStatus(
-          "Stored drafts were cleared. This document stays in memory; drafts resume after your next edit."
+          "Removed from library. This document stays open; saving resumes after your next edit."
         );
       }),
-    [adopted, setRecoveries, setStatus]
+    [setRecoveries, setStatus]
   );
   useEffect(() => {
     if (!doc.pages.length || paused.current === doc) return;
@@ -111,29 +127,26 @@ function useDraftSync(
       );
       return;
     }
-    const writer = (session.current ??= draftSession());
-    const permitted = () => canSaveDraft(current.current);
-    const recovery = adopted.current;
+    const writer = (session.current ??= draftSession(id));
+    const permitted = () => maySave(current.current, id, epoch);
+    setStatus("Saving draft…");
     const timer = setTimeout(() => {
-      setStatus("Saving draft…");
       writes.current = writes.current
         .catch(() => {})
         .then(async () => {
           const active = await writer;
-          if (!canSaveDraft(current.current)) return;
+          if (!permitted()) return;
           if (!(await saveDraft(doc, active, permitted))) {
-            if (!canSaveDraft(current.current)) return;
-            paused.current = current.current;
-            session.current = draftSession();
+            if (!permitted()) return;
+            paused.current = current.current.document;
+            session.current = draftSession(id);
             setStatus(
-              "Stored drafts were cleared. This document stays in memory; drafts resume after your next edit."
+              "Removed from library. This document stays open; saving resumes after your next edit."
             );
             return;
           }
-          if (recovery) {
-            await removeRecoveredDraft(recovery, active.id);
-            if (adopted.current === recovery) adopted.current = null;
-          }
+          if (!permitted()) return;
+          if (active.id !== id) setDraftId(active.id);
           setStatus("Draft saved on this device");
         })
         .catch(() => {
@@ -143,6 +156,15 @@ function useDraftSync(
         });
     }, 600);
     return () => clearTimeout(timer);
-  }, [doc, adopted, setStatus]);
-  return writes;
+  }, [doc, id, epoch, setStatus, setDraftId]);
+}
+function remainingDrafts(saved: Draft[], removed: string | null) {
+  return removed === null ? [] : saved.filter((draft) => draft.id !== removed);
+}
+function maySave(
+  current: { document: EditorDocument; id: string; epoch: number },
+  id: string,
+  epoch: number
+) {
+  return current.id === id && current.epoch === epoch && canSaveDraft(current.document);
 }

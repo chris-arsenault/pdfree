@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
-import { type PlacedObject, type Tool } from "../core/model";
-export type DialogName = "" | "signature" | "initials" | "split" | "export" | "help" | "properties";
+import { newId, type PlacedObject, type Tool } from "../core/model";
+export type DialogName =
+  "" | "signature" | "initials" | "split" | "export" | "help" | "properties" | "library";
 export function useEditorUi() {
   const [activeId, setActiveId] = useState("");
   const [pageIds, setPageIds] = useState<string[]>([]);
@@ -14,6 +15,7 @@ export function useEditorUi() {
   const [savedRevision, setSavedRevision] = useState(-1);
   const [exportSelected, setExportSelected] = useState(false);
   const [documentEpoch, setDocumentEpoch] = useState(0);
+  const [draftId, setDraftId] = useState<string>(newId);
   const setObjectIds = useCallback((ids: string[]) => {
     updateObjectIds(ids);
     setPropertiesOpen(ids.length > 0);
@@ -34,6 +36,7 @@ export function useEditorUi() {
     setPropertiesOpen(false);
     setPagesOpen(window.matchMedia("(min-width: 761px)").matches);
     setDocumentEpoch((epoch) => epoch + 1);
+    setDraftId(newId());
   }, [setObjectIds, setTool]);
   return {
     activeId,
@@ -59,6 +62,8 @@ export function useEditorUi() {
     exportSelected,
     setExportSelected,
     documentEpoch,
+    draftId,
+    setDraftId,
     reset,
   };
 }

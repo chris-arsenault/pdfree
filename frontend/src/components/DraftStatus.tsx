@@ -1,7 +1,7 @@
 import { useDraft } from "../hooks/useDraft";
 import { useEditor } from "../hooks/editorContext";
-import { Database, FileCheck2 } from "lucide-react";
-import { ActionPopover } from "./ui/ActionPopover";
+import { Library, FileCheck2 } from "lucide-react";
+import { LibraryDialog } from "./LibraryDialog";
 export function DraftStatus() {
   const editor = useEditor(),
     draft = useDraft();
@@ -10,13 +10,13 @@ export function DraftStatus() {
   return (
     <div className={`draft-status ${routine ? "" : "status-notice"}`}>
       {!editor.document.pages.length && draft.recoveries.length ? (
-        draft.recoveries.map((recovery, index) => (
+        draft.recoveries.slice(0, 1).map((recovery) => (
           <div className="draft-recovery" key={recovery.id}>
             <span>
               Recover {recovery.document.name} · {new Date(recovery.savedAt).toLocaleString()}
             </span>
             <button onClick={() => draft.restore(recovery)} disabled={!!editor.task.busy}>
-              {index ? `Recover ${recovery.document.name}` : "Recover draft"}
+              Recover draft
             </button>
           </div>
         ))
@@ -26,36 +26,14 @@ export function DraftStatus() {
           {draft.status || "Local drafts"}
         </span>
       )}
-      <ActionPopover label="Local data" icon={Database}>
-        {(close) => (
-          <>
-            <p>
-              Drafts and remembered signatures stay in this browser. Download an editing project for
-              backup.
-            </p>
-            {editor.document.pages.length > 0 && (
-              <button
-                onClick={() => {
-                  editor.setDialog("properties");
-                  close();
-                }}
-              >
-                Document details
-              </button>
-            )}
-            <button
-              className="danger"
-              onClick={() => {
-                draft.discard();
-                close();
-              }}
-              disabled={!!editor.task.busy}
-            >
-              Clear local data
-            </button>
-          </>
-        )}
-      </ActionPopover>
+      <button
+        className="popover-trigger"
+        disabled={!!editor.task.busy}
+        onClick={() => editor.setDialog("library")}
+      >
+        <Library size={17} aria-hidden="true" /> Library
+      </button>
+      {editor.dialog === "library" && <LibraryDialog draft={draft} />}
     </div>
   );
 }

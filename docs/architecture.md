@@ -148,14 +148,19 @@ objects, values and stable IDs; field descriptors are rederived from source PDFs
 geometry, unique identities, references and archive budgets on save/open.
 Unknown project versions fail explicitly. See [ADR 0004](adr/0004-projects-drafts-and-retained-pwa.md).
 
-IndexedDB stores per-tab draft slots under `pdfree-draft-v2:` with write revisions,
-model revision 3 and a clear-generation token. Legacy drafts refresh derived
+IndexedDB stores local library documents under `pdfree-draft-v2:` with write revisions,
+model revision 3 and generation tokens. Opening a replacement creates a separate
+entry; reopening a saved document updates its existing entry. Each tab remembers
+its active entry for reload recovery. Concurrent saves of the same entry retain
+both working copies by assigning a new ID to the conflicting writer.
+Legacy drafts refresh derived
 source descriptors while retaining edits; revision-2 drafts normalize new nullable
 source properties without changing geometry. Encrypted-source drafts default off
 and require document-level consent. Generation and current consent checks share a
-transaction: stale queued writes cannot resurrect cleared drafts. Recovery removes
-a predecessor only if its saved revision is unchanged. BroadcastChannel and local
-events notify open tabs of clearing. Remembered signature changes are atomic
+transaction: stale queued writes cannot resurrect deleted entries. Deleting one
+entry increments its generation and leaves other entries untouched. BroadcastChannel
+and local events notify open tabs of deletion; matching open documents remain in
+memory and resume autosaving after the next edit. Remembered signature changes are atomic
 IndexedDB updates. Browser storage remains evictable; portable projects provide
 the explicit backup path.
 

@@ -92,27 +92,31 @@ it requires no PDF password. Keep these projects private.
 
 ## Local storage and updates
 
-Drafts autosave in IndexedDB with a separate recovery slot for each tab. Recovery
-is offered after reload; storage failures are visible. Download an editing
-project for durable backup because browsers can evict stored data.
+Documents autosave in this browser. Open Library in the bottom status strip to
+view saved documents, reopen one or delete it individually. Opening a replacement
+keeps previously saved documents in the library; reopening updates the same entry.
+Recovery is offered after reload. Download an editing project for durable backup
+because browsers can evict stored data.
 
 Decrypted documents do not autosave by default. In Document details, explicitly
 enable “Save decrypted drafts on this device” to allow unprotected recovery.
-Disabling it stops future writes; Clear local data removes previously saved
-drafts. Downloaded projects are separate files and are not removed by clearing.
+Disabling it stops future writes; delete the document in Library to remove its
+previously saved local copy. Downloaded projects are separate files and are kept.
 
-Clear local data removes stored drafts and remembered signatures after
-confirmation. Other open tabs retain their in-memory documents and pause
-autosaving until the next edit. Queued writes cannot restore cleared drafts.
-Open Local data in the bottom status strip to find this action and Document
-details. The offline indicator opens application-cache status. Storage failures,
-encrypted-input draft notices and update prompts remain visible in the strip.
+Library also previews remembered signatures. Use one in the open document or
+delete it individually; deleting a remembered signature keeps already placed
+marks. Document deletion requires confirmation and keeps the open document in
+memory. Saving that document resumes after the next edit; other saved documents
+are unaffected. Queued writes cannot recreate a deleted entry.
+The Document action opens source information and draft consent settings. The
+offline indicator opens application-cache status. Storage failures, encrypted-input
+draft notices and update prompts remain visible in the strip.
 
 The retained PWA caches application assets. After “Ready to work offline,”
 editing and downloads can run without an origin connection. Updates prompt
 before reloading; save an editing project before accepting the update.
 
-Opening a replacement document, deleting pages, clearing local data, downloading
+Opening a replacement or saved document, deleting pages or a saved document, downloading
 an unprotected project and applying an update use custom confirmation dialogs.
 Cancel is focused first; Escape cancels and returns to the current work.
 The unsaved-edit warning when closing or reloading the tab remains a

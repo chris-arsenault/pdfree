@@ -84,7 +84,7 @@ function DraftConsent() {
       </label>
       <p className="field-note">
         Drafts include decrypted content without password protection. Disabling stops new saves;
-        Clear local data deletes existing drafts.
+        Delete the saved document in Library to remove its existing local copy.
       </p>
     </>
   );

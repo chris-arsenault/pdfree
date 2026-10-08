@@ -77,8 +77,9 @@ pending secured export, including preparation before its worker starts.
 Encrypted sources retain immutable original bytes and an unprotected working
 copy in memory. Editing projects contain both and require confirmation before
 download. Local decrypted drafts are disabled until explicitly enabled in
-Document details; revoking consent fences queued writes. Clear local data removes
-existing local copies. Re-protection is an explicit PDF export choice.
+Document details; revoking consent fences queued writes. Deleting a document in
+Library removes its existing local copy while retaining open documents in memory.
+Re-protection is an explicit PDF export choice.
 
 Each credential-bearing import or export owns a worker that terminates after
 success, failure or cancellation.

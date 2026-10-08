@@ -5,8 +5,11 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Replaced Clear local data with a simple Library for saved documents and
+  signature previews. Reopen documents, reuse signatures and delete individual
+  entries while keeping other saved items and open documents intact.
 - Replaced browser confirmations for document replacement, page deletion,
-  local-data clearing, unprotected project downloads and application updates
+  saved-document deletion, unprotected project downloads and application updates
   with accessible custom dialogs and keyboard-safe cancellation.
 - Reorganized editor tools into stable icon groups with custom keyboard and
   hover tooltips, explicit page-action scope and contextual object properties.

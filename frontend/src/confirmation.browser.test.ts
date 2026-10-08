@@ -4,7 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import { openEditor } from "../tooling/editorHarness";
 import { formFixture } from "./core/fixtures";
 import { encryptedFixture } from "../tooling/encryptedFixture";
-import { deleteDraft, loadDraft } from "./services/drafts";
+import { deleteDraft, loadDraft, loadDrafts, saveDraft, draftSession } from "./services/drafts";
 
 const offline = vi.hoisted(() => ({
   refresh: () => {},
@@ -76,26 +76,37 @@ it("keeps edits when canceling replacement and can open the same file after conf
     .toHaveValue("Original");
 });
 
-it("preserves stored drafts on cancellation and clears them only after confirming", async () => {
+it("cancels individual document deletion and keeps other saved documents and the open editor", async () => {
   root = await openEditor(await formFixture());
   await page.getByRole("textbox", { name: "name", exact: true }).fill("Keep my draft");
   await expect
     .poll(async () => Object.values((await loadDraft())?.document.values ?? {}))
     .toContain("Keep my draft");
-  const local = page.getByRole("button", { name: "Local data", exact: true });
-  const dialog = page.getByRole("dialog", { name: "Clear local data?", exact: true });
-  await local.click();
-  await page.getByRole("button", { name: "Clear local data", exact: true }).click();
+  await saveDraft(
+    { ...(await loadDraft())!.document, name: "Other.pdf" },
+    await draftSession("other")
+  );
+  await page.getByRole("button", { name: "Library", exact: true }).click();
+  const remove = page.getByRole("button", { name: "Delete test.pdf", exact: true });
+  const dialog = page.getByRole("dialog", { name: "Delete test.pdf?", exact: true });
+  await remove.click();
   await userEvent.keyboard("{Escape}");
-  expect(await loadDraft()).not.toBeNull();
+  expect(await loadDrafts()).toHaveLength(2);
+  await remove.click();
+  await dialog.getByRole("button", { name: "Delete document", exact: true }).click();
+  await expect
+    .element(page.getByRole("button", { name: "Open Other.pdf", exact: true }))
+    .toBeVisible();
+  await expect
+    .poll(async () => (await loadDrafts()).map((draft) => draft.document.name))
+    .toEqual(["Other.pdf"]);
+  await expect
+    .element(page.getByRole("button", { name: "Close dialog", exact: true }))
+    .toHaveFocus();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await expect
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Keep my draft");
-  await local.click();
-  await page.getByRole("button", { name: "Clear local data", exact: true }).click();
-  await dialog.getByRole("button", { name: "Clear local data", exact: true }).click();
-  await expect.element(page.getByRole("heading", { name: /^Your paperwork/ })).toBeVisible();
-  await expect.poll(() => loadDraft()).toBeNull();
 });
 
 it("cancels unprotected project download without losing export settings or downloading bytes", async () => {

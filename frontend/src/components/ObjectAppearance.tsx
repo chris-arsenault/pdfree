@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { type PlacedObject, type Asset } from "../core/model";
 
-function ObjectImage({ asset }: { asset: Asset | null }) {
+export function ObjectImage({ asset }: { asset: Asset | null }) {
   const ref = useRef<HTMLImageElement>(null);
   useEffect(() => {
     if (!asset) return;

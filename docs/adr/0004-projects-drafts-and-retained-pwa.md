@@ -19,9 +19,11 @@ that existing offline work remain while architecture and quality were reviewed.
 
 Use a versioned `.pdfree` ZIP with a validated manifest, original PDFs and placed
 assets as the explicit editable backup. Enforce archive, expansion, manifest and
-reference budgets symmetrically on save/open. Use IndexedDB for per-tab drafts
-and optional remembered signatures, with transactional revisions, clear-generation
-fencing and atomic signature updates.
+reference budgets symmetrically on save/open. Use IndexedDB for local library
+documents and optional remembered signatures, with transactional revisions,
+generation fencing and atomic signature updates. Keep each tab's active entry
+for reload recovery. Replacement documents get independent entries; reopening
+updates the selected entry. Concurrent revisions retain both working copies.
 
 Retain the existing PWA asset cache and explicit update prompt. Browser-only
 processing is the required boundary; offline operation is a retained capability,
@@ -41,7 +43,9 @@ not an interpretation that adds requirements to all future features.
 ## Consequences
 
 Projects include original content and are unprotected unless secured separately.
-Draft failures remain visible and users need explicit project backups. Clearing
-local data pauses other tabs' autosave without discarding their memory state.
+Draft failures remain visible and users need explicit project backups. Individual
+library deletion pauses autosave only for that entry without discarding open
+documents from memory. Other documents continue saving. The next edit resumes
+saving for an open deleted entry.
 PWA tests describe retained behavior; they do not redefine the no-backend request.
 See [user guide](../user-guide.md) and [architecture](../architecture.md).

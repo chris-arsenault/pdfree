@@ -15,6 +15,7 @@ export function SignatureDialog() {
       <p className="modal-description">
         Create your signature, then click the document to place it.
       </p>
+      {signature.error && <p role="alert">{signature.error}</p>}
       <SignatureInput signature={signature} />
       <label className="checkbox-label">
         <input

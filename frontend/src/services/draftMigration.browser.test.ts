@@ -4,7 +4,7 @@ import { PDFDocument } from "pdf-lib";
 import { choiceFixture } from "../../tooling/choiceFixture";
 import { appendSource, importPdf } from "../core/importPdf";
 import { emptyDocument, defaultObject } from "../core/model";
-import { deleteDraft, loadDrafts } from "./drafts";
+import { deleteDraft, deleteSavedDraft, loadDrafts } from "./drafts";
 
 beforeEach(() => deleteDraft());
 afterEach(() => deleteDraft());
@@ -38,6 +38,9 @@ it("recovers legacy choice descriptors and visible boxes without changing edits 
     { value: "NY", label: "New York" },
   ]);
   expect(await get("pdfree-draft-v1")).toEqual(snapshot);
+  await deleteSavedDraft(draft.id);
+  expect(await loadDrafts()).toEqual([]);
+  expect(await get("pdfree-draft-v1")).toBeUndefined();
 });
 it("normalizes revision 2 drafts without refreshing geometry or mutating stored data", async () => {
   const doc = appendSource(

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it } from "vitest";
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { page, userEvent } from "vitest/browser";
@@ -11,7 +11,7 @@ import {
   draftSession,
   loadDrafts,
   saveDraft,
-  removeRecoveredDraft,
+  deleteSavedDraft,
 } from "./services/drafts";
 import App from "./App";
 import { formFixture } from "./core/fixtures";
@@ -128,7 +128,7 @@ afterEach(async () => {
   await deleteDraft();
 });
 
-it("disables draft recovery and clearing while another document task is running", async () => {
+it("disables draft recovery and the library while another document task is running", async () => {
   await saveDraft(documentFixture("Recovery.pdf"), await draftSession("closed-tab"));
   mount(BusyProbe);
   await expect
@@ -138,10 +138,7 @@ it("disables draft recovery and clearing while another document task is running"
   await expect
     .element(page.getByRole("button", { name: "Recover draft", exact: true }))
     .toBeDisabled();
-  await page.getByRole("button", { name: "Local data", exact: true }).click();
-  await expect
-    .element(page.getByRole("button", { name: "Clear local data", exact: true }))
-    .toBeDisabled();
+  await expect.element(page.getByRole("button", { name: "Library", exact: true })).toBeDisabled();
 });
 
 it("resets placement, selection, and dialog state on document replacement", async () => {
@@ -256,27 +253,41 @@ it("fences a queued write from before global clear and allows a new generation",
   expect((await loadDrafts())[0].document.name).toBe("New edit.pdf");
 });
 
-it("removes an adopted recovery only after its replacement has been saved", async () => {
-  await saveDraft(documentFixture("Recovered.pdf"), await draftSession("closed-tab"));
-  const old = (await loadDrafts())[0],
-    destination = await draftSession("new-tab");
-  expect(await saveDraft(old.document, destination)).toBe(true);
-  await removeRecoveredDraft(old, destination.id);
-  const remaining = await loadDrafts();
-  expect(remaining).toHaveLength(1);
-  expect(remaining[0].id).toBe(destination.id);
+it("deletes only one saved document and fences its queued writes without blocking another document", async () => {
+  const first = await draftSession("first"),
+    second = await draftSession("second");
+  await saveDraft(documentFixture("First.pdf"), first);
+  await saveDraft(documentFixture("Second.pdf"), second);
+  await deleteSavedDraft(first.id);
+  expect(await saveDraft(documentFixture("Old queued edit.pdf"), first)).toBe(false);
+  expect(await saveDraft(documentFixture("Other document.pdf"), second)).toBe(true);
+  expect((await loadDrafts()).map((draft) => draft.document.name)).toEqual(["Other document.pdf"]);
 });
 
-it("does not remove a recovery slot another tab has updated after it was read", async () => {
-  const clock = vi.spyOn(Date, "now").mockReturnValue(1000);
-  try {
-    const active = await draftSession("active-tab");
-    await saveDraft(documentFixture(), active);
-    const snapshot = (await loadDrafts())[0];
-    await saveDraft(documentFixture("Later edit.pdf"), active);
-    await removeRecoveredDraft(snapshot, "new-tab");
-    expect((await loadDrafts())[0].document.name).toBe("Later edit.pdf");
-  } finally {
-    clock.mockRestore();
-  }
+it("keeps both edits when two tabs reopen and save the same library entry", async () => {
+  await saveDraft(documentFixture("Original.pdf"), await draftSession("shared"));
+  const first = await draftSession("shared"),
+    second = await draftSession("shared");
+  await Promise.all([
+    saveDraft(documentFixture("First tab.pdf"), first),
+    saveDraft(documentFixture("Second tab.pdf"), second),
+  ]);
+  expect((await loadDrafts()).map((draft) => draft.document.name).sort()).toEqual([
+    "First tab.pdf",
+    "Second tab.pdf",
+  ]);
+  expect(first.id).not.toBe(second.id);
+});
+
+it("retains a newer saved entry when another tab opens an older snapshot", async () => {
+  const writer = await draftSession("shared");
+  await saveDraft(documentFixture("Original.pdf"), writer);
+  const snapshot = (await loadDrafts())[0];
+  await saveDraft(documentFixture("Newer.pdf"), writer);
+  const reopened = await draftSession(snapshot.id, snapshot.revision);
+  await saveDraft(snapshot.document, reopened);
+  expect((await loadDrafts()).map((draft) => draft.document.name).sort()).toEqual([
+    "Newer.pdf",
+    "Original.pdf",
+  ]);
 });

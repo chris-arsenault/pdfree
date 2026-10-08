@@ -10,13 +10,19 @@ export type Draft = {
   document: EditorDocument;
   savedAt: number;
 };
-export type DraftSession = { id: string; generation: number };
+export type DraftSession = {
+  id: string;
+  generation: number;
+  entryGeneration: number;
+  revision: string;
+};
 const store = createStore("keyval-store", "keyval");
 const prefix = "pdfree-draft-v2:";
 const legacyKey = "pdfree-draft-v1";
 const generationKey = "pdfree-draft-generation";
 const channelName = "pdfree-drafts-cleared";
 const owner = newId();
+let activeId: string = owner;
 let predecessor = "";
 try {
   predecessor = sessionStorage.getItem("pdfree-draft-slot") ?? "";
@@ -25,9 +31,32 @@ try {
   // A unique page-lifetime slot remains safe when session storage is unavailable.
 }
 
-export async function draftSession(id: string = owner): Promise<DraftSession> {
-  return { id, generation: (await get<number>(generationKey, store)) ?? 0 };
+export async function draftSession(
+  id: string = owner,
+  openedRevision?: string
+): Promise<DraftSession> {
+  const [generation, entryGeneration, draft] = await Promise.all([
+    get<number>(generationKey, store),
+    get<number>(generationKey + ":" + id, store),
+    get<Draft>(draftKey(id), store),
+  ]);
+  return {
+    id,
+    generation: generation ?? 0,
+    entryGeneration: entryGeneration ?? 0,
+    revision: openedRevision ?? draft?.revision ?? "",
+  };
 }
+
+export function activeDraft(id: string) {
+  activeId = id;
+  try {
+    sessionStorage.setItem("pdfree-draft-slot", id);
+  } catch {
+    // Library entries still work when session storage is unavailable.
+  }
+}
+const draftKey = (id: string) => (id === "legacy" ? legacyKey : prefix + id);
 
 export async function loadDrafts(): Promise<Draft[]> {
   const stored = await entries<string, Draft>(store);
@@ -53,7 +82,7 @@ export async function loadDrafts(): Promise<Draft[]> {
   );
   return drafts.sort((a, b) => {
     const priority = (draft: Draft) =>
-      Number(draft.id === owner) * 2 + Number(draft.id === predecessor);
+      Number(draft.id === activeId) * 2 + Number(draft.id === predecessor);
     return priority(b) - priority(a) || b.savedAt - a.savedAt;
   });
 }
@@ -81,39 +110,55 @@ export async function saveDraft(
   const current = session ?? (await draftSession());
   return store("readwrite", (objects) => {
     let saved = false;
+    const next = { ...current };
     const generation = objects.get(generationKey);
-    generation.onsuccess = () => {
-      if ((generation.result ?? 0) !== current.generation || !permitted()) return;
+    const entry = objects.get(generationKey + ":" + current.id);
+    const existing = objects.get(draftKey(current.id));
+    // Requests in one transaction complete in order; the final read sees both tokens.
+    existing.onsuccess = () => {
+      if (
+        (generation.result ?? 0) !== current.generation ||
+        (entry.result ?? 0) !== current.entryGeneration ||
+        !permitted()
+      )
+        return;
+      // Keep both working copies if another tab saved this entry since we read it.
+      if ((existing.result?.revision ?? "") !== current.revision) {
+        next.id = newId();
+        next.entryGeneration = 0;
+      }
+      next.revision = newId();
       objects.put(
         {
           version: 1,
           modelRevision: 3,
-          id: current.id,
-          revision: newId(),
+          id: next.id,
+          revision: next.revision,
           document,
           savedAt: Date.now(),
         },
-        prefix + current.id
+        draftKey(next.id)
       );
       saved = true;
     };
-    return promisifyRequest(objects.transaction).then(() => saved);
+    return promisifyRequest(objects.transaction).then(() => {
+      if (saved) Object.assign(current, next);
+      return saved;
+    });
   });
 }
 
-export async function removeRecoveredDraft(draft: Draft, destinationId: string) {
-  if (draft.id === destinationId) return;
+export async function deleteSavedDraft(id: string) {
   await store("readwrite", (objects) => {
-    const key = draft.id === "legacy" ? legacyKey : prefix + draft.id;
-    const request = objects.get(key);
+    const token = generationKey + ":" + id;
+    const request = objects.get(token);
     request.onsuccess = () => {
-      const unchanged = draft.revision
-        ? request.result?.revision === draft.revision
-        : request.result?.savedAt === draft.savedAt;
-      if (unchanged) objects.delete(key);
+      objects.put((request.result ?? 0) + 1, token);
+      objects.delete(draftKey(id));
     };
     return promisifyRequest(objects.transaction);
   });
+  notifyRemoved(id);
 }
 
 export async function deleteDraft() {
@@ -133,22 +178,26 @@ export async function deleteDraft() {
     };
     return promisifyRequest(objects.transaction).then(() => next);
   });
-  if (typeof window !== "undefined")
-    window.dispatchEvent(new CustomEvent(channelName, { detail: generation }));
-  if (typeof BroadcastChannel !== "undefined") {
-    const channel = new BroadcastChannel(channelName);
-    channel.postMessage(generation);
-    channel.close();
-  }
+  notifyRemoved(null);
   return generation;
 }
 
-export function onDraftsCleared(notify: (generation: number) => void) {
-  const local = (event: Event) => notify((event as CustomEvent<number>).detail);
+function notifyRemoved(id: string | null) {
+  if (typeof window !== "undefined")
+    window.dispatchEvent(new CustomEvent(channelName, { detail: id }));
+  if (typeof BroadcastChannel !== "undefined") {
+    const channel = new BroadcastChannel(channelName);
+    channel.postMessage(id);
+    channel.close();
+  }
+}
+
+export function onDraftsRemoved(notify: (id: string | null) => void) {
+  const local = (event: Event) => notify((event as CustomEvent<string | null>).detail);
   window.addEventListener(channelName, local);
   const channel =
     typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(channelName);
-  if (channel) channel.onmessage = (event: MessageEvent<number>) => notify(event.data);
+  if (channel) channel.onmessage = (event: MessageEvent<string | null>) => notify(event.data);
   return () => {
     window.removeEventListener(channelName, local);
     channel?.close();

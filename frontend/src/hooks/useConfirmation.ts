@@ -11,10 +11,12 @@ export function useConfirmation(busy: boolean) {
   const [request, setRequest] = useState<Confirmation | null>(null);
   const pending = useRef<((confirmed: boolean) => void) | null>(null);
   const trigger = useRef<HTMLElement | null>(null);
+  const triggerDialog = useRef<HTMLDialogElement | null>(null);
   const ask = useCallback((next: Confirmation) => {
     // A second action must not replace a decision the user is already making.
     if (pending.current) return Promise.resolve(false);
     trigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    triggerDialog.current = trigger.current?.closest("dialog") ?? null;
     return new Promise<boolean>((resolve) => {
       pending.current = resolve;
       setRequest(next);
@@ -30,8 +32,9 @@ export function useConfirmation(busy: boolean) {
   useEffect(() => {
     if (request || busy) return;
     // Wait for the task's rendered state to remove inert/disabled before restoring focus.
-    const element = trigger.current;
+    const element = focusTarget(trigger.current, triggerDialog.current);
     trigger.current = null;
+    triggerDialog.current = null;
     const active = document.activeElement;
     if (
       element?.isConnected &&
@@ -44,8 +47,15 @@ export function useConfirmation(busy: boolean) {
       pending.current?.(false);
       pending.current = null;
       trigger.current = null;
+      triggerDialog.current = null;
     },
     []
   );
   return { request, ask, answer };
+}
+
+function focusTarget(trigger: HTMLElement | null, dialog: HTMLDialogElement | null) {
+  return trigger?.isConnected
+    ? trigger
+    : dialog?.querySelector<HTMLElement>("button:not([disabled])");
 }
