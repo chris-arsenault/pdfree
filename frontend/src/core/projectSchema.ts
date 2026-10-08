@@ -1,0 +1,81 @@
+import { z } from "zod";
+import { editorLimits } from "./editorValidation";
+const number = z.number().finite().min(-100_000).max(100_000);
+const point = z.object({ x: number, y: number });
+const fieldKind = z.enum(["text", "checkbox", "radio", "dropdown", "list"]);
+const id = z.string().min(1).max(200);
+const text = z.string().max(100_000);
+export const placedObjectSchema = z.object({
+  id,
+  kind: z.enum([
+    "text",
+    "check",
+    "cross",
+    "image",
+    "stamp",
+    "ink",
+    "highlight",
+    "rectangle",
+    "line",
+    "arrow",
+    "field",
+  ]),
+  x: number,
+  y: number,
+  width: number.positive(),
+  height: number.positive(),
+  rotation: number,
+  text,
+  fontSize: z.number().min(1).max(1000),
+  color: z.string().regex(/^#[0-9a-f]{6}$/i),
+  opacity: z.number().min(0).max(1),
+  align: z.enum(["left", "center", "right"]),
+  font: z.enum(["sans", "signature"]),
+  assetId: z.string().max(200),
+  points: z.array(point).max(100_000),
+  strokeWidth: z.number().min(0.1).max(1000),
+  fieldKind,
+  fieldName: text,
+  options: z.array(text).max(1000),
+  required: z.boolean(),
+});
+export const projectSchema = z.object({
+  version: z.literal(1),
+  name: z
+    .string()
+    .min(1)
+    .max(editorLimits.name)
+    .refine((name) => Boolean(name.trim()), "Give the document a name."),
+  sources: z
+    .array(z.object({ id, name: text, path: z.string().regex(/^sources\/\d+\.pdf$/) }))
+    .max(1000),
+  assets: z
+    .array(
+      z.object({
+        id,
+        name: text,
+        path: z.string().regex(/^assets\/\d+\.(png|jpg)$/),
+        mime: z.enum(["image/png", "image/jpeg"]),
+      })
+    )
+    .max(1000),
+  pages: z
+    .array(
+      z.object({
+        id,
+        sourceId: z.string().max(200),
+        sourceIndex: z.number().int().nonnegative(),
+        rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
+        box: z.object({
+          x: number,
+          y: number,
+          width: number.positive(),
+          height: number.positive(),
+        }),
+        objects: z.array(placedObjectSchema).max(10_000),
+      })
+    )
+    .min(1)
+    .max(10_000),
+  values: z.record(z.string(), z.union([text, z.array(text).max(1000), z.boolean()])),
+});

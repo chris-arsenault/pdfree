@@ -1,0 +1,43 @@
+.export-security {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+.export-security legend {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 6px;
+}
+.export-security label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.security-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+.export-security label.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+}
+.security-permissions {
+  border: 0;
+  margin: 12px 0 0;
+  padding: 0;
+  min-width: 0;
+}
+.security-permissions legend {
+  padding: 0;
+}
+@media (max-width: 480px) {
+  .security-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,6 @@
+project: pdfree
+prefix: pdfree
+stack:
+  - typescript
+  - terraform
+typescript_dir: frontend

@@ -1,0 +1,7 @@
+dist
+coverage
+node_modules
+pnpm-lock.yaml
+public/pdfjs
+src/__screenshots__
+test-results

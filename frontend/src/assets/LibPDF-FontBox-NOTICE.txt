@@ -1,0 +1,6 @@
+LibPDF 0.5.2 includes FontBox-derived source under Apache License 2.0.
+The upstream package README identifies src/fontbox as derived from Apache PDFBox.
+Source: https://github.com/LibPDF-js/core
+Apache PDFBox: https://pdfbox.apache.org/
+The accompanying LICENSE_LIBPDF_FONTBOX_APACHE.txt contains Apache License 2.0.
+The LibPDF MIT license and dependency license notices are included separately.

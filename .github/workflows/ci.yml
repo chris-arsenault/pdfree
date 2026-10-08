@@ -1,0 +1,57 @@
+name: CI/CD
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+jobs:
+  ci:
+    uses: chris-arsenault/ahara/.github/workflows/ci.yml@main
+    secrets: inherit
+  browser:
+    name: Browser (${{ matrix.engine }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    env:
+      PDFREE_BROWSER: ${{ matrix.engine }}
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@10.29.3 --activate
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install test browser
+        run: pnpm exec playwright install --with-deps "$PDFREE_BROWSER"
+      - name: Browser interactions and writer fidelity
+        run: pnpm test:browser
+      - name: Install independent PDF security verifiers
+        if: matrix.engine == 'chromium'
+        run: sudo apt-get update && sudo apt-get install -y openssl qpdf poppler-utils
+      - name: Verify signatures, certification and encryption independently
+        if: matrix.engine == 'chromium'
+        run: pnpm test:security
+      - name: Build production bundle
+        run: pnpm build
+      - name: Offline, CSP, accessibility and download checks
+        run: pnpm test:release
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-${{ matrix.engine }}
+          path: frontend/test-results/
