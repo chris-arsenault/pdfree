@@ -9,6 +9,7 @@ import { Footer } from "./components/Footer";
 import { Toolbar } from "./components/Toolbar";
 import { Inspector } from "./components/Inspector";
 import { Dialogs } from "./components/Dialogs";
+import { ConfirmationDialog } from "./components/ConfirmationDialog";
 import { useKeyboard } from "./hooks/useKeyboard";
 
 export default function App() {
@@ -31,7 +32,13 @@ export default function App() {
             <span className="spinner" />
             {editor.task.busy}…
             {editor.task.busy === "Opening files" && (
-              <button className="button secondary" onClick={editor.password.cancel}>
+              <button
+                className="button secondary"
+                onClick={() => {
+                  editor.confirmation.answer(false);
+                  editor.password.cancel();
+                }}
+              >
                 Cancel opening
               </button>
             )}
@@ -68,6 +75,7 @@ export default function App() {
         )}
         <Footer />
         <Dialogs />
+        <ConfirmationDialog />
       </div>
     </EditorContext.Provider>
   );

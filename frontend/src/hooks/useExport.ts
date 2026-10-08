@@ -20,9 +20,13 @@ export function useExport(
     editor.task.run("Saving editing project", async () => {
       if (
         hasEncryptedSources(editor.document) &&
-        !window.confirm(
-          "This editing project includes decrypted document content without password protection. Save it?"
-        )
+        !(await editor.confirmation.ask({
+          title: "Download an unprotected project?",
+          message:
+            "This editing project includes decrypted document content without password protection. Keep the downloaded file private.",
+          confirmLabel: "Download project",
+          tone: "primary",
+        }))
       )
         return;
       download(

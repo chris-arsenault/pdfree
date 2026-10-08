@@ -590,6 +590,21 @@
   padding-top: 20px;
   margin-top: 24px;
 }
+.confirmation-dialog {
+  width: min(460px, calc(100vw - 32px));
+}
+.confirmation-message {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.confirmation-dialog .modal-actions {
+  flex-wrap: wrap;
+}
+.confirmation-dialog .danger:hover {
+  background: #ffe3df;
+}
 .tabs {
   display: flex;
   padding: 4px;

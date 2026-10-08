@@ -112,4 +112,11 @@ The retained PWA caches application assets. After “Ready to work offline,”
 editing and downloads can run without an origin connection. Updates prompt
 before reloading; save an editing project before accepting the update.
 
+Opening a replacement document, deleting pages, clearing local data, downloading
+an unprotected project and applying an update use custom confirmation dialogs.
+Cancel is focused first; Escape cancels and returns to the current work.
+The unsaved-edit warning when closing or reloading the tab remains a
+browser-controlled dialog. File selection, direct file saving and printing also
+use the browser's platform controls.
+
 Consult [compatibility](compatibility.md) for input, font and export limits.

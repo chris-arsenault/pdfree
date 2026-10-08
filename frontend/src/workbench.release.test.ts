@@ -1,11 +1,13 @@
 import { beforeAll, afterAll, expect, it } from "vitest";
 import { chromium, firefox, webkit, type Browser, type Page } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { PDFDocument } from "pdf-lib";
 import { PNG } from "pngjs";
 import { startTestServer } from "../tooling/testServer";
 import { formFixture } from "./core/fixtures";
+import { encryptedFixture } from "../tooling/encryptedFixture";
+import { readProject } from "./core/projects";
 
 let browser: Browser, server: Awaited<ReturnType<typeof startTestServer>>;
 const engineName = process.env.PDFREE_BROWSER ?? "chromium";
@@ -62,6 +64,137 @@ async function waitForSampleText(page: Page) {
     )
     .toBe(true);
 }
+
+it.each([1280, 320])(
+  "confirms selected-page deletion with safe focus and cancellation at %ipx",
+  async (width) => {
+    const context = await browser.newContext({ viewport: { width, height: 844 } });
+    const page = await context.newPage();
+    const nativeDialogs: string[] = [];
+    page.on("dialog", async (dialog) => {
+      nativeDialogs.push(dialog.type());
+      await dialog.dismiss();
+    });
+    try {
+      await open(page);
+      const narrow = width < 760;
+      if (narrow) await page.getByRole("button", { name: "Pages", exact: true }).click();
+      await page.getByRole("checkbox", { name: "Select page 1", exact: true }).check();
+      await page.getByRole("checkbox", { name: "Select page 3", exact: true }).check();
+      const remove = page.getByRole("button", { name: "Delete pages", exact: true });
+      const dialog = page.getByRole("dialog", { name: "Delete 2 selected pages?", exact: true });
+      await remove.click();
+      await expect
+        .poll(() =>
+          dialog
+            .getByRole("button", { name: "Cancel" })
+            .evaluate((element) => element === document.activeElement)
+        )
+        .toBe(true);
+      await page.keyboard.press("Tab");
+      await expect
+        .poll(() =>
+          dialog
+            .getByRole("button", { name: "Delete pages", exact: true })
+            .evaluate((element) => element === document.activeElement)
+        )
+        .toBe(true);
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Tab");
+      await expect
+        .poll(() => dialog.evaluate((element) => element.contains(document.activeElement)))
+        .toBe(true);
+      await accessible(page);
+      await page.screenshot({ path: `test-results/${engineName}-confirmation-${width}.png` });
+      await page.keyboard.press("Escape");
+      await dialog.waitFor({ state: "hidden" });
+      await expect
+        .poll(() =>
+          remove.evaluate((element) =>
+            element === document.activeElement
+              ? "trigger"
+              : document.activeElement?.outerHTML.slice(0, 240)
+          )
+        )
+        .toBe("trigger");
+      expect(
+        await page.getByRole("checkbox", { name: "Select page 1", exact: true }).isChecked()
+      ).toBe(true);
+      expect(
+        await page.getByRole("checkbox", { name: "Select page 3", exact: true }).isChecked()
+      ).toBe(true);
+      if (narrow)
+        expect(await page.getByRole("dialog", { name: "Pages", exact: true }).isVisible()).toBe(
+          true
+        );
+      await remove.click();
+      await page.keyboard.press("Enter");
+      await dialog.waitFor({ state: "hidden" });
+      await remove.click();
+      await dialog.getByRole("button", { name: "Delete pages", exact: true }).click();
+      if (narrow) await page.getByRole("button", { name: "Hide pages", exact: true }).click();
+      await page.getByText("PAGE 1 OF 1", { exact: true }).waitFor();
+      await page.getByRole("button", { name: "Undo", exact: true }).click();
+      await page.getByText("PAGE 1 OF 3", { exact: true }).waitFor();
+      expect(nativeDialogs).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+);
+
+it("keeps export settings when canceling a nested confirmation and downloads decrypted project bytes only with consent", async () => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  const nativeDialogs: string[] = [],
+    downloads: string[] = [];
+  page.on("dialog", async (dialog) => {
+    nativeDialogs.push(dialog.type());
+    await dialog.dismiss();
+  });
+  page.on("download", (download) => downloads.push(download.suggestedFilename()));
+  try {
+    await open(page, await encryptedFixture("AES-256", ""));
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await page.getByRole("textbox", { name: "File name", exact: true }).fill("Private.pdf");
+    const project = page.getByRole("button", { name: "Download editing project", exact: true });
+    const dialog = page.getByRole("dialog", {
+      name: "Download an unprotected project?",
+      exact: true,
+    });
+    await project.click();
+    await accessible(page);
+    await page.screenshot({ path: `test-results/${engineName}-project-confirmation.png` });
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "hidden" });
+    expect(await page.getByRole("textbox", { name: "File name", exact: true }).inputValue()).toBe(
+      "Private.pdf"
+    );
+    expect(downloads).toEqual([]);
+    await expect
+      .poll(() =>
+        project.evaluate((element) =>
+          element === document.activeElement
+            ? "trigger"
+            : document.activeElement?.outerHTML.slice(0, 240)
+        )
+      )
+      .toBe("trigger");
+    await project.click();
+    const downloading = page.waitForEvent("download");
+    await dialog.getByRole("button", { name: "Download project", exact: true }).click();
+    const download = await downloading;
+    expect(download.suggestedFilename()).toBe("Private.pdfree");
+    const path = await download.path();
+    expect(path).not.toBeNull();
+    const restored = await readProject(new Uint8Array(await readFile(path!)));
+    expect(restored.pages).toHaveLength(3);
+    expect(restored.sources[0].decryptedBytes?.length).toBeGreaterThan(0);
+    expect(nativeDialogs).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
 
 it("keeps common desktop actions stable, explains icons and exposes contextual properties", async () => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });

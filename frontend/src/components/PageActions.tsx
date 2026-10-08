@@ -20,11 +20,14 @@ import { FileButton } from "./ui/FileButton";
 export function PageActions() {
   const editor = useEditor();
   const remove = () =>
-    editor.task.run("Deleting selected pages", () => {
+    editor.task.run("Deleting selected pages", async () => {
       if (
-        !window.confirm(
-          `Delete ${editor.selectedPageIds.length} selected page(s)? You can undo this.`
-        )
+        !(await editor.confirmation.ask({
+          title: `Delete ${pageScope(editor)}?`,
+          message: "Pages and their edits will be removed from this document. You can undo this.",
+          confirmLabel: editor.selectedPageIds.length === 1 ? "Delete page" : "Delete pages",
+          tone: "danger",
+        }))
       )
         return;
       editor.commit(removePages(editor.document, editor.selectedPageIds));

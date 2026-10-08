@@ -20,18 +20,23 @@ export function OfflineStatus() {
     });
     return () => navigator.serviceWorker?.removeEventListener("controllerchange", controlled);
   }, []);
-  const apply = () => {
-    if (
-      editor.document.pages.length &&
-      !window.confirm(
-        "Updating reloads the editor. Download your editing project first to keep movable objects. Reload now?"
+  const apply = () =>
+    editor.task.run("Updating editor", async () => {
+      if (
+        editor.document.pages.length &&
+        !(await editor.confirmation.ask({
+          title: "Update and reload?",
+          message:
+            "Updating reloads the editor. Download an editing project first to keep movable objects and other edits.",
+          confirmLabel: "Update and reload",
+          tone: "primary",
+        }))
       )
-    )
-      return;
-    update
-      .current(true)
-      .catch(() => setError("The update could not load. Your current editor remains available."));
-  };
+        return;
+      await update
+        .current(true)
+        .catch(() => setError("The update could not load. Your current editor remains available."));
+    });
   return (
     <div className={`offline-status ${error || waiting ? "status-notice" : ""}`} role="status">
       {error ? (
@@ -53,7 +58,7 @@ export function OfflineStatus() {
       {waiting && (
         <>
           <span>A new version is ready. Save your editing project before updating.</span>
-          <button onClick={apply}>
+          <button onClick={apply} disabled={!!editor.task.busy}>
             <RefreshCw size={14} aria-hidden="true" /> Update
           </button>
         </>

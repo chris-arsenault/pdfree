@@ -64,6 +64,7 @@ export default tseslint.config(
       ...hooks.configs.recommended.rules,
       ...a11y.configs.recommended.rules,
       "react/react-in-jsx-scope": "off",
+      "no-alert": "error",
       "react/prop-types": "off",
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "react-perf/jsx-no-new-object-as-prop": ["warn", { nativeAllowList: "all" }],

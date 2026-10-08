@@ -5,6 +5,7 @@ import { openFiles, insertImported } from "../services/openFiles";
 import { useTask } from "./useTask";
 import { useEditorUi } from "./useEditorUi";
 import { usePdfPassword } from "./usePdfPassword";
+import { useConfirmation } from "./useConfirmation";
 import { selectedPageIds as selection, updatePlacedObject } from "../core/editorOperations";
 
 export function useEditorState() {
@@ -17,6 +18,7 @@ export function useEditorState() {
   const ui = useEditorUi(),
     password = usePdfPassword(),
     task = useTask(),
+    confirmation = useConfirmation(!!task.busy),
     document = history.present;
   const page = document.pages.find((item) => item.id === ui.activeId) ?? document.pages[0] ?? null;
   const activePageId = page ? page.id : "";
@@ -38,8 +40,13 @@ export function useEditorState() {
       if (!files.length) return;
       const replacing =
         replaceCurrent || files.some((file) => file.name.toLowerCase().endsWith(".pdfree"));
-      if (!allowReplace(replacing, document.pages.length, ui.savedRevision !== history.revision))
-        return;
+      const allowed = await allowReplace(
+        replacing,
+        document.pages.length,
+        ui.savedRevision !== history.revision,
+        confirmation.ask
+      );
+      if (!allowed) return;
       const signal = password.begin();
       const loaded = await openFiles(
         files,
@@ -73,18 +80,23 @@ export function useEditorState() {
     updateObject,
     selectedPageIds,
     password,
+    confirmation,
   };
 }
 function pageIdAt(document: EditorDocument, index: number) {
   return document.pages[index]?.id ?? "";
 }
-function allowReplace(replacing: boolean, pageCount: number, unsaved: boolean) {
-  return (
-    !replacing ||
-    !pageCount ||
-    !unsaved ||
-    window.confirm(
-      "Open a new document? Download an editing project first if you need to keep these edits."
-    )
-  );
+function allowReplace(
+  replacing: boolean,
+  pageCount: number,
+  unsaved: boolean,
+  ask: ReturnType<typeof useConfirmation>["ask"]
+) {
+  if (!replacing || !pageCount || !unsaved) return Promise.resolve(true);
+  return ask({
+    title: "Open a new document?",
+    message: "Download an editing project first if you need to keep these edits.",
+    confirmLabel: "Open document",
+    tone: "primary",
+  });
 }

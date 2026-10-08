@@ -5,6 +5,9 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Replaced browser confirmations for document replacement, page deletion,
+  local-data clearing, unprotected project downloads and application updates
+  with accessible custom dialogs and keyboard-safe cancellation.
 - Reorganized editor tools into stable icon groups with custom keyboard and
   hover tooltips, explicit page-action scope and contextual object properties.
 - Moved page operations beside thumbnails, consolidated routine status, and

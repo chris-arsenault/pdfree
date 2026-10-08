@@ -213,16 +213,14 @@ it("does not place an image prepared in a document that has been replaced", asyn
     new File([blob], "synthetic.png", { type: "image/png" })
   );
   await expect.element(page.getByText("Opening image…", { exact: true })).not.toBeInTheDocument();
-  const confirm = window.confirm;
-  window.confirm = () => true;
-  try {
-    await userEvent.upload(
-      document.querySelector<HTMLInputElement>(".header-actions input")!,
-      new File([bytes], "Second.pdf", { type: "application/pdf" })
-    );
-  } finally {
-    window.confirm = confirm;
-  }
+  await userEvent.upload(
+    document.querySelector<HTMLInputElement>(".header-actions input")!,
+    new File([bytes], "Second.pdf", { type: "application/pdf" })
+  );
+  await page
+    .getByRole("dialog", { name: "Open a new document?", exact: true })
+    .getByRole("button", { name: "Open document", exact: true })
+    .click();
   await expect.element(page.getByText("Second.pdf", { exact: false })).toBeVisible();
   await page.getByRole("region", { name: "PDF page", exact: true }).click({
     position: { x: 100, y: 100 },

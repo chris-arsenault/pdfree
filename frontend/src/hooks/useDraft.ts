@@ -57,9 +57,13 @@ export function useDraft() {
   const discard = () =>
     editor.task.run("Clearing local data", async () => {
       if (
-        !window.confirm(
-          "Clear all stored drafts and remembered signatures from this browser? Other open tabs keep their current documents in memory. Download your project first to keep editable work."
-        )
+        !(await editor.confirmation.ask({
+          title: "Clear local data?",
+          message:
+            "This clears the current document, all stored drafts and remembered signatures from this browser. Other open tabs keep their documents in memory. Download an editing project first to keep your work.",
+          confirmLabel: "Clear local data",
+          tone: "danger",
+        }))
       )
         return;
       editor.replace(emptyDocument());

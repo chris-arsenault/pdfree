@@ -87,10 +87,12 @@ it("retries a wrong opening password, exports edited bytes and excludes credenti
   } finally {
     await pdf.destroy();
   }
-  vi.spyOn(window, "confirm").mockReturnValue(true);
-  const project = await readProject(
-    await editorDownload("Download editing project", "application/octet-stream")
-  );
+  const downloading = editorDownload("Download editing project", "application/octet-stream");
+  await page
+    .getByRole("dialog", { name: "Download an unprotected project?", exact: true })
+    .getByRole("button", { name: "Download project", exact: true })
+    .click();
+  const project = await readProject(await downloading);
   expect(project.sources[0].encryption?.algorithm).toBe("AES-256");
   expect(project.sources[0].decryptedBytes?.length).toBeGreaterThan(0);
   expect(JSON.stringify(project)).not.toMatch(/reader-fixture|owner-fixture|wrong-fixture/);
@@ -111,11 +113,14 @@ it("opens permission-only encryption without prompting and does not autosave dec
 it("cancels opening another encrypted file without replacing the current edited document", async () => {
   root = await openEditor(await formFixture());
   await page.getByRole("textbox", { name: "name", exact: true }).fill("Retained Ada");
-  vi.spyOn(window, "confirm").mockReturnValue(true);
   await userEvent.upload(
     document.querySelector<HTMLInputElement>('.app-header input[type="file"]')!,
     new File([Uint8Array.from(await encryptedFixture())], "locked.pdf", { type: "application/pdf" })
   );
+  await page
+    .getByRole("dialog", { name: "Open a new document?", exact: true })
+    .getByRole("button", { name: "Open document", exact: true })
+    .click();
   await expect.element(page.getByRole("dialog", { name: "Unlock PDF" })).toBeVisible();
   await page
     .getByRole("dialog", { name: "Unlock PDF" })
