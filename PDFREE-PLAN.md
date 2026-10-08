@@ -626,3 +626,28 @@ Terraform resource-creation log supplies the registration evidence.
 PDFree's local `make ci` and production build pass. The standard CI coverage
 command passes 345 unit tests with 90.15% statement and 91.97% line coverage.
 Its first publication follows the successful infrastructure deployment above.
+
+First PDFree commit `d62fe07b7728e8b37b1fd1b3a063caf6772ec4c0` deployed through
+[run 37721396791](https://github.com/chris-arsenault/pdfree/actions/runs/37721396791).
+All five jobs passed. Terraform added 245 resources, changed/destroyed none and
+invoked one invalidation. Distribution: `E15CRNNV76L7FQ`; bucket:
+`pdfree-frontend-559098897826`. Public DNS resolves the hostname and HTTPS serves
+the app, CSP, security headers and correct worker/cache metadata. The workspace
+resolver at `192.168.66.1` still returned ENOTFOUND, so the temporary live browser
+test used the public DNS answer without changing machine or network settings.
+The three-page filled export and signed/encrypted export completed with zero
+page errors and no nonlocal/write requests.
+
+Live Poppler validation exposed missing invisible-signature widgets. Tightening
+the native tests to reject reader syntax diagnostics also exposed dangling
+annotation references after pdf-lib flattened fields. Tracking repairs:
+`92a390b8-0602-4f11-8409-ce1eaecbd5a3` and
+`7ceac250-3aa5-4cfb-913f-d4a458a330b3`. Generated and widgetless existing signature
+fields now receive zero-size widgets linked to their page. Existing merged and
+separate widgets keep their geometry. Flattening removes only captured widget
+references and preserves ordinary comments. The new regressions failed before
+the repairs; all eleven native security checks now reject parser errors and pass.
+Local `make ci` passes 350 unit and 40 browser tests, and the rebuilt production
+bundle passes nine Chromium release checks. The repaired release is published
+through the same standard workflow and requires another live export check.
+Its unit coverage is 90.38% statements, 92.15% lines and 85.25% branches.

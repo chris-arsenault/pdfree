@@ -82,6 +82,12 @@ async function verifyCms(name: string, bytes: Uint8Array) {
   ).rejects.toThrow();
 }
 
+async function verifyPoppler(path: string, password?: string) {
+  const result = await run("pdfsig", ["-nocert", ...(password ? ["-upw", password] : []), path]);
+  expect(result.stdout).toContain("Signature is Valid");
+  expect(result.stderr).not.toMatch(/Syntax Error/i);
+}
+
 it.each([0, 1, 2, 3] as const)(
   "verifies approval/certification policy %s and rejects tampering independently",
   async (policy) => {
@@ -90,7 +96,7 @@ it.each([0, 1, 2, 3] as const)(
       signing: signing(policy),
     });
     await verifyCms(`policy-${policy}`, bytes);
-    expect((await run("pdfsig", ["-nocert", path])).stdout).toContain("Signature is Valid");
+    await verifyPoppler(path);
     const pdf = await PDFDocument.load(bytes);
     expect(pdf.getForm().getTextField("name").getText()).toBe("Signed Ada");
     const perms = pdf.catalog.lookupMaybe(PDFName.of("Perms"), PDFDict);
@@ -129,8 +135,7 @@ it("combines encryption and locked certification without invalidating the signat
     signing: signing(1),
   });
   await verifyCms("encrypted-certified", bytes);
-  const result = await run("pdfsig", ["-nocert", "-upw", "reader-password", path]);
-  expect(result.stdout).toContain("Signature is Valid");
+  await verifyPoppler(path, "reader-password");
   expect((await run("qpdf", ["--password=reader-password", "--check", path])).stdout).toContain(
     "No syntax or stream encoding errors"
   );
@@ -143,7 +148,7 @@ it("verifies ECDSA output independently with OpenSSL and Poppler", async () => {
     signing: { ...signing(2), certificate: ec },
   });
   await verifyCms("ecdsa", bytes);
-  expect((await run("pdfsig", ["-nocert", path])).stdout).toContain("Signature is Valid");
+  await verifyPoppler(path);
 });
 
 it("allows viewing without an opening password while enforcing every reader permission bit", async () => {
@@ -202,6 +207,9 @@ it("reuses an empty signature field and rejects subsequent attempts to rewrite s
     signing: signing(0),
   });
   await verifyCms("existing-field", signed);
+  const path = "test-results/security/existing-field.pdf";
+  await writeFile(path, signed);
+  await verifyPoppler(path);
   const reopened = await PDFDocument.load(signed);
   expect(
     reopened
@@ -231,6 +239,6 @@ it("signs a flattened filled form with the filled appearance intact", async () =
   expect(pdf.getForm().getFields()).toHaveLength(1);
   const path = "test-results/security/flattened.pdf";
   await writeFile(path, signed);
-  expect((await run("pdfsig", ["-nocert", path])).stdout).toContain("Signature is Valid");
+  await verifyPoppler(path);
   expect((await run("pdftotext", [path, "-"])).stdout).toContain("Flattened Ada");
 });

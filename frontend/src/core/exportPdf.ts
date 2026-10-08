@@ -1,4 +1,4 @@
-import { PDFDocument, degrees, PDFName, PDFRadioGroup } from "pdf-lib";
+import { PDFDocument, degrees, PDFName, PDFRadioGroup, PDFRef } from "pdf-lib";
 import { type EditorDocument, type Page, fieldKey } from "./model";
 import { copyPagesWithForms, removeOrphanWidgets } from "./copyForms";
 import { writeValue } from "./nativeFields";
@@ -127,6 +127,26 @@ export async function prepareExport(
     : await composeDocument(document, pages, sourceCache);
   return { pdf, pages };
 }
+function flattenFields(pdf: PDFDocument) {
+  const form = pdf.getForm();
+  const widgets = new Set(
+    form
+      .getFields()
+      .flatMap((field) =>
+        field.acroField.getWidgets().map((widget) => pdf.context.getObjectRef(widget.dict))
+      )
+  );
+  form.flatten();
+  // pdf-lib removes widget dictionaries but leaves some page annotation references.
+  for (const page of pdf.getPages()) {
+    const annotations = page.node.Annots();
+    if (!annotations) continue;
+    for (let index = annotations.size() - 1; index >= 0; index--) {
+      const annotation = annotations.get(index);
+      if (annotation instanceof PDFRef && widgets.has(annotation)) annotations.remove(index);
+    }
+  }
+}
 export async function exportPdf(
   document: EditorDocument,
   flatten = false,
@@ -141,6 +161,6 @@ export async function exportPdf(
   await drawObjects(pdf, pages, document, fonts);
   updateChoiceAppearances(pdf, fonts.sans);
   pdf.getForm().updateFieldAppearances(fonts.sans);
-  if (flatten) pdf.getForm().flatten();
+  if (flatten) flattenFields(pdf);
   return pdf.save();
 }

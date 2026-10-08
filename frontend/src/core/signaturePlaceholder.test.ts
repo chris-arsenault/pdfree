@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { PDFDocument, PDFHexString, PDFName, PDFNull, PDFDict } from "pdf-lib";
+import { PDFDocument, PDFHexString, PDFName, PDFNull, PDFDict, PDFArray } from "pdf-lib";
 import { signaturePlaceholder } from "./signaturePlaceholder";
 import { importPdf } from "./importPdf";
 
@@ -10,6 +10,75 @@ const signing = {
   reason: "Approved",
   location: "Montréal",
 };
+it.each([false, true])(
+  "serializes a page-linked invisible widget for an existing field: %s",
+  async (reuse) => {
+    const pdf = await PDFDocument.create();
+    pdf.addPage();
+    if (reuse) {
+      const field = pdf.context.obj({ FT: "Sig", T: PDFHexString.fromText("Approval") });
+      pdf.getForm().acroForm.addField(pdf.context.register(field));
+    }
+    const saved = await PDFDocument.load(
+      (await signaturePlaceholder(await pdf.save(), signing, "Signer", 1024)).bytes
+    );
+    const field = saved.getForm().getFields()[0];
+    const annotations = saved.getPage(0).node.Annots();
+    expect(annotations?.size()).toBe(1);
+    const widget = annotations!.lookup(0, PDFDict);
+    expect(widget.get(PDFName.of("Subtype"))).toEqual(PDFName.of("Widget"));
+    expect(widget.lookup(PDFName.of("Rect"), PDFArray).asRectangle()).toEqual({
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    });
+    expect(widget.get(PDFName.of("Parent"))).toEqual(field.ref);
+    expect(widget.get(PDFName.of("P"))).toEqual(saved.getPage(0).ref);
+    expect(field.acroField.getWidgets()).toHaveLength(1);
+  }
+);
+it.each([false, true])(
+  "preserves an existing signature widget's page and geometry when merged: %s",
+  async (merged) => {
+    const pdf = await PDFDocument.create();
+    pdf.addPage();
+    const page = pdf.addPage();
+    const field = pdf.context.obj({ FT: "Sig", T: PDFHexString.fromText("Visible approval") });
+    const reference = pdf.context.register(field);
+    const widget = pdf.context.obj({
+      Type: "Annot",
+      Subtype: "Widget",
+      Rect: [40, 50, 140, 80],
+      P: page.ref,
+    });
+    if (merged) {
+      for (const [key, value] of widget.entries()) field.set(key, value);
+      page.node.addAnnot(reference);
+    } else {
+      widget.set(PDFName.of("Parent"), reference);
+      const widgetReference = pdf.context.register(widget);
+      field.set(PDFName.of("Kids"), pdf.context.obj([widgetReference]));
+      page.node.addAnnot(widgetReference);
+    }
+    pdf.getForm().acroForm.addField(reference);
+    const saved = await PDFDocument.load(
+      (await signaturePlaceholder(await pdf.save(), signing, "Signer", 1024)).bytes
+    );
+    expect(saved.getPage(0).node.Annots()?.size() ?? 0).toBe(0);
+    expect(saved.getPage(1).node.Annots()?.size()).toBe(1);
+    const savedField = saved.getForm().getFields()[0];
+    expect(savedField.getName()).toBe("Visible approval");
+    expect(savedField.acroField.getWidgets()).toHaveLength(1);
+    expect(savedField.acroField.getWidgets()[0].getRectangle()).toEqual({
+      x: 40,
+      y: 50,
+      width: 100,
+      height: 30,
+    });
+    expect(savedField.acroField.getWidgets()[0].P()).toEqual(saved.getPage(1).ref);
+  }
+);
 it("accepts explicitly null signature values and preserves their existing field name", async () => {
   const pdf = await PDFDocument.create();
   pdf.addPage();

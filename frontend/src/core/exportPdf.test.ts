@@ -64,6 +64,28 @@ describe("PDF form and page round trips", () => {
     const saved = await PDFDocument.load(await exportPdf(doc, true));
     expect(saved.getForm().getFields()).toHaveLength(0);
     expect(saved.getPageCount()).toBe(3);
+    for (const page of saved.getPages()) expect(page.node.Annots()?.size() ?? 0).toBe(0);
+  });
+  it("preserves non-field annotations when removing flattened widgets", async () => {
+    const original = await PDFDocument.load(await formFixture());
+    const comment = original.context.register(
+      original.context.obj({
+        Type: "Annot",
+        Subtype: "Text",
+        Rect: [10, 10, 30, 30],
+        Contents: "Keep this comment",
+      })
+    );
+    original.getPage(0).node.addAnnot(comment);
+    const doc = appendSource(
+      emptyDocument(),
+      await importPdf(await original.save(), "comment.pdf")
+    );
+    const saved = await PDFDocument.load(await exportPdf(doc, true));
+    const annotations = saved.getPage(0).node.Annots()!;
+    expect(annotations.size()).toBe(1);
+    expect(annotations.lookup(0, PDFDict).get(PDFName.of("Subtype"))).toEqual(PDFName.of("Text"));
+    expect(saved.getForm().getFields()).toHaveLength(0);
   });
 });
 it("creates genuine text, checkbox, radio and dropdown fields with initial values", async () => {

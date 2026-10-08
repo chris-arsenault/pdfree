@@ -1,6 +1,27 @@
-import { PDFDocument, PDFHexString, PDFName, PDFNumber, PDFString } from "pdf-lib";
+import {
+  PDFDocument,
+  PDFHexString,
+  PDFName,
+  PDFNumber,
+  PDFString,
+  PDFArray,
+  PDFDict,
+  PDFRef,
+  PDFWidgetAnnotation,
+} from "pdf-lib";
 import { type PdfSigning } from "./pdfSecurity";
 import { hasCertificateSignature, signatureFields } from "./signedPdf";
+
+function addInvisibleWidget(pdf: PDFDocument, field: PDFDict, reference: PDFRef) {
+  if (field.has(PDFName.of("Subtype")) || field.lookupMaybe(PDFName.of("Kids"), PDFArray)?.size())
+    return;
+  const page = pdf.getPage(0);
+  const widget = PDFWidgetAnnotation.create(pdf.context, reference);
+  widget.setP(page.ref);
+  const widgetReference = pdf.context.register(widget.dict);
+  field.set(PDFName.of("Kids"), pdf.context.obj([widgetReference]));
+  page.node.addAnnot(widgetReference);
+}
 
 function signingField(pdf: PDFDocument, marker: string) {
   const existing = signatureFields(pdf)[0];
@@ -12,13 +33,16 @@ function signingField(pdf: PDFDocument, marker: string) {
       throw new Error(
         "This signature field requires seed values or field locks that PDFree cannot safely honor. Use a copy without those requirements."
       );
+    addInvisibleWidget(pdf, existing.acroField.dict, existing.ref);
     return existing.acroField.dict;
   }
   const field = pdf.context.obj({
     FT: "Sig",
     T: PDFHexString.fromText(`PDFree signature ${marker}`),
   });
-  pdf.getForm().acroForm.addField(pdf.context.register(field));
+  const reference = pdf.context.register(field);
+  pdf.getForm().acroForm.addField(reference);
+  addInvisibleWidget(pdf, field, reference);
   return field;
 }
 

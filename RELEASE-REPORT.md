@@ -1,7 +1,7 @@
 # PDFree release verification
 
-2026-10-08; local Linux verification with synthetic documents. No user documents
-were uploaded. No deployed-hostname or macOS/iOS Safari claim is made.
+2026-10-08; Linux and deployed-hostname verification with synthetic documents.
+No user documents were uploaded. Real macOS/iOS Safari remains unverified.
 
 The application fills native fields and static/scanned forms, places visible
 signatures and initials, signs/certifies with local certificates, exports AES-256
@@ -14,9 +14,9 @@ codecs, security worker and service worker. Installation caches about 9.8 MiB of
 
 - Strict TypeScript and shared Ahara ESLint pass with zero warnings.
 - `make ci` and the shared CI-style unit coverage run pass. Core unit coverage
-  measures 90.15% statements, 91.97% lines and 85.02% branches; browser checks add behavioral
+  measures 90.38% statements, 92.15% lines and 85.25% branches; browser checks add behavioral
   evidence separately and are not included in those coverage percentages.
-- 345 unit tests exercise actual saved PDFs, field/widget copying, identical names
+- 350 unit tests exercise actual saved PDFs, field/widget copying, identical names
   across merged sources, flattening, authored fields, project validation,
   coordinate/history/resize/range contracts, unsupported units, XFA and signature
   rejection, signature/certificate/password validation, worker cancellation and
@@ -189,3 +189,35 @@ lifecycle review found that cancellation must start before font/PDF preparation;
 closing the dialog now prevents a security worker or download from starting even
 when preparation completes later. Test setup failures and the lifecycle repair
 are recorded separately from the independent cryptographic checks.
+
+## Deployment verification and reader diagnostics
+
+Ahara registration deployed before PDFree publication. Infrastructure run
+[37720545759](https://github.com/chris-arsenault/ahara-infra/actions/runs/37720545759)
+and initial PDFree run
+[37721396791](https://github.com/chris-arsenault/pdfree/actions/runs/37721396791)
+passed. The latter includes all three browser engines, native security verifiers,
+standard unit coverage, Terraform deployment and platform reporting.
+
+At `https://pdf.ahara.io`, a temporary Chromium check opened a synthetic PDF,
+filled its field, downloaded the three-page result and downloaded a combined
+locked certification/AES-256 export. The original form value survived export;
+the browser recorded no page errors and no document/credential upload requests.
+qpdf verified AESv3 encryption and Poppler validated the complete signature.
+Public DNS resolved the hostname while this workspace's configured resolver still
+returned ENOTFOUND. The browser check used the public answer for that hostname;
+no machine DNS or network settings changed. HTTPS also confirmed CSP, immutable
+worker caching, no-cache service-worker delivery and JavaScript worker MIME type.
+
+The first live signature produced Poppler widget syntax diagnostics despite
+valid cryptographic bytes. Native tests had checked signature validity without
+rejecting stderr diagnostics. They now reject syntax errors for RSA/ECDSA,
+every certification policy, encrypted signing, reused fields and flattened forms.
+The stricter gate also caught pdf-lib leaving annotation references to deleted
+widgets after flattening. Both defects are repaired: zero-size signature widgets
+have page/parent relationships, existing widget geometry stays intact, and
+flattening removes only the known widget references while preserving comments.
+The new widget-linkage/flattened-annotation assertions and tightened native checks
+failed on the original code and pass after repair. Five added unit cases also
+cover preserved geometry and comments. Local CI, eleven native verifiers and nine Chromium
+production checks pass; the repaired release follows the standard deployment.
