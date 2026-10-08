@@ -1,5 +1,6 @@
 import { newId, type EditorDocument, type Page } from "./model";
 import { duplicateComments } from "./comments";
+import { pruneNavigation } from "./bookmarks";
 
 export function rotatePages(document: EditorDocument, ids: string[], angle = 90) {
   return {
@@ -12,18 +13,24 @@ export function rotatePages(document: EditorDocument, ids: string[], angle = 90)
 export function removePages(document: EditorDocument, ids: string[]) {
   const pages = document.pages.filter((page) => !ids.includes(page.id));
   if (!pages.length) throw new Error("Keep at least one page, or open a new document.");
-  return { ...document, pages };
+  return pruneNavigation({ ...document, pages });
 }
 export function duplicatePages(document: EditorDocument, ids: string[]) {
+  const copies = new Map<string, string>();
+  ids.forEach((id) => copies.set(id, newId()));
   return {
     ...document,
+    rules: (document.rules ?? []).map((rule) => ({
+      ...rule,
+      pageIds: rule.pageIds.flatMap((id) => (copies.has(id) ? [id, copies.get(id)!] : [id])),
+    })),
     pages: document.pages.flatMap((page) =>
       ids.includes(page.id)
         ? [
             page,
             {
               ...page,
-              id: newId(),
+              id: copies.get(page.id)!,
               comments: duplicateComments(page.comments),
               objects: page.objects.map((object) => ({
                 ...object,
@@ -58,6 +65,9 @@ export function insertBlank(document: EditorDocument, afterId: string) {
     box: { ...box, x: 0, y: 0 },
     objects: [],
     comments: [],
+    recognition: null,
+    scan: null,
+    links: [],
   };
   const pages = [...document.pages];
   pages.splice(index + 1, 0, page);

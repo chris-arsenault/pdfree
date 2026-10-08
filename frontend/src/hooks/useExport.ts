@@ -5,17 +5,18 @@ import { filePicker, saveDirect } from "../services/fileSave";
 import { pageImages } from "../services/pageImages";
 import { printPdf } from "../services/print";
 import { type SecuritySettings } from "../core/securitySettings";
-import { useExportPdf } from "./useExportPdf";
+import { useExportPdf, type ExportProcessing } from "./useExportPdf";
 import { hasEncryptedSources } from "../core/model";
 export function useExport(
   name: string,
   selected: boolean,
   flatten: boolean,
-  security: SecuritySettings
+  security: SecuritySettings,
+  processing: ExportProcessing = {}
 ) {
   const editor = useEditor(),
     pageIds = selected ? editor.selectedPageIds : [];
-  const pdfBytes = useExportPdf(pageIds, flatten, security);
+  const pdfBytes = useExportPdf(pageIds, flatten, security, processing);
   const saveProject = () =>
     editor.task.run("Saving editing project", async () => {
       if (
@@ -45,7 +46,8 @@ export function useExport(
         types: [{ description: "PDF document", accept: { "application/pdf": [".pdf"] } }],
       });
       await saveDirect(handle, await pdfBytes());
-      if (!selected) editor.setSavedRevision(editor.history.revision);
+      if (!selected && (!processing.nup || processing.nup.count === 1))
+        editor.setSavedRevision(editor.history.revision);
       editor.setDialog("");
     });
   const images = () =>
@@ -66,7 +68,8 @@ export function useExport(
           name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`,
           "application/pdf"
         );
-      if (!selected && !print) editor.setSavedRevision(editor.history.revision);
+      if (!selected && !print && (!processing.nup || processing.nup.count === 1))
+        editor.setSavedRevision(editor.history.revision);
       editor.setDialog("");
     });
   return { saveProject, direct, images, exportFile };

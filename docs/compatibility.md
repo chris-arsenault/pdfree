@@ -26,9 +26,12 @@ New protected exports use AES-256 with passwords or selected recipient certifica
 Complete exports containing every page from a single original source exactly
 once preserve its catalog structures, including when pages are reordered.
 Extraction, duplication, insertion and merging use the composition path. That
-path rejects referenced sources with bookmarks, named destinations/attachments,
-tagged accessibility structures, comment relationships across pages or internal page links that it cannot safely
+path remaps supported outline hierarchies and named/explicit internal destinations.
+It rejects referenced sources with unsupported navigation, attachments,
+tagged accessibility structures or comment relationships across pages that it cannot safely
 remap. Export the complete original document or use a compatible source.
+Styled or structure-linked outlines retain their original catalog and are not
+editable in PDFree. Supported editing preserves hierarchy and destination details.
 Unused sources do not block an export.
 
 ### Limitations
@@ -43,26 +46,47 @@ Bundled fonts cover Latin/Greek/Cyrillic. Missing glyphs and overflowing added
 text produce errors rather than silent substitution or clipping. New fields
 accept quarter-turn object angles; new radio groups require zero object rotation.
 Their pages can still rotate. Visible cover shapes are not content-removing
-redaction. Image-only scans have no searchable text layer supplied by PDFree.
+redaction. English OCR adds searchable/selectable invisible text to scans; recognition
+accuracy and reading order require review. Pages already containing PDF text are
+skipped. OCR does not provide handwriting guarantees, paragraph editing or PDF/UA.
+
+Scan image processing supports a single upright direct image with optional OCR
+text, 8-bit DeviceRGB/DeviceGray, JPEG or plain/Flate samples without masks or
+predictors. Cleanup rejects mixed vector layouts, nested forms, rotated image
+placements and unsafe annotation geometry. Crop hides content and is not redaction.
+Deskew supports whole-page destinations, numeric XYZ positions and numeric FitR
+regions; other positioned destinations must first become whole-page bookmarks.
+Compression retains unsupported image resources and reports targets it cannot
+reach; it never rasterizes entire pages to reduce size.
+
+N-up provides 2/4/6 pages per sheet on Letter/A4/Legal paper. This explicit print
+derivative flattens fields and bakes supported annotation appearances, retaining
+vector/text page content. Interactive fields, comment threads and navigation are
+absent from the derivative. An annotation without a supported visible appearance
+blocks N-up; links and popup windows do not produce print marks.
 
 ## Resource boundaries
 
-| Boundary                         | Value                                                      | Source                                  |
-| -------------------------------- | ---------------------------------------------------------- | --------------------------------------- |
-| PDF/project name                 | 255 characters                                             | `editorValidation.ts`                   |
-| Project archive                  | 256 MiB                                                    | `projectLimits.ts`                      |
-| Expanded project                 | 512 MiB                                                    | `projectLimits.ts`                      |
-| Project manifest                 | 8 MiB                                                      | `projectLimits.ts`                      |
-| ZIP entries                      | 2,001                                                      | `projectLimits.ts`                      |
-| Project source PDFs / assets     | 1,000 each                                                 | `projectSchema.ts`                      |
-| Project pages / objects per page | 10,000 each                                                | `projectSchema.ts`                      |
-| Comments per page / comment text | 10,000 / 100,000 characters                                | `projectSchema.ts`, `importComments.ts` |
-| Main viewer canvas longest edge  | 4,096 pixels                                               | `rasterBudget.ts`                       |
-| PNG export                       | 108 dpi; 8,192 pixels per edge; 33,554,432 pixels per page | `rasterBudget.ts`                       |
-| PNG archive image data           | 128 MiB                                                    | `rasterBudget.ts`                       |
-| PKCS#12 identity                 | 2 MiB                                                      | `pdfSecurity.ts`                        |
-| Opening/owner password           | 127 UTF-8 bytes each                                       | `pdfSecurity.ts`                        |
-| Export recipient certificates    | 1–32, each up to 2 MiB                                     | `pdfSecurity.ts`                        |
+| Boundary                         | Value                                                      | Source                                      |
+| -------------------------------- | ---------------------------------------------------------- | ------------------------------------------- |
+| PDF/project name                 | 255 characters                                             | `editorValidation.ts`                       |
+| Project archive                  | 256 MiB                                                    | `projectLimits.ts`                          |
+| Expanded project                 | 512 MiB                                                    | `projectLimits.ts`                          |
+| Project manifest                 | 8 MiB                                                      | `projectLimits.ts`                          |
+| ZIP entries                      | 2,001                                                      | `projectLimits.ts`                          |
+| Project source PDFs / assets     | 1,000 each                                                 | `projectSchema.ts`                          |
+| Project pages / objects per page | 10,000 each                                                | `projectSchema.ts`                          |
+| Comments per page / comment text | 10,000 / 100,000 characters                                | `projectSchema.ts`, `importComments.ts`     |
+| Main viewer canvas longest edge  | 4,096 pixels                                               | `rasterBudget.ts`                           |
+| PNG export                       | 108 dpi; 8,192 pixels per edge; 33,554,432 pixels per page | `rasterBudget.ts`                           |
+| PNG archive image data           | 128 MiB                                                    | `rasterBudget.ts`                           |
+| PKCS#12 identity                 | 2 MiB                                                      | `pdfSecurity.ts`                            |
+| Opening/owner password           | 127 UTF-8 bytes each                                       | `pdfSecurity.ts`                            |
+| Export recipient certificates    | 1–32, each up to 2 MiB                                     | `pdfSecurity.ts`                            |
+| OCR raster                       | 4,096 pixels per edge; 12 Mi pixels; up to 216 dpi         | `services/ocr.ts`                           |
+| Processed scan image             | 8,192 pixels per edge; 32 Mi pixels                        | `core/pdfImages.ts`                         |
+| Utility batch output             | 128 MiB, sequential file processing                        | `services/batchUtilities.ts`                |
+| Bookmark hierarchy               | 50 levels                                                  | `core/utilityModel.ts`, `core/bookmarks.ts` |
 
 Core sources are under `frontend/src/core/`; raster budgets are under
 `frontend/src/services/`. Save and import enforce project budgets and validate

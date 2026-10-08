@@ -5,6 +5,13 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Added browser-local English OCR, supported-image compression with size preview,
+  scan crop/deskew/contrast/background cleanup and editable native bookmarks.
+- Added durable numbering/Bates labels, watermarks and stamps, sequential multi-PDF
+  processing and 2/4/6-up vector print derivatives with baked appearances.
+- Added isolated document tabs with separate undo, selection, clipboard and local
+  recovery. Version-4 projects and revision-5 drafts retain utility state.
+
 - Added native PDF notes and replies with page markers and a compact Comments
   panel. Edit, delete, undo and reopen comments while preserving incoming authors,
   dates, markup and reply links. Comments persist in version-3 projects and local

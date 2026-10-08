@@ -1,4 +1,4 @@
-import { Plus, Redo2, Undo2 } from "lucide-react";
+import { Plus, Redo2, Undo2, Wrench, ScanText, ScanLine, ListOrdered, Files } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { type Tool } from "../core/model";
 import { tools } from "./toolDefinitions";
@@ -19,6 +19,7 @@ export function Toolbar() {
   return (
     <div className="toolbar" role="toolbar" aria-label="Editing tools">
       <HistoryButtons />
+      <UtilityTools />
       <div className="desktop-tools">
         {["select", "fill", "sign", "annotate", "field"].map((group) => (
           <div className="tool-group" key={group}>
@@ -38,32 +39,85 @@ export function Toolbar() {
           </div>
         ))}
       </div>
-      <div className="mobile-tools">
-        {tools
-          .filter((tool) => ["select", "text", "signature"].includes(tool.id))
-          .map((tool) => (
-            <IconButton
-              key={tool.id}
-              label={tool.label}
-              icon={tool.icon}
-              detail={tool.hint}
-              aria-pressed={editor.tool === tool.id}
-              className={editor.tool === tool.id ? "active" : ""}
-              onClick={() => select(tool.id)}
-            />
-          ))}
-        <ActionPopover label="Add" icon={Plus}>
-          {(close) => (
-            <ToolChoices
-              select={(tool) => {
-                select(tool);
-                close();
-              }}
-            />
-          )}
-        </ActionPopover>
-      </div>
+      <MobileTools select={select} />
       <span className="active-tool">{tools.find((tool) => tool.id === editor.tool)?.label}</span>
+    </div>
+  );
+}
+function UtilityTools() {
+  const editor = useEditor();
+  return (
+    <ActionPopover label="Tools" icon={Wrench}>
+      {(close) => (
+        <>
+          <button
+            onClick={() => {
+              editor.setDialog("ocr");
+              close();
+            }}
+          >
+            <ScanText size={17} aria-hidden="true" />
+            Recognize text
+          </button>
+          <button
+            onClick={() => {
+              editor.setDialog("cleanup");
+              close();
+            }}
+          >
+            <ScanLine size={17} aria-hidden="true" />
+            Clean up scans
+          </button>
+          <button
+            onClick={() => {
+              editor.setDialog("repeat");
+              close();
+            }}
+          >
+            <ListOrdered size={17} aria-hidden="true" />
+            Repeat across pages
+          </button>
+          <button
+            onClick={() => {
+              editor.setDialog("batch");
+              close();
+            }}
+          >
+            <Files size={17} aria-hidden="true" />
+            Process multiple PDFs
+          </button>
+        </>
+      )}
+    </ActionPopover>
+  );
+}
+function MobileTools({ select }: { select: (tool: Tool) => void }) {
+  const editor = useEditor();
+  return (
+    <div className="mobile-tools">
+      {tools
+        .filter((tool) => ["select", "text", "signature"].includes(tool.id))
+        .map((tool) => (
+          <IconButton
+            key={tool.id}
+            label={tool.label}
+            icon={tool.icon}
+            detail={tool.hint}
+            aria-pressed={editor.tool === tool.id}
+            className={editor.tool === tool.id ? "active" : ""}
+            onClick={() => select(tool.id)}
+          />
+        ))}
+      <ActionPopover label="Add" icon={Plus}>
+        {(close) => (
+          <ToolChoices
+            select={(tool) => {
+              select(tool);
+              close();
+            }}
+          />
+        )}
+      </ActionPopover>
     </div>
   );
 }

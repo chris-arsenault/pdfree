@@ -1,9 +1,24 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import { newId, type PlacedObject, type Tool } from "../core/model";
 import { useCommentUi } from "./useCommentUi";
+import { emptyClipboard } from "../core/editorOperations";
 export type DialogName =
-  "" | "signature" | "initials" | "split" | "export" | "help" | "properties" | "library";
-export function useEditorUi() {
+  | ""
+  | "signature"
+  | "initials"
+  | "split"
+  | "export"
+  | "help"
+  | "properties"
+  | "library"
+  | "ocr"
+  | "cleanup"
+  | "repeat"
+  | "batch"
+  | "bookmarks";
+// eslint-disable-next-line max-lines-per-function -- Session UI state shares one reset boundary; keep these independent state primitives together.
+export function useEditorUi(initialDraftId?: string) {
+  const clipboard = useRef(emptyClipboard());
   const [activeId, setActiveId] = useState("");
   const [pageIds, setPageIds] = useState<string[]>([]);
   const [objectIds, updateObjectIds] = useState<string[]>([]);
@@ -18,7 +33,7 @@ export function useEditorUi() {
   const [savedRevision, setSavedRevision] = useState(-1);
   const [exportSelected, setExportSelected] = useState(false);
   const [documentEpoch, setDocumentEpoch] = useState(0);
-  const [draftId, setDraftId] = useState<string>(newId);
+  const [draftId, setDraftId] = useState<string>(() => initialDraftId ?? newId());
   const setObjectIds = useCallback(
     (ids: string[]) => {
       updateObjectIds(ids);
@@ -45,8 +60,10 @@ export function useEditorUi() {
     setPagesOpen(window.matchMedia("(min-width: 761px)").matches);
     setDocumentEpoch((epoch) => epoch + 1);
     setDraftId(newId());
+    clipboard.current = emptyClipboard();
   }, [setObjectIds, setTool, resetComments]);
   return {
+    clipboard,
     activeId,
     setActiveId,
     pageIds,

@@ -14,6 +14,7 @@ import { hasCertificateSignature } from "./signedPdf";
 import { unlockPdf } from "./unlockPdf";
 import { type PdfCredential } from "./pdfCredentials";
 import { readComments } from "./importComments";
+import { readNavigation } from "./bookmarks";
 
 function validateControls(pdf: PDFDocument) {
   if (pdf.catalog.lookupMaybe(PDFName.of("AcroForm"), PDFDict)?.has(PDFName.of("XFA")))
@@ -117,8 +118,30 @@ export async function importPdf(bytes: Uint8Array, name: string, credential?: Pd
     box: visiblePageBox(page),
     objects: [],
     comments: comments.pages[sourceIndex],
+    recognition: null,
+    scan: null,
+    links: [],
   }));
-  return { source, pages };
+  let bookmarks: ReturnType<typeof readNavigation> = [];
+  try {
+    bookmarks = readNavigation(pdf, pages);
+    source.structuralWarnings = source.structuralWarnings.filter(
+      (warning) => !["document bookmarks", "internal page links"].includes(warning)
+    );
+    const names = pdf.catalog.lookupMaybe(PDFName.of("Names"), PDFDict);
+    if (names && names.keys().every((key) => key.toString() === "/Dests"))
+      source.structuralWarnings = source.structuralWarnings.filter(
+        (warning) => warning !== "named destinations or attachments"
+      );
+  } catch {
+    source.warnings.push(
+      "Some bookmarks or internal destinations are unsupported; navigation editing is unavailable for this source."
+    );
+    pages.forEach((page) => {
+      page.links = [];
+    });
+  }
+  return { source, pages, bookmarks };
 }
 export function appendSource(
   document: EditorDocument,
@@ -133,5 +156,6 @@ export function appendSource(
     sources: [...document.sources, imported.source],
     pages: [...document.pages, ...imported.pages],
     values,
+    bookmarks: [...(document.bookmarks ?? []), ...(imported.bookmarks ?? [])],
   };
 }

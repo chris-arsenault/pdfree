@@ -15,6 +15,10 @@ certification and AES-256 password or recipient-certificate protection. Encrypte
 inputs open with an opening/owner password or a local recipient `.p12`/`.pfx`
 identity. Permission-only PDFs with an empty opening password open automatically.
 
+Recognize English scanned text, clean up supported scans, compress images, edit
+bookmarks and apply numbering, watermarks or stamps. Process multiple PDFs and
+prepare 2/4/6-up print copies. Document tabs keep each file's edits and undo separate.
+
 See the [user guide](docs/user-guide.md) and
 [signing and protection guide](docs/security.md) for workflows and boundaries.
 
@@ -70,5 +74,5 @@ registration, state, headers and the authorized manual deployment path.
 
 ## License
 
-[MIT](LICENSE). Bundled font, PDF.js and cryptographic dependency licenses are
+[MIT](LICENSE). Bundled font, PDF.js, OCR and cryptographic dependency licenses are
 included in the application assets.

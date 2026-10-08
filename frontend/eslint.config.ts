@@ -20,6 +20,7 @@ export default tseslint.config(
       "node_modules/**",
       "test-results/**",
       "public/pdfjs/**",
+      "public/ocr/**",
       "src/__screenshots__/**",
     ],
   },

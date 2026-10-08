@@ -3,7 +3,7 @@ import { useEditor } from "../hooks/editorContext";
 import { searchDocument, documentOutline, type NavigationItem } from "../services/navigation";
 import { selectedHighlights } from "../core/selectionHighlights";
 import { replaceObjects } from "../core/objectOperations";
-import { Bookmark, Search, TextSelect, X } from "lucide-react";
+import { Bookmark, Search, TextSelect, X, Pencil } from "lucide-react";
 import { IconButton } from "./ui/IconButton";
 import { PageNavigation } from "./PageNavigation";
 import { PanelToggle } from "./PanelToggle";
@@ -84,6 +84,14 @@ function NavigationResults({ results, close }: { results: NavigationItem[]; clos
   const editor = useEditor();
   return (
     <div className="navigation-results">
+      <IconButton
+        label="Edit bookmarks"
+        icon={Pencil}
+        onClick={() => {
+          close();
+          editor.setDialog("bookmarks");
+        }}
+      />
       <IconButton label="Close results" icon={X} onClick={close} />
       {results.length ? (
         results.map((result, index) => (

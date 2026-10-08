@@ -30,6 +30,11 @@ revision 4. Store comment identities, source annotation indices, page anchors,
 metadata and reply parents explicitly. Empty arrays retain deletions across
 recovery; older manifests/drafts derive missing records from immutable sources.
 
+Document utilities extend new manifests to version 4 and drafts to revision 5.
+Store recognition boxes, processed scan assets/parameters, internal destinations,
+bookmark hierarchy and page rules explicitly. Document sessions own independent
+history and draft identities; remember saved open IDs and the active ID for reload.
+
 Retain the existing PWA asset cache and explicit update prompt. Browser-only
 processing is the required boundary; offline operation is a retained capability,
 not an interpretation that adds requirements to all future features.

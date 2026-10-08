@@ -87,6 +87,41 @@ export type Page = {
   box: { x: number; y: number; width: number; height: number };
   objects: PlacedObject[];
   comments: PdfComment[];
+  recognition?: Recognition | null;
+  scan?: ScanAdjustment | null;
+  links?: PageLink[];
+};
+export type TextWord = Point & { width: number; height: number; text: string; confidence: number };
+export type Recognition = { engine: "tesseract-7"; language: "eng"; words: TextWord[] };
+export type ScanAdjustment = {
+  assetId: string;
+  angle: number;
+  contrast: number;
+  background: number;
+};
+export type Destination = {
+  pageId: string;
+  mode: "XYZ" | "Fit" | "FitH" | "FitV" | "FitR" | "FitB" | "FitBH" | "FitBV";
+  coordinates: (number | null)[];
+};
+export type Bookmark = {
+  id: string;
+  parentId: string | null;
+  title: string;
+  destination: Destination;
+};
+export type PageLink = { annotationIndex: number; destination: Destination };
+export type PageRule = {
+  id: string;
+  kind: "number" | "watermark" | "stamp";
+  pageIds: string[];
+  text: string;
+  start: number;
+  padding: number;
+  position: "top" | "center" | "bottom";
+  fontSize: number;
+  color: string;
+  opacity: number;
 };
 export type Asset = { id: string; name: string; data: Uint8Array; mime: string };
 export type EditorDocument = {
@@ -97,6 +132,8 @@ export type EditorDocument = {
   values: Record<string, FieldValue>;
   assets: Asset[];
   allowDecryptedDrafts: boolean;
+  bookmarks?: Bookmark[];
+  rules?: PageRule[];
 };
 export const sourceBytes = (source: Source) => source.decryptedBytes ?? source.bytes;
 export const hasEncryptedSources = (document: EditorDocument) =>
@@ -112,6 +149,8 @@ export const emptyDocument = (): EditorDocument => ({
   values: {},
   assets: [],
   allowDecryptedDrafts: false,
+  bookmarks: [],
+  rules: [],
 });
 export const fieldKey = (sourceId: string, name: string) => `${sourceId}:${name}`;
 export const defaultObject = (kind: PlacedObject["kind"], point: Point): PlacedObject => ({

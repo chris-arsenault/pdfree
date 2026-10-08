@@ -1,6 +1,7 @@
 @import url("./editor.css");
 @import url("./controls.css");
 @import url("./comments.css");
+@import url("./utilities.css");
 @font-face {
   font-family: "Noto Sans";
   font-style: normal;

@@ -8,13 +8,22 @@ import { filePicker } from "../services/fileSave";
 import { defaultSecuritySettings, hasSecurity } from "../core/securitySettings";
 import { ExportSecurity } from "./ExportSecurity";
 import { hasEncryptedSources } from "../core/model";
+import { type CompressionOptions } from "../core/compressPdf";
+import { CompressionControls } from "./CompressionControls";
+import { defaultNup } from "../core/nupPdf";
+import { NupControls } from "./NupControls";
 export function ExportDialog() {
   const editor = useEditor(),
     [flatten, setFlatten] = useState(false),
     [selected, setSelected] = useState(editor.exportSelected);
   const [security, setSecurity] = useState(defaultSecuritySettings);
+  const [compression, setCompression] = useState<CompressionOptions>({
+    preset: "original",
+    targetBytes: 0,
+  });
+  const [nup, setNup] = useState(defaultNup);
   const [name, setName] = useState(editor.document.name),
-    actions = useExport(name, selected, flatten, security);
+    actions = useExport(name, selected, flatten, security, { compression, nup });
   const close = useCloseDialog();
   return (
     <Modal title="Export your document" onClose={close}>
@@ -48,12 +57,14 @@ export function ExportDialog() {
         project to continue moving added objects.
       </p>
       <RequiredFields />
-      {hasEncryptedSources(editor.document) && (
-        <p className="inline-warning">
-          This document was encrypted. Enable protection below to encrypt the new PDF. Editing
-          projects, images, print and Split downloads contain decrypted content.
-        </p>
-      )}
+      <CompressionControls
+        options={compression}
+        onChange={setCompression}
+        selected={selected}
+        flatten={flatten}
+      />
+      <NupControls options={nup} onChange={setNup} selected={selected} />
+      <ProtectionNotice />
       <ExportSecurity value={security} onChange={setSecurity} disabled={!!editor.task.busy} />
       <OtherFormats actions={actions} />
       <div className="modal-actions">
@@ -74,6 +85,15 @@ export function ExportDialog() {
       </div>
     </Modal>
   );
+}
+function ProtectionNotice() {
+  const editor = useEditor();
+  return hasEncryptedSources(editor.document) ? (
+    <p className="inline-warning">
+      This document was encrypted. Enable protection below to encrypt the new PDF. Editing projects,
+      images, print and Split downloads contain decrypted content.
+    </p>
+  ) : null;
 }
 function OtherFormats({ actions }: { actions: ReturnType<typeof useExport> }) {
   const editor = useEditor();

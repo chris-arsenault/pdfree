@@ -40,7 +40,6 @@ it("recovers editable native values and a typed signature from the local draft",
   root.unmount();
   root = createRoot(host);
   root.render(createElement(App));
-  await page.getByRole("button", { name: "Recover draft" }).click();
   await expect
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Draft value");

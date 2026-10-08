@@ -37,7 +37,8 @@ Application asset caching and updates are described in
 | Member                 | Contract                                                                                                                    |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `sources`              | Stable IDs, immutable original PDF bytes, nullable decrypted working bytes/encryption metadata, derived fields and warnings |
-| `pages`                | Stable page IDs, source ID/index, quarter-turn rotation, visible page box, placed objects and comment records               |
+| `pages`                | Stable page IDs, source ID/index, rotation, visible box, objects, comments, OCR words, scan adjustments and internal links  |
+| `bookmarks` / `rules`  | Native outline hierarchy with stable destinations; dynamic numbering, watermarks and stamps scoped to page IDs              |
 | `values`               | Native values keyed by source ID and field name, distinct from displayed choice labels                                      |
 | `assets`               | Stable asset IDs and local PNG/JPEG bytes referenced by placed objects                                                      |
 | `name`                 | Validated output/project name                                                                                               |
@@ -70,12 +71,12 @@ editing. It derives field/widget relationships and reports scripted-field and
 catalog-composition warnings. `nativeFields.ts` and choice helpers preserve
 labels, export values, flags and repeated widgets.
 
-PDF.js renders original page backgrounds with native fields and added objects
+PDF.js renders original or locally prepared scan backgrounds with native fields and added objects
 overlaid by the editor. A separate rendering copy omits Text annotation icons;
 the existing PDF worker prepares that copy and the comment marker layer supplies
 its interactive replacements. Other native
 markup appearances remain rendered by PDF.js. Source bytes stay immutable.
-Text selection/search use the original text layer plus
+Text selection/search use the original text layer, recognized words and
 entered text. Page and thumbnail windows bound mounted canvases; raster budgets
 bound allocations. Viewers, canvases and temporary object URLs are released as
 documents change. [Compatibility](compatibility.md) defines the limits.
@@ -122,6 +123,8 @@ screenshots. See [ADR 0003](adr/0003-pdf-engines-and-preservation.md).
 
 ## Secured export
 
+The utility pipeline completes compression and N-up before entering this stage.
+
 The ordinary writer finishes its PDF first. `useExportPdf.ts` establishes
 cancellation before credential/font/PDF preparation. `securityClient.ts` then
 transfers export bytes and certificate bytes into one dedicated security worker.
@@ -155,9 +158,10 @@ credential boundaries; [ADR 0005](adr/0005-secured-export-pipeline.md) records r
 ## Durable projects and local recovery
 
 The `.pdfree` format is a ZIP with `manifest.json`, `sources/<index>.pdf` and
-`assets/<index>.png` or `.jpg`. New projects use manifest version 3 with explicit
-page comment records, including empty arrays for deleted threads. Version 1 and 2
-projects remain readable and derive comments from their original PDFs. Encrypted
+`assets/<index>.png` or `.jpg`. New projects use manifest version 4 with explicit
+comments, recognition, scan adjustments, links, bookmarks and repeated rules.
+Versions 1–3 remain readable; missing source-derived comments and navigation are
+migrated without replacing current saved crop geometry. Encrypted
 documents include `working/<index>.pdf` entries and encryption metadata. All
 supported manifests decode to editing model version 1. Original
 ciphertext remains in `sources/`; working entries are unprotected and contain no
@@ -169,7 +173,7 @@ geometry, unique identities, references and archive budgets on save/open.
 Unknown project versions fail explicitly. See [ADR 0004](adr/0004-projects-drafts-and-retained-pwa.md).
 
 IndexedDB stores local library documents under `pdfree-draft-v2:` with write revisions,
-model revision 4 and generation tokens. Opening a replacement creates a separate
+model revision 5 and generation tokens. Opening another document creates a separate
 entry; reopening a saved document updates its existing entry. Each tab remembers
 its active entry for reload recovery. Concurrent saves of the same entry retain
 both working copies by assigning a new ID to the conflicting writer.
@@ -185,6 +189,37 @@ and local events notify open tabs of deletion; matching open documents remain in
 memory and resume autosaving after the next edit. Remembered signature changes are atomic
 IndexedDB updates. Browser storage remains evictable; portable projects provide
 the explicit backup path.
+
+## Document utilities and sessions
+
+OCR renders bounded page images, skips pages with existing text and runs English
+recognition in a disposable outer worker owning a Tesseract.js 7 worker. Engine
+variants and language data ship as same-origin PWA assets. Stable-page word boxes
+are stored in PDF coordinates and exported as invisible Unicode text. Cancellation
+terminates the worker tree; recognition never replaces source content.
+
+Cleanup stores a processed image asset and crop/deskew parameters. Rendering and
+export prepare copies with private image resource dictionaries, keeping other
+pages sharing the original image unchanged. Mixed layouts and annotation geometry
+that cannot safely follow deskew are rejected. Compression traverses supported
+image resources, including nested forms, and keeps the smaller complete output.
+Both operations preserve original source bytes.
+
+Supported outlines and internal destinations import into durable records and map
+to actual output references on composition. Removed targets prune bookmarks and
+clear link actions. Repeated page rules derive their text from current page order;
+empty scope means all pages, while explicit scope follows stable IDs. Sequential
+multi-file processing retains per-file errors and bounded successful downloads.
+
+N-up embeds cropped/rotated pages as vectors on separate print sheets, baking
+supported visible annotation appearances after field flattening. Its output omits
+interactive fields, threads and navigation. Compression and N-up run before
+signing/encryption; they do not modify the editing document.
+
+Each document session owns history, selection, clipboard, dialogs, tasks and draft
+identity. Inactive sessions keep autosave mounted; only the active session mounts
+viewers. Session storage remembers saved document IDs and the active ID for reload.
+Encrypted sessions retain the existing document-level decrypted-draft consent.
 
 ## Source ownership
 

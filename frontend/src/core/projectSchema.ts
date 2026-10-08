@@ -1,5 +1,12 @@
 import { z } from "zod";
 import { editorLimits } from "./editorValidation";
+import {
+  bookmarkSchema,
+  ruleSchema,
+  recognitionSchema,
+  scanSchema,
+  linkSchema,
+} from "./utilityModel";
 const number = z.number().finite().min(-100_000).max(100_000);
 const point = z.object({ x: number, y: number });
 const fieldKind = z.enum(["text", "checkbox", "radio", "dropdown", "list"]);
@@ -41,7 +48,9 @@ export const placedObjectSchema = z.object({
 });
 export const projectSchema = z
   .object({
-    version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+    bookmarks: z.array(bookmarkSchema).max(10_000).optional(),
+    rules: z.array(ruleSchema).max(1000).optional(),
     allowDecryptedDrafts: z.boolean().default(false),
     name: z
       .string()
@@ -97,6 +106,9 @@ export const projectSchema = z
             height: number.positive(),
           }),
           objects: z.array(placedObjectSchema).max(10_000),
+          recognition: recognitionSchema.nullable().optional(),
+          scan: scanSchema.nullable().optional(),
+          links: z.array(linkSchema).max(10_000).optional(),
           comments: z
             .array(
               z.object({
@@ -129,4 +141,15 @@ export const projectSchema = z
   .refine(
     (manifest) => manifest.version < 3 || manifest.pages.every((page) => !!page.comments),
     "Version 3 projects require comment records."
+  )
+  .refine(
+    (manifest) =>
+      manifest.version < 4 ||
+      (manifest.bookmarks !== undefined &&
+        manifest.rules !== undefined &&
+        manifest.pages.every(
+          (page) =>
+            page.recognition !== undefined && page.scan !== undefined && page.links !== undefined
+        )),
+    "Version 4 projects require explicit utility records."
   );

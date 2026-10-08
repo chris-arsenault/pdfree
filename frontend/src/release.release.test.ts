@@ -95,7 +95,7 @@ it("uses the production CSP, remains offline, downloads editable projects and fi
   const archive = await downloadBytes(await projectDownload);
   expect((await readProject(archive)).pages).toHaveLength(3);
   await page.reload();
-  await page.getByRole("button", { name: "Recover draft" }).click();
+  await page.getByRole("textbox", { name: "name", exact: true }).waitFor();
   expect(await page.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(
     "Offline Ada"
   );

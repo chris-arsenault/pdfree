@@ -26,6 +26,7 @@ export default defineConfig({
       "pkijs",
       "asn1js",
       "node-forge",
+      "tesseract.js",
     ],
   },
   test: {

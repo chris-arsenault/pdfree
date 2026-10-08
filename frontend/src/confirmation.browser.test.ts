@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { type Root } from "react-dom/client";
 import { page, userEvent } from "vitest/browser";
-import { openEditor } from "../tooling/editorHarness";
+import { openEditor, selectDocument } from "../tooling/editorHarness";
 import { formFixture } from "./core/fixtures";
 import { encryptedFixture } from "../tooling/encryptedFixture";
 import { deleteDraft, loadDraft, loadDrafts, saveDraft, draftSession } from "./services/drafts";
@@ -56,21 +56,28 @@ it("cancels page deletion with Enter or Escape and deletes only after explicit c
   await expect.element(page.getByText("PAGE 1 OF 3", { exact: true })).toBeVisible();
 });
 
-it("keeps edits when canceling replacement and can open the same file after confirmation", async () => {
+it("keeps edits in document tabs and cancels closing an edited document", async () => {
   const bytes = Uint8Array.from(await formFixture());
   root = await openEditor(bytes, "Original.pdf");
   await page.getByRole("textbox", { name: "name", exact: true }).fill("Keep this edit");
   const input = document.querySelector<HTMLInputElement>(".header-actions input")!;
   const next = new File([bytes], "Replacement.pdf", { type: "application/pdf" });
-  const dialog = page.getByRole("dialog", { name: "Open a new document?", exact: true });
   await userEvent.upload(input, next);
+  await expect
+    .element(page.getByRole("textbox", { name: "name", exact: true }))
+    .toHaveValue("Original");
+  await selectDocument("Original.pdf");
+  const dialog = page.getByRole("dialog", { name: "Close Original.pdf?", exact: true });
+  await page.getByRole("button", { name: "Close Original.pdf", exact: true }).click();
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await expect
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Keep this edit");
-  await userEvent.upload(input, next);
-  await dialog.getByRole("button", { name: "Open document", exact: true }).click();
-  await expect.element(page.getByText("Replacement.pdf", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Close Original.pdf", exact: true }).click();
+  await dialog.getByRole("button", { name: "Close document", exact: true }).click();
+  await expect
+    .element(page.getByRole("button", { name: "Close Replacement.pdf", exact: true }))
+    .toBeVisible();
   await expect
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Original");

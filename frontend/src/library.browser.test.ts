@@ -20,7 +20,7 @@ afterEach(async () => {
   await clearSignatures();
 });
 
-it("retains documents across replacement, cancels reopening, and updates the reopened entry without duplicates", async () => {
+it("retains documents in tabs and focuses their library entries without duplicates", async () => {
   const bytes = Uint8Array.from(await formFixture());
   root = await openEditor(bytes, "First.pdf");
   await page.getByRole("textbox", { name: "name", exact: true }).fill("First edit");
@@ -34,11 +34,9 @@ it("retains documents across replacement, cancels reopening, and updates the reo
     document.querySelector<HTMLInputElement>(".header-actions input")!,
     new File([bytes], "Second.pdf", { type: "application/pdf" })
   );
-  await page
-    .getByRole("dialog", { name: "Open a new document?" })
-    .getByRole("button", { name: "Open document", exact: true })
-    .click();
-  await expect.element(page.getByText("Second.pdf", { exact: true })).toBeVisible();
+  await expect
+    .element(page.getByRole("button", { name: "Close Second.pdf", exact: true }))
+    .toBeVisible();
   await expect
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Original");
@@ -56,12 +54,7 @@ it("retains documents across replacement, cancels reopening, and updates the reo
   expect(await loadDrafts()).toHaveLength(2);
   await page.getByRole("button", { name: "Library", exact: true }).click();
   const open = page.getByRole("button", { name: "Open First.pdf", exact: true });
-  const confirmation = page.getByRole("dialog", { name: "Open a saved document?" });
   await open.click();
-  await confirmation.getByRole("button", { name: "Cancel" }).click();
-  await expect.element(open).toHaveFocus();
-  await open.click();
-  await confirmation.getByRole("button", { name: "Open document", exact: true }).click();
   await expect
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("First edit");
@@ -74,6 +67,7 @@ it("retains documents across replacement, cancels reopening, and updates the reo
     )
     .toContain("Reopened edit");
   expect(await loadDrafts()).toHaveLength(2);
+  expect(document.querySelectorAll(".document-tab")).toHaveLength(2);
   const pdf = await localPdf(await editorDownload("Download PDF", "application/pdf"));
   try {
     expect(pdf.numPages).toBe(3);

@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { sourcePdf } from "../services/viewer";
+import { useEffect, useRef, useState } from "react";
+import { sourcePage } from "../services/viewer";
+import { usePageBackground } from "../hooks/usePageBackground";
 import { type Page, type Source } from "../core/model";
 import { viewerRasterRatio } from "../services/rasterBudget";
+import { displaySize } from "../core/coordinates";
 
 export function PageCanvas({
   page,
@@ -15,23 +17,16 @@ export function PageCanvas({
   thumbnail: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const { background, assets } = usePageBackground(page);
   const [error, setError] = useState("");
-  const { sourceIndex, rotation, box } = page;
-  const { x, y, width, height } = box;
-  const geometry = useMemo(
-    () => ({ sourceIndex, rotation, x, y, width, height }),
-    [sourceIndex, rotation, x, y, width, height]
-  );
   useEffect(() => {
     let cancelled = false;
     let task: { cancel: () => void } | null = null;
+    let release = () => {};
     const render = async () => {
       const canvas = ref.current;
       if (!canvas) return;
-      const dimensions =
-        geometry.rotation % 180 === 0
-          ? { width: geometry.width, height: geometry.height }
-          : { width: geometry.height, height: geometry.width };
+      const dimensions = displaySize(background);
       const desired = thumbnail ? 1 : Math.min(window.devicePixelRatio, 2);
       const ratio = viewerRasterRatio(dimensions.width, dimensions.height, scale, desired);
       canvas.width = Math.ceil(dimensions.width * scale * ratio);
@@ -45,10 +40,17 @@ export function PageCanvas({
         setError("");
         return;
       }
-      const pdf = await sourcePdf(source);
-      const original = await pdf.getPage(geometry.sourceIndex + 1);
-      if (cancelled) return;
-      const viewport = original.getViewport({ scale: scale * ratio, rotation: geometry.rotation });
+      const view = await sourcePage(source, background, assets),
+        original = view.page;
+      release = view.release;
+      if (cancelled) {
+        release();
+        return;
+      }
+      const viewport = original.getViewport({
+        scale: scale * ratio,
+        rotation: background.rotation,
+      });
       const rendering = original.render({ canvas, viewport, annotationMode: thumbnail ? 1 : 2 });
       task = rendering;
       await rendering.promise;
@@ -60,8 +62,9 @@ export function PageCanvas({
     return () => {
       cancelled = true;
       task?.cancel();
+      release();
     };
-  }, [geometry, source, scale, thumbnail]);
+  }, [source, scale, thumbnail, background, assets]);
   return (
     <>
       <canvas

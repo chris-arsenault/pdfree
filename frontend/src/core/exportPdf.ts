@@ -7,6 +7,11 @@ import { addAuthoredFields } from "./authoredFields";
 import { validateText } from "./textValidation";
 import { updateChoiceAppearances } from "./choiceFields";
 import { writeComments } from "./exportComments";
+import { writeNavigation } from "./bookmarks";
+import { applyScan } from "./scanCleanup";
+import { writeRecognition } from "./recognition";
+import { writeRules } from "./pageRules";
+import { visiblePageBox } from "./visiblePage";
 
 export function canPreserveCatalog(document: EditorDocument, pages: Page[]) {
   const source = preservedSource(document, pages);
@@ -125,6 +130,17 @@ export async function prepareExport(
   const pdf = canPreserveCatalog(document, pages)
     ? await preserveDocument(document, pages)
     : await composeDocument(document, pages, sourceCache);
+  writeNavigation(pdf, document, pages);
+  pages.forEach((page, index) => {
+    const target = pdf.getPage(index),
+      original = visiblePageBox(target);
+    if (
+      Object.keys(original).some(
+        (key) => original[key as keyof typeof original] !== page.box[key as keyof typeof original]
+      )
+    )
+      target.setCropBox(page.box.x, page.box.y, page.box.width, page.box.height);
+  });
   writeComments(pdf, pages);
   removeOrphanWidgets(pdf);
   return { pdf, pages };
@@ -158,9 +174,12 @@ export async function exportPdf(
 ) {
   const { pdf, pages } = await prepareExport(document, selectedIds, sourceCache);
   const fonts = await embedFonts(pdf, fontData);
+  for (const [index, page] of pages.entries()) await applyScan(pdf, index, page, document);
   validateText(document, pages, fonts);
   addAuthoredFields(pdf, pages, fonts);
   await drawObjects(pdf, pages, document, fonts);
+  writeRecognition(pdf, pages, fonts);
+  writeRules(pdf, document, pages, fonts);
   updateChoiceAppearances(pdf, fonts.sans);
   pdf.getForm().updateFieldAppearances(fonts.sans);
   if (flatten) flattenFields(pdf);

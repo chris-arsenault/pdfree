@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useContext,
   useRef,
   useState,
   type Dispatch,
@@ -18,9 +19,17 @@ import {
 } from "../services/drafts";
 import { type EditorDocument, canSaveDraft } from "../core/model";
 import { releaseViewers } from "../services/viewer";
+import { SessionContext } from "./sessionContext";
+import { DraftContext } from "./draftContext";
 
 export function useDraft() {
+  const draft = useContext(DraftContext);
+  if (!draft) throw new Error("The document draft provider is missing.");
+  return draft;
+}
+export function useDraftState(active = true) {
   const editor = useEditor();
+  const sessions = useContext(SessionContext);
   const [recoveries, setRecoveries] = useState<Draft[]>([]),
     [status, setStatus] = useState("");
   const { document: doc, history, savedRevision } = editor;
@@ -31,7 +40,8 @@ export function useDraft() {
     editor.documentEpoch,
     setStatus,
     setRecoveries,
-    editor.setDraftId
+    editor.setDraftId,
+    active
   );
   useEffect(() => {
     let cancelled = false;
@@ -58,10 +68,18 @@ export function useDraft() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [doc.pages.length, savedRevision, history.revision]);
   useEffect(() => {
+    if (!active) return;
     releaseViewers(doc.sources.map((source) => source.id));
-  }, [doc.sources]);
+  }, [doc.sources, active]);
   const restore = (draft: Draft) =>
     editor.task.run("Opening saved document", async () => {
+      if (sessions) {
+        const saved = (await loadDrafts()).find((item) => item.id === draft.id);
+        if (!saved) throw new Error("This saved document was deleted.");
+        editor.setDialog("");
+        sessions.openDocument(saved.document, saved.id);
+        return;
+      }
       if (
         doc.pages.length &&
         editor.savedRevision !== editor.history.revision &&
@@ -83,13 +101,15 @@ export function useDraft() {
   return { recoveries, status, restore };
 }
 
+// eslint-disable-next-line max-lines-per-function -- The queued save and generation/consent checks share this session lifecycle.
 function useDraftSync(
   doc: EditorDocument,
   { id, opened }: { id: string; opened: RefObject<{ id: string; revision: string } | null> },
   epoch: number,
   setStatus: Dispatch<SetStateAction<string>>,
   setRecoveries: Dispatch<SetStateAction<Draft[]>>,
-  setDraftId: Dispatch<SetStateAction<string>>
+  setDraftId: Dispatch<SetStateAction<string>>,
+  active: boolean
 ) {
   const writes = useRef<Promise<void>>(Promise.resolve());
   const session = useRef<Promise<DraftSession> | null>(null);
@@ -103,9 +123,11 @@ function useDraftSync(
       id,
       opened.current?.id === id ? opened.current.revision : undefined
     );
-    activeDraft(id);
     paused.current = null;
   }, [id, epoch, opened]);
+  useEffect(() => {
+    if (active) activeDraft(id);
+  }, [active, id]);
   useEffect(
     () =>
       onDraftsRemoved((removed) => {

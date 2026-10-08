@@ -183,3 +183,37 @@ it.each(["R2-empty.pdf", "pubsec-256.pdf"])(
     }
   }
 );
+it("signs and encrypts the completed N-up print derivative", async () => {
+  const context = await browser.newContext(),
+    page = await context.newPage();
+  try {
+    await setupExport(page, "signer.p12");
+    await page.getByText("Pages per printed sheet", { exact: true }).click();
+    await page.getByRole("combobox", { name: "Pages per sheet", exact: true }).selectOption("2");
+    const ready = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download PDF", exact: true }).click();
+    const bytes = new Uint8Array(await readFile((await (await ready).path())!));
+    expect(verifyDownloadedSignature(bytes)).toBe(true);
+    const pdf = await getDocument({
+      data: bytes,
+      password: "reader-password",
+      standardFontDataUrl: `${resolve("public/pdfjs/standard_fonts")}/`,
+    }).promise;
+    try {
+      expect(pdf.numPages).toBe(2);
+      const text = await (await pdf.getPage(1)).getTextContent();
+      expect(text.items.map((item) => ("str" in item ? item.str : "")).join(" ")).toContain(
+        "Production Ada"
+      );
+      expect(
+        (await (await pdf.getPage(1)).getAnnotations()).filter(
+          (annotation) => annotation.fieldName === "name"
+        )
+      ).toEqual([]);
+    } finally {
+      await pdf.destroy();
+    }
+  } finally {
+    await context.close();
+  }
+});

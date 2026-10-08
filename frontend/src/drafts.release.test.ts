@@ -40,13 +40,13 @@ it("keeps two tabs drafts separate across reload and deletes only the selected l
     await fillDraft(first, "First.pdf", "First tab");
     await fillDraft(second, "Second.pdf", "Second tab");
     await first.reload();
-    await first.getByRole("button", { name: "Recover draft", exact: true }).click();
+    await first.getByRole("textbox", { name: "name", exact: true }).waitFor();
     expect(await first.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(
       "First tab"
     );
     await first.getByText("Draft saved on this device", { exact: true }).waitFor();
     await second.reload();
-    await second.getByRole("button", { name: "Recover draft", exact: true }).click();
+    await second.getByRole("textbox", { name: "name", exact: true }).waitFor();
     expect(await second.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(
       "Second tab"
     );
@@ -77,7 +77,7 @@ it("keeps two tabs drafts separate across reload and deletes only the selected l
     await second.getByText("Saving draft…", { exact: true }).waitFor();
     await second.getByText("Draft saved on this device", { exact: true }).waitFor();
     await second.reload();
-    await second.getByRole("button", { name: "Recover draft", exact: true }).click();
+    await second.getByRole("textbox", { name: "name", exact: true }).waitFor();
     expect(await second.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(
       "Second continued"
     );

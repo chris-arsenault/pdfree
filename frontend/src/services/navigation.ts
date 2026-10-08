@@ -1,5 +1,6 @@
 import { type EditorDocument } from "../core/model";
 import { sourcePdf } from "./viewer";
+import { pageRules, ruleText } from "../core/pageRules";
 type OutlineNode = { title: string; dest: unknown; items: OutlineNode[] };
 export type NavigationItem = { title: string; pageId: string };
 export async function searchDocument(document: EditorDocument, query: string) {
@@ -7,7 +8,11 @@ export async function searchDocument(document: EditorDocument, query: string) {
     needle = query.toLocaleLowerCase();
   for (const page of document.pages) {
     const source = document.sources.find((item) => item.id === page.sourceId);
-    let text = page.objects.map((object) => object.text).join(" ");
+    let text = [
+      ...page.objects.map((object) => object.text),
+      ...(page.recognition?.words.map((word) => word.text) ?? []),
+      ...pageRules(document, page).map((rule) => ruleText(document, page, rule)),
+    ].join(" ");
     if (source) {
       const content = await (
         await (await sourcePdf(source)).getPage(page.sourceIndex + 1)
@@ -36,6 +41,24 @@ function flattenOutline(nodes: OutlineNode[], depth = 0): { title: string; dest:
   ]);
 }
 export async function documentOutline(document: EditorDocument) {
+  const unsupported = document.sources.some(
+    (source) =>
+      source.structuralWarnings.includes("document bookmarks") &&
+      document.pages.some((page) => page.sourceId === source.id)
+  );
+  if (document.bookmarks !== undefined && !unsupported) {
+    const list = (parentId: string | null, depth = 0): NavigationItem[] =>
+      (document.bookmarks ?? [])
+        .filter((bookmark) => bookmark.parentId === parentId)
+        .flatMap((bookmark) => [
+          {
+            title: `${"  ".repeat(Math.min(depth, 10))}${bookmark.title}`,
+            pageId: bookmark.destination.pageId,
+          },
+          ...list(bookmark.id, depth + 1),
+        ]);
+    return list(null);
+  }
   const result: NavigationItem[] = [];
   for (const source of document.sources) {
     const pdf = await sourcePdf(source),

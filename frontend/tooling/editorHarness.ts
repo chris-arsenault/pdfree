@@ -6,6 +6,7 @@ import App from "../src/App";
 import "../src/styles.css";
 
 export async function openEditor(bytes: Uint8Array, name = "test.pdf") {
+  sessionStorage.removeItem("pdfree-open-documents");
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
@@ -22,6 +23,13 @@ export async function openEditor(bytes: Uint8Array, name = "test.pdf") {
     root.unmount();
     throw error;
   }
+}
+export async function selectDocument(name: string) {
+  const button = [
+    ...document.querySelectorAll<HTMLButtonElement>(".document-tab > button:first-child"),
+  ].find((button) => button.textContent?.includes(name));
+  if (!button) throw new Error(`No open document named ${name}.`);
+  await userEvent.click(button);
 }
 
 export async function editorDownload(

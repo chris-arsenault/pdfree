@@ -4,6 +4,7 @@ import { appendSource, importPdf } from "./importPdf";
 import { emptyDocument } from "./model";
 import { insertBlank } from "./pageOperations";
 import { writeProject, readProject } from "./projects";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 it("uses the CropBox intersection with MediaBox for editing and inserted blank pages", async () => {
   const pdf = await PDFDocument.create();
@@ -25,7 +26,11 @@ it("repairs source-derived geometry from older projects without moving PDF-coord
   const doc = appendSource(emptyDocument(), await importPdf(await pdf.save(), "old.pdf"));
   doc.pages[0].box = { x: -50, y: -100, width: 500, height: 650 };
   const snapshot = structuredClone(doc);
-  const restored = await readProject(writeProject(doc));
+  const files = unzipSync(writeProject(doc));
+  const manifest = JSON.parse(strFromU8(files["manifest.json"]));
+  manifest.version = 3;
+  files["manifest.json"] = strToU8(JSON.stringify(manifest));
+  const restored = await readProject(zipSync(files));
   expect(restored.pages[0].box).toEqual({ x: 0, y: 0, width: 450, height: 550 });
   expect(restored.pages[0].id).toBe(doc.pages[0].id);
   expect(restored.sources[0].bytes).toEqual(doc.sources[0].bytes);

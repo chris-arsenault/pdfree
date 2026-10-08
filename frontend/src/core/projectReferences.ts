@@ -7,8 +7,10 @@ import {
 } from "./model";
 import { objectRotationError } from "./editorValidation";
 import { validateCommentThreads } from "./comments";
+import { validateUtilities } from "./utilityModel";
 
 export function validateProjectReferences(document: EditorDocument) {
+  validateUtilities(document);
   if (document.sources.some((source) => !!source.encryption !== !!source.decryptedBytes))
     throw new Error("Encrypted sources need their original and decrypted working bytes.");
   const items = [

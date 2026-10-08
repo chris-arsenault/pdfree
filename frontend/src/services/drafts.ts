@@ -1,10 +1,11 @@
 import { createStore, entries, get, promisifyRequest } from "idb-keyval";
 import { newId, type EditorDocument, canSaveDraft } from "../core/model";
 import { refreshSources } from "../core/refreshSources";
+import { normalizeUtilities } from "../core/utilityModel";
 
 export type Draft = {
   version: 1;
-  modelRevision: 4;
+  modelRevision: 5;
   id: string;
   revision: string;
   document: EditorDocument;
@@ -67,7 +68,7 @@ export async function loadDrafts(): Promise<Draft[]> {
       )
       .map(async ([key, draft]) => ({
         ...draft,
-        modelRevision: 4 as const,
+        modelRevision: 5 as const,
         document: await migrateDraft(draft),
         id: key === legacyKey ? "legacy" : key.slice(prefix.length),
         revision: typeof draft.revision === "string" ? draft.revision : "",
@@ -82,17 +83,25 @@ export async function loadDrafts(): Promise<Draft[]> {
 
 export const loadDraft = async () => (await loadDrafts())[0] ?? null;
 async function migrateDraft(draft: Draft) {
-  if (draft.modelRevision >= 4) return normalizeDraft(draft.document);
-  const refreshed = await refreshSources(draft.document.sources, draft.document.pages);
+  if (draft.modelRevision >= 5) return normalizeDraft(draft.document);
+  const refreshed = await refreshSources(
+    draft.document.sources,
+    draft.document.pages,
+    draft.modelRevision >= 2
+  );
   if (draft.modelRevision >= 2)
     refreshed.pages = refreshed.pages.map((page, index) => ({
       ...page,
       box: draft.document.pages[index].box,
     }));
-  return normalizeDraft({ ...draft.document, ...refreshed });
+  return normalizeDraft({
+    ...draft.document,
+    ...refreshed,
+    bookmarks: draft.document.bookmarks ?? refreshed.bookmarks,
+  });
 }
 function normalizeDraft(document: EditorDocument): EditorDocument {
-  return {
+  return normalizeUtilities({
     ...document,
     allowDecryptedDrafts: document.allowDecryptedDrafts === true,
     sources: document.sources.map((source) => ({
@@ -100,7 +109,7 @@ function normalizeDraft(document: EditorDocument): EditorDocument {
       decryptedBytes: source.decryptedBytes ?? null,
       encryption: source.encryption ?? null,
     })),
-  };
+  });
 }
 
 export async function saveDraft(
@@ -134,7 +143,7 @@ export async function saveDraft(
       objects.put(
         {
           version: 1,
-          modelRevision: 4,
+          modelRevision: 5,
           id: next.id,
           revision: next.revision,
           document,

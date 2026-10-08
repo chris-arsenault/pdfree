@@ -3,5 +3,6 @@ coverage
 node_modules
 pnpm-lock.yaml
 public/pdfjs
+public/ocr
 src/__screenshots__
 test-results

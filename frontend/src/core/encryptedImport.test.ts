@@ -81,7 +81,7 @@ describe.each(encryptionAlgorithms)("%s encrypted input", (algorithm) => {
   );
 });
 
-it("preserves encrypted originals and decrypted working sources in version-3 projects without credentials", async () => {
+it("preserves encrypted originals and decrypted working sources in version-4 projects without credentials", async () => {
   let doc = appendSource(
     emptyDocument(),
     await importPdf(await encryptedFixture(), "locked.pdf", "reader-fixture")
@@ -90,7 +90,7 @@ it("preserves encrypted originals and decrypted working sources in version-3 pro
   doc = duplicatePages(doc, [doc.pages[0].id]);
   const archive = writeProject(doc),
     files = unzipSync(archive);
-  expect(JSON.parse(strFromU8(files["manifest.json"])).version).toBe(3);
+  expect(JSON.parse(strFromU8(files["manifest.json"])).version).toBe(4);
   const restored = await readProject(archive);
   expect(restored.pages).toEqual(doc.pages);
   expect(restored.values).toEqual(doc.values);

@@ -16,6 +16,8 @@ import {
 import App from "./App";
 import { formFixture } from "./core/fixtures";
 import { DraftStatus } from "./components/DraftStatus";
+import { useDraftState } from "./hooks/useDraft";
+import { DraftContext } from "./hooks/draftContext";
 
 let root: Root | null = null;
 let finishTask: (() => void) | null = null;
@@ -24,7 +26,7 @@ function BusyProbe() {
   return createElement(
     EditorContext.Provider,
     { value: editor },
-    createElement(DraftStatus),
+    createElement(BusyDraft),
     createElement(
       "button",
       {
@@ -40,6 +42,10 @@ function BusyProbe() {
       "Block"
     )
   );
+}
+function BusyDraft() {
+  const draft = useDraftState();
+  return createElement(DraftContext.Provider, { value: draft }, createElement(DraftStatus));
 }
 function documentFixture(name = "First.pdf"): EditorDocument {
   return {
@@ -215,11 +221,9 @@ it("does not place an image prepared in a document that has been replaced", asyn
     document.querySelector<HTMLInputElement>(".header-actions input")!,
     new File([bytes], "Second.pdf", { type: "application/pdf" })
   );
-  await page
-    .getByRole("dialog", { name: "Open a new document?", exact: true })
-    .getByRole("button", { name: "Open document", exact: true })
-    .click();
-  await expect.element(page.getByText("Second.pdf", { exact: false })).toBeVisible();
+  await expect
+    .element(page.getByRole("button", { name: "Close Second.pdf", exact: true }))
+    .toBeVisible();
   await page.getByRole("region", { name: "PDF page", exact: true }).click({
     position: { x: 100, y: 100 },
   });

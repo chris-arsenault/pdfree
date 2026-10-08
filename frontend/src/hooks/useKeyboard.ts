@@ -1,11 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useEditor } from "./editorContext";
 import { moveObjects, removeObjects } from "../core/objectOperations";
 import {
   canCopyObjects,
   copyObjects,
   pasteObjects,
-  emptyClipboard,
   type ObjectClipboard,
 } from "../core/editorOperations";
 type Editor = ReturnType<typeof useEditor>;
@@ -79,11 +78,7 @@ function handleObjects(editor: Editor, event: KeyboardEvent) {
 }
 export function useKeyboard() {
   const editor = useEditor(),
-    clipboard = useRef<ObjectClipboard>(emptyClipboard());
-  const epoch = editor.documentEpoch;
-  useEffect(() => {
-    clipboard.current = emptyClipboard();
-  }, [epoch]);
+    clipboard = editor.clipboard;
   useEffect(() => {
     const handle = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
@@ -107,5 +102,5 @@ export function useKeyboard() {
     };
     window.addEventListener("keydown", handle);
     return () => window.removeEventListener("keydown", handle);
-  }, [editor]);
+  }, [editor, clipboard]);
 }

@@ -25,7 +25,7 @@ it("recovers legacy choice descriptors and visible boxes without changing edits 
   const snapshot = { version: 1, revision: "old-revision", document: doc, savedAt: 123 };
   await set("pdfree-draft-v1", snapshot);
   const [draft] = await loadDrafts();
-  expect(draft.modelRevision).toBe(4);
+  expect(draft.modelRevision).toBe(5);
   expect(draft.id).toBe("legacy");
   expect(draft.revision).toBe("old-revision");
   expect(draft.document.pages[0].box).toEqual({ x: 0, y: 0, width: 450, height: 550 });
@@ -75,7 +75,7 @@ it("recovers comments from revision 3 drafts while retaining page identities and
   };
   await set("pdfree-draft-v2:prior-notes", snapshot);
   const [draft] = await loadDrafts();
-  expect(draft.modelRevision).toBe(4);
+  expect(draft.modelRevision).toBe(5);
   expect(draft.document.pages[0].id).toBe(pageId);
   expect(draft.document.pages[0].box).toEqual(doc.pages[0].box);
   expect(draft.document.pages[0].comments.map((comment) => comment.text)).toContain(

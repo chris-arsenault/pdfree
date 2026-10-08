@@ -117,16 +117,12 @@ it("cancels opening another encrypted file without replacing the current edited 
     document.querySelector<HTMLInputElement>('.app-header input[type="file"]')!,
     new File([Uint8Array.from(await encryptedFixture())], "locked.pdf", { type: "application/pdf" })
   );
-  await page
-    .getByRole("dialog", { name: "Open a new document?", exact: true })
-    .getByRole("button", { name: "Open document", exact: true })
-    .click();
   await expect.element(page.getByRole("dialog", { name: "Unlock PDF" })).toBeVisible();
   await page
     .getByRole("dialog", { name: "Unlock PDF" })
     .getByRole("button", { name: "Cancel opening", exact: true })
     .click();
-  await expect.element(page.getByRole("alert")).toHaveTextContent("current document is unchanged");
+  await expect.element(page.getByRole("dialog", { name: "Unlock PDF" })).not.toBeInTheDocument();
   await expect
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Retained Ada");
@@ -159,7 +155,6 @@ it("requires decrypted-draft consent, preserves recovery and excludes the openin
   document.body.append(host);
   root = createRoot(host);
   root.render(createElement(App));
-  await page.getByRole("button", { name: "Recover draft", exact: true }).click();
   await expect
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Recovered encrypted Ada");

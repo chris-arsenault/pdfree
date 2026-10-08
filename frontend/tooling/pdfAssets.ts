@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, readdirSync } from "node:fs";
+import { cpSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 export function copyPdfAssets() {
@@ -19,6 +19,30 @@ export function copyPdfAssets() {
     join(target, "Caveat-OFL.txt")
   );
   copySecurityLicenses(target);
+  copyOcrAssets();
+}
+
+function copyOcrAssets() {
+  const require = createRequire(import.meta.url);
+  const engine = dirname(require.resolve("tesseract.js/package.json"));
+  const core = dirname(
+    createRequire(join(engine, "package.json")).resolve("tesseract.js-core/package.json")
+  );
+  const language = dirname(require.resolve("@tesseract.js-data/eng/package.json"));
+  const target = join(process.cwd(), "public", "ocr");
+  rmSync(target, { recursive: true, force: true });
+  mkdirSync(join(target, "core"), { recursive: true });
+  mkdirSync(join(target, "lang"), { recursive: true });
+  cpSync(join(engine, "dist/worker.min.js"), join(target, "worker.min.js"));
+  cpSync(join(engine, "LICENSE.md"), join(target, "LICENSE_TESSERACT.txt"));
+  for (const name of readdirSync(core))
+    if (/^tesseract-core(?:-simd|-relaxedsimd)?-lstm\.wasm\.js$/.test(name))
+      cpSync(join(core, name), join(target, "core", name));
+  cpSync(join(core, "LICENSE"), join(target, "LICENSE_CORE.txt"));
+  cpSync(
+    join(language, "4.0.0_best_int/eng.traineddata.gz"),
+    join(target, "lang/eng.traineddata.gz")
+  );
 }
 
 function copySecurityLicenses(target: string) {

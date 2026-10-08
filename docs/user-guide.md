@@ -41,9 +41,39 @@ text for text highlights where a text layer exists. Covering content with shapes
 does not remove it. Use the Field tool to author genuine fillable fields; configure
 their names, options, required flags and tab order in the inspector.
 
-Search includes existing PDF text and entered text. Image-only scans require
-manual navigation. Zoom, fit width/page, thumbnails, page jump and available
+Search includes existing PDF text, recognized words, entered text and repeated labels.
+Zoom, fit width/page, thumbnails, page jump and available
 document outlines navigate the document.
+
+Open another document with the plus icon beside the document tabs. Each document
+keeps its own edits, undo, selection and clipboard. Closing an edited document asks
+for confirmation; saved library entries remain available.
+
+## Scan and repeated tools
+
+Tools opens Recognize text, Clean up scans, Repeat across pages and Process multiple
+PDFs. Recognition and cleanup default to the current page selection; repeated
+rules default to all pages. Recognition starts with English and adds searchable/selectable text
+without changing the scanned image. Existing PDF text is skipped. Review recognition
+accuracy; Remove recognition and Undo leave the source image intact.
+
+Clean up scans offers crop, deskew, contrast and background cleanup, with a preview
+of the first selected page before applying one undoable edit. Reset settings and
+apply the preview to restore source geometry/appearance. Unsupported mixed layouts
+and annotations that cannot safely rotate produce an explicit error. Crop hides
+content; it does not remove sensitive data.
+
+Repeat across pages adds numbering/Bates prefixes, watermarks or stamps. Numbering
+follows the current page order; selected scopes follow page identities, including
+duplicates. Process multiple PDFs applies numbering, OCR or compression sequentially,
+reports errors per file and downloads successful PDFs individually or as ZIP.
+Password/certificate prompts are not supported in this batch flow; open protected
+documents individually.
+
+Edit bookmarks in the Pages outline control. Add the current page, rename, choose
+a target/parent, reorder by drag or arrow buttons and save. Deleted targets remove
+their bookmarks and disable incoming internal links. Duplicates keep existing
+bookmarks targeting the original page.
 
 ## Comments
 
@@ -102,6 +132,13 @@ a PDF export reopen as PDF page content, not movable PDFree objects. Save a
 certificate signing nor tamper protection.
 
 The Export dialog can also [sign, certify or protect its PDF output](security.md).
+PDF size and quality offers supported-image compression and an actual byte-size
+preview. Unsupported image resources keep their quality; a target size is not a
+promise. Pages per printed sheet creates a separate 2/4/6-up PDF with paper,
+orientation, ordering and margin controls. Review its first-sheet preview and print
+at actual size. It bakes field/comment appearances but omits interactive fields,
+threads and navigation. Keep an ordinary PDF or editing project for those features.
+
 Those settings apply to PDF download and direct PDF save only; projects, drafts,
 PNGs, print and Split outputs are unprotected.
 
@@ -115,7 +152,8 @@ it requires no PDF password. Keep these projects private.
 Documents autosave in this browser. Open Library in the bottom status strip to
 view saved documents, reopen one or delete it individually. Opening a replacement
 keeps previously saved documents in the library; reopening updates the same entry.
-Recovery is offered after reload. Download an editing project for durable backup
+Saved open documents and the active tab restore after reload. Library also offers
+other saved documents. Download an editing project for durable backup
 because browsers can evict stored data.
 
 Decrypted documents do not autosave by default. In Document details, explicitly
@@ -133,7 +171,7 @@ offline indicator opens application-cache status. Storage failures, encrypted-in
 draft notices and update prompts remain visible in the strip.
 
 The retained PWA caches application assets. After “Ready to work offline,”
-editing and downloads can run without an origin connection. Updates prompt
+editing, English OCR and downloads can run without an origin connection. Updates prompt
 before reloading; save an editing project before accepting the update.
 
 Opening a replacement or saved document, deleting pages or a saved document, downloading

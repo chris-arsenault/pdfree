@@ -10,6 +10,7 @@ function getWorker() {
   worker.onmessage = (event: MessageEvent<{ id: string; result: unknown; error: string }>) => {
     const task = pending.get(event.data.id);
     if (!task) return;
+    if ("progress" in event.data) return;
     pending.delete(event.data.id);
     if (event.data.error) task.reject(new Error(event.data.error));
     else task.resolve(event.data.result);
@@ -25,6 +26,50 @@ function getWorker() {
     worker = null;
   };
   return worker;
+}
+
+// Long operations own a disposable worker, so cancellation cannot interrupt
+// another document's rendering or an unrelated export.
+export function runProcessingWorker<T>(
+  request: RequestWithoutId,
+  signal: AbortSignal,
+  progress: (message: string) => void = () => {}
+) {
+  return new Promise<T>((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException("Processing canceled.", "AbortError"));
+      return;
+    }
+    const worker = new Worker(new URL("./pdfWorker.ts", import.meta.url), { type: "module" });
+    const finish = () => {
+      signal.removeEventListener("abort", abort);
+      worker.terminate();
+    };
+    const abort = () => {
+      finish();
+      reject(new DOMException("Processing canceled.", "AbortError"));
+    };
+    signal.addEventListener("abort", abort, { once: true });
+    worker.onmessage = (event: MessageEvent<{ result: T; error?: string; progress?: string }>) => {
+      if (event.data.progress) {
+        progress(event.data.progress);
+        return;
+      }
+      finish();
+      if (event.data.error) reject(new Error(event.data.error));
+      else resolve(event.data.result);
+    };
+    worker.onerror = () => {
+      finish();
+      reject(new Error("Document processing failed; your original is unchanged."));
+    };
+    try {
+      worker.postMessage({ ...request, id: newId() });
+    } catch (error) {
+      finish();
+      reject(error);
+    }
+  });
 }
 type RequestWithoutId<T = WorkerRequest> = T extends unknown ? Omit<T, "id"> : never;
 export function runPdfWorker<T>(request: RequestWithoutId): Promise<T> {

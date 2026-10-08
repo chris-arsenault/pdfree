@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from "react";
+import { useReducer, useCallback, useContext } from "react";
 import { emptyDocument, type EditorDocument, type PlacedObject } from "../core/model";
 import { historyReducer } from "../core/history";
 import { openFiles, insertImported } from "../services/openFiles";
@@ -7,15 +7,19 @@ import { useEditorUi } from "./useEditorUi";
 import { usePdfPassword } from "./usePdfPassword";
 import { useConfirmation } from "./useConfirmation";
 import { selectedPageIds as selection, updatePlacedObject } from "../core/editorOperations";
+import { SessionContext } from "./sessionContext";
 
-export function useEditorState() {
+// This hook owns the single document/history/task boundary used by each session.
+// eslint-disable-next-line max-lines-per-function
+export function useEditorState(initialDocument = emptyDocument(), initialDraftId?: string) {
+  const sessions = useContext(SessionContext);
   const [history, dispatch] = useReducer(historyReducer, {
     past: [],
-    present: emptyDocument(),
+    present: initialDocument,
     future: [],
     revision: 0,
   });
-  const ui = useEditorUi(),
+  const ui = useEditorUi(initialDraftId),
     password = usePdfPassword(),
     task = useTask(),
     confirmation = useConfirmation(!!task.busy),
@@ -38,8 +42,11 @@ export function useEditorState() {
   const importFiles = (files: File[], replaceCurrent = false, insertAfter = false) =>
     task.run("Opening files", async () => {
       if (!files.length) return;
-      const replacing =
-        replaceCurrent || files.some((file) => file.name.toLowerCase().endsWith(".pdfree"));
+      if (sessions && replaceCurrent && document.pages.length) {
+        sessions.openFiles(files);
+        return;
+      }
+      const replacing = replacingFiles(files, replaceCurrent);
       const allowed = await allowReplace(
         replacing,
         document.pages.length,
@@ -82,6 +89,9 @@ export function useEditorState() {
     password,
     confirmation,
   };
+}
+function replacingFiles(files: File[], replaceCurrent: boolean) {
+  return replaceCurrent || files.some((file) => file.name.toLowerCase().endsWith(".pdfree"));
 }
 function pageIdAt(document: EditorDocument, index: number) {
   return document.pages[index]?.id ?? "";

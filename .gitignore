@@ -6,6 +6,7 @@ node_modules/
 .pnpm-store/
 /frontend/dist/
 /frontend/public/pdfjs/
+/frontend/public/ocr/
 /frontend/src/**/__screenshots__/
 /frontend/coverage/
 /frontend/test-results/

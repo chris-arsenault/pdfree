@@ -4,6 +4,7 @@ import { type EditorDocument } from "./model";
 import { refreshSources } from "./refreshSources";
 import { validateProjectBudget, storedProjectBudget } from "./projectLimits";
 import { validateProjectReferences } from "./projectReferences";
+import { normalizeUtilities } from "./utilityModel";
 
 export function writeProject(document: EditorDocument) {
   const files: Record<string, Uint8Array> = {};
@@ -20,9 +21,14 @@ export function writeProject(document: EditorDocument) {
     files[path] = asset.data;
     return { id: asset.id, name: asset.name, mime: asset.mime, path };
   });
-  const version = 3;
+  const version = 4;
   const pages = document.pages.map((page) => ({ ...page, comments: page.comments ?? [] }));
-  const parsed = projectSchema.safeParse({ ...document, version, sources, assets, pages });
+  const parsed = projectSchema.safeParse({
+    ...normalizeUtilities({ ...document, pages }),
+    version,
+    sources,
+    assets,
+  });
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     throw new Error(`Cannot save this editing project: ${issue.path.join(".")} — ${issue.message}`);
@@ -68,7 +74,8 @@ function bytesFor(files: Record<string, Uint8Array>, path: string) {
 export async function readProject(bytes: Uint8Array): Promise<EditorDocument> {
   const files = projectFiles(bytes),
     parsed = projectSchema.safeParse(parseManifest(bytesFor(files, "manifest.json")));
-  if (!parsed.success) throw new Error("This is not a supported PDFree version 1, 2 or 3 project.");
+  if (!parsed.success)
+    throw new Error("This is not a supported PDFree version 1, 2, 3 or 4 project.");
   const manifest = parsed.data;
   const refreshed = await refreshSources(
     manifest.sources.map((item) => ({
@@ -78,12 +85,14 @@ export async function readProject(bytes: Uint8Array): Promise<EditorDocument> {
       decryptedBytes: item.workingPath ? bytesFor(files, item.workingPath) : null,
       encryption: item.encryption ?? null,
     })),
-    manifest.pages
+    manifest.pages,
+    manifest.version >= 4
   );
   const document: EditorDocument = {
     ...manifest,
     version: 1,
     ...refreshed,
+    bookmarks: manifest.bookmarks ?? refreshed.bookmarks,
     assets: manifest.assets.map((asset) => ({
       id: asset.id,
       name: asset.name,
@@ -92,7 +101,7 @@ export async function readProject(bytes: Uint8Array): Promise<EditorDocument> {
     })),
   };
   validateProjectReferences(document);
-  return document;
+  return normalizeUtilities(document);
 }
 function parseManifest(bytes: Uint8Array): unknown {
   try {
