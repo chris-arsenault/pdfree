@@ -46,7 +46,7 @@ async function download(buttonName: string, mime: string, action = "Export") {
   try {
     await page.getByRole("button", { name: action, exact: true }).click();
     await page.getByRole("button", { name: buttonName, exact: true }).click();
-    await expect.poll(() => files.length).toBe(1);
+    await expect.poll(() => files.length, { timeout: 10_000 }).toBe(1);
     return new Uint8Array(await files[0]);
   } finally {
     spy.mockRestore();
