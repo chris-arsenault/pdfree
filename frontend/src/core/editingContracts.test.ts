@@ -10,6 +10,7 @@ function page(rotation = 0): Page {
     id: "page",
     sourceId: "",
     sourceIndex: 0,
+    comments: [],
     rotation,
     box: { x: 20, y: 30, width: 200, height: 300 },
     objects: [],

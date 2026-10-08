@@ -5,6 +5,11 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Added native PDF notes and replies with page markers and a compact Comments
+  panel. Edit, delete, undo and reopen comments while preserving incoming authors,
+  dates, markup and reply links. Comments persist in version-3 projects and local
+  drafts, survive page operations and remain annotations when fields are flattened.
+
 - Replaced Clear local data with a simple Library for saved documents and
   signature previews. Reopen documents, reuse signatures and delete individual
   entries while keeping other saved items and open documents intact.

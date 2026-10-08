@@ -4,6 +4,7 @@ export type FieldValue = string | string[] | boolean;
 export type FieldKind = "text" | "checkbox" | "radio" | "dropdown" | "list";
 export type Tool =
   | "select"
+  | "comment"
   | "text"
   | "check"
   | "cross"
@@ -51,7 +52,7 @@ export type Source = {
 };
 export type PlacedObject = Box & {
   id: string;
-  kind: Exclude<Tool, "select" | "date" | "signature" | "initials">;
+  kind: Exclude<Tool, "select" | "comment" | "date" | "signature" | "initials">;
   text: string;
   fontSize: number;
   color: string;
@@ -66,6 +67,18 @@ export type PlacedObject = Box & {
   options: string[];
   required: boolean;
 };
+export type PdfComment = Point & {
+  width: number;
+  height: number;
+  id: string;
+  annotationIndex: number | null;
+  parentId: string | null;
+  text: string;
+  author: string;
+  createdAt: string;
+  modifiedAt: string;
+  readOnly: boolean;
+};
 export type Page = {
   id: string;
   sourceId: string;
@@ -73,6 +86,7 @@ export type Page = {
   rotation: number;
   box: { x: number; y: number; width: number; height: number };
   objects: PlacedObject[];
+  comments: PdfComment[];
 };
 export type Asset = { id: string; name: string; data: Uint8Array; mime: string };
 export type EditorDocument = {

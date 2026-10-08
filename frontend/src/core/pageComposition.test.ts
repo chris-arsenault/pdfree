@@ -44,6 +44,7 @@ describe("blank page geometry", () => {
       id: "legacy-blank",
       sourceId: "",
       sourceIndex: 0,
+      comments: [],
       rotation: 90,
       box: { x: 50, y: 100, width: 500, height: 650 },
       objects: [],

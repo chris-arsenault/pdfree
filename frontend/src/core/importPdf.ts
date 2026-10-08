@@ -13,6 +13,7 @@ import { visiblePageBox } from "./visiblePage";
 import { hasCertificateSignature } from "./signedPdf";
 import { unlockPdf } from "./unlockPdf";
 import { type PdfCredential } from "./pdfCredentials";
+import { readComments } from "./importComments";
 
 function validateControls(pdf: PDFDocument) {
   if (pdf.catalog.lookupMaybe(PDFName.of("AcroForm"), PDFDict)?.has(PDFName.of("XFA")))
@@ -84,6 +85,8 @@ export async function importPdf(bytes: Uint8Array, name: string, credential?: Pd
   }
   const id = newId();
   const inspection = inspect(pdf);
+  const comments = readComments(pdf);
+  inspection.structuralWarnings.push(...comments.warnings);
   if (
     pdf
       .getPages()
@@ -113,6 +116,7 @@ export async function importPdf(bytes: Uint8Array, name: string, credential?: Pd
     rotation: ((page.getRotation().angle % 360) + 360) % 360,
     box: visiblePageBox(page),
     objects: [],
+    comments: comments.pages[sourceIndex],
   }));
   return { source, pages };
 }

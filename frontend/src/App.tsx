@@ -11,6 +11,7 @@ import { Inspector } from "./components/Inspector";
 import { Dialogs } from "./components/Dialogs";
 import { ConfirmationDialog } from "./components/ConfirmationDialog";
 import { useKeyboard } from "./hooks/useKeyboard";
+import { CommentsPanel } from "./components/CommentsPanel";
 
 export default function App() {
   const editor = useEditorState();
@@ -68,6 +69,7 @@ export default function App() {
               {editor.pagesOpen && <PageSidebar />}
               <Workspace />
               <Inspector />
+              <CommentsPanel />
             </div>
           </div>
         ) : (

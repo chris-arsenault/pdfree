@@ -5,6 +5,7 @@ import { type EditorDocument } from "../core/model";
 import { writeProject, readProject } from "../core/projects";
 import { imagePdf } from "../core/imagePdf";
 import { exportSplitArchive } from "../core/exportBatch";
+import { commentView } from "../core/commentView";
 export type WorkerRequest =
   | { id: string; kind: "import"; bytes: Uint8Array; name: string }
   | {
@@ -17,6 +18,7 @@ export type WorkerRequest =
     }
   | { id: string; kind: "project-save"; document: EditorDocument }
   | { id: string; kind: "project-open"; bytes: Uint8Array }
+  | { id: string; kind: "comment-view"; bytes: Uint8Array }
   | { id: string; kind: "image-pdf"; bytes: Uint8Array; name: string; mime: string }
   | {
       id: string;
@@ -32,6 +34,7 @@ function processRequest(request: WorkerRequest) {
   if (request.kind === "import") return importPdf(request.bytes, request.name);
   if (request.kind === "project-save") return writeProject(request.document);
   if (request.kind === "project-open") return readProject(request.bytes);
+  if (request.kind === "comment-view") return commentView(request.bytes);
   if (request.kind === "image-pdf") return imagePdf(request.bytes, request.name, request.mime);
   if (request.kind === "split")
     return exportSplitArchive(

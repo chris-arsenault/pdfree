@@ -4,7 +4,7 @@ import { refreshSources } from "../core/refreshSources";
 
 export type Draft = {
   version: 1;
-  modelRevision: 3;
+  modelRevision: 4;
   id: string;
   revision: string;
   document: EditorDocument;
@@ -67,15 +67,8 @@ export async function loadDrafts(): Promise<Draft[]> {
       )
       .map(async ([key, draft]) => ({
         ...draft,
-        modelRevision: 3 as const,
-        document: normalizeDraft(
-          draft.modelRevision >= 2
-            ? draft.document
-            : {
-                ...draft.document,
-                ...(await refreshSources(draft.document.sources, draft.document.pages)),
-              }
-        ),
+        modelRevision: 4 as const,
+        document: await migrateDraft(draft),
         id: key === legacyKey ? "legacy" : key.slice(prefix.length),
         revision: typeof draft.revision === "string" ? draft.revision : "",
       }))
@@ -88,6 +81,16 @@ export async function loadDrafts(): Promise<Draft[]> {
 }
 
 export const loadDraft = async () => (await loadDrafts())[0] ?? null;
+async function migrateDraft(draft: Draft) {
+  if (draft.modelRevision >= 4) return normalizeDraft(draft.document);
+  const refreshed = await refreshSources(draft.document.sources, draft.document.pages);
+  if (draft.modelRevision >= 2)
+    refreshed.pages = refreshed.pages.map((page, index) => ({
+      ...page,
+      box: draft.document.pages[index].box,
+    }));
+  return normalizeDraft({ ...draft.document, ...refreshed });
+}
 function normalizeDraft(document: EditorDocument): EditorDocument {
   return {
     ...document,
@@ -131,7 +134,7 @@ export async function saveDraft(
       objects.put(
         {
           version: 1,
-          modelRevision: 3,
+          modelRevision: 4,
           id: next.id,
           revision: next.revision,
           document,

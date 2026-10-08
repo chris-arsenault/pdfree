@@ -37,7 +37,7 @@ Application asset caching and updates are described in
 | Member                 | Contract                                                                                                                    |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `sources`              | Stable IDs, immutable original PDF bytes, nullable decrypted working bytes/encryption metadata, derived fields and warnings |
-| `pages`                | Stable page IDs, source ID/index, quarter-turn rotation, visible page box and placed objects                                |
+| `pages`                | Stable page IDs, source ID/index, quarter-turn rotation, visible page box, placed objects and comment records               |
 | `values`               | Native values keyed by source ID and field name, distinct from displayed choice labels                                      |
 | `assets`               | Stable asset IDs and local PNG/JPEG bytes referenced by placed objects                                                      |
 | `name`                 | Validated output/project name                                                                                               |
@@ -71,7 +71,11 @@ catalog-composition warnings. `nativeFields.ts` and choice helpers preserve
 labels, export values, flags and repeated widgets.
 
 PDF.js renders original page backgrounds with native fields and added objects
-overlaid by the editor. Text selection/search use the original text layer plus
+overlaid by the editor. A separate rendering copy omits Text annotation icons;
+the existing PDF worker prepares that copy and the comment marker layer supplies
+its interactive replacements. Other native
+markup appearances remain rendered by PDF.js. Source bytes stay immutable.
+Text selection/search use the original text layer plus
 entered text. Page and thumbnail windows bound mounted canvases; raster budgets
 bound allocations. Viewers, canvases and temporary object URLs are released as
 documents change. [Compatibility](compatibility.md) defines the limits.
@@ -95,6 +99,20 @@ Both paths embed bundled fonts, validate text, add authored fields and draw
 objects. Native appearances are regenerated. Flattening captures widget
 references before pdf-lib removes dictionaries, then removes only those widget
 references from page annotations; ordinary comments remain.
+
+`importComments.ts` derives native note/markup text, authors, dates, annotation
+indices and same-page reply identities. Each page owns its flat comment records;
+stable IDs and parent IDs describe threads. Comments retain the full annotation
+rectangle in PDF coordinates so marker bounds match native exports after rotation.
+Existing Text notes are editable;
+locked/state/group annotations and other markup are read only. Cross-page replies
+and their targets are read only and block composition. `comments.ts` applies edits
+through the shared history model and assigns fresh thread IDs on page duplication.
+`exportComments.ts` updates supported source annotations, removes deleted notes
+and their popups, and writes Unicode Text annotations with appearances and IRT/RT
+reply links. `copyAnnotations.ts` rebinds page, popup and reply references to the
+actual copied annotations before source-index-based edits are applied. Unknown
+annotation types remain intact. Form flattening does not flatten comments.
 
 Split preview and output use current physical page membership and stable page
 IDs. `exportBatch.ts` processes one split request with reusable parsed sources
@@ -137,25 +155,29 @@ credential boundaries; [ADR 0005](adr/0005-secured-export-pipeline.md) records r
 ## Durable projects and local recovery
 
 The `.pdfree` format is a ZIP with `manifest.json`, `sources/<index>.pdf` and
-`assets/<index>.png` or `.jpg`. Plain documents retain manifest version 1;
-encrypted documents use manifest version 2 with additional `working/<index>.pdf`
-entries and encryption metadata. Both decode to editing model version 1. Original
+`assets/<index>.png` or `.jpg`. New projects use manifest version 3 with explicit
+page comment records, including empty arrays for deleted threads. Version 1 and 2
+projects remain readable and derive comments from their original PDFs. Encrypted
+documents include `working/<index>.pdf` entries and encryption metadata. All
+supported manifests decode to editing model version 1. Original
 ciphertext remains in `sources/`; working entries are unprotected and contain no
 opening credentials. Project save requires explicit confirmation for these documents.
 `projects.ts` uses source/asset path descriptors replacing raw bytes. The manifest retains pages,
-objects, values and stable IDs; field descriptors are rederived from source PDFs.
+objects, comments, values and stable IDs; field descriptors are rederived from source PDFs.
 `projectSchema.ts`, `projectReferences.ts` and `projectLimits.ts` validate shape,
 geometry, unique identities, references and archive budgets on save/open.
 Unknown project versions fail explicitly. See [ADR 0004](adr/0004-projects-drafts-and-retained-pwa.md).
 
 IndexedDB stores local library documents under `pdfree-draft-v2:` with write revisions,
-model revision 3 and generation tokens. Opening a replacement creates a separate
+model revision 4 and generation tokens. Opening a replacement creates a separate
 entry; reopening a saved document updates its existing entry. Each tab remembers
 its active entry for reload recovery. Concurrent saves of the same entry retain
 both working copies by assigning a new ID to the conflicting writer.
 Legacy drafts refresh derived
-source descriptors while retaining edits; revision-2 drafts normalize new nullable
-source properties without changing geometry. Encrypted-source drafts default off
+source descriptors while retaining edits; revision-2/3 drafts derive missing
+comments and normalize nullable source properties without changing saved geometry.
+Current drafts retain explicit comment arrays so deletion survives recovery.
+Encrypted-source drafts default off
 and require document-level consent. Generation and current consent checks share a
 transaction: stale queued writes cannot resurrect deleted entries. Deleting one
 entry increments its generation and leaves other entries untouched. BroadcastChannel

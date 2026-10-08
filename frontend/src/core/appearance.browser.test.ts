@@ -9,6 +9,7 @@ it("renders rectangle strokes and both arrowheads with the selected opacity", as
     id: "page",
     sourceId: "",
     sourceIndex: 0,
+    comments: [],
     rotation: 0,
     box: { x: 0, y: 0, width: 300, height: 300 },
     objects: [

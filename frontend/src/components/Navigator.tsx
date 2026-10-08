@@ -75,6 +75,7 @@ export function Navigator() {
       />
       <PageNavigation />
       <PanelToggle panel="properties" />
+      <PanelToggle panel="comments" />
       {searched && <NavigationResults results={results} close={close} />}
     </div>
   );

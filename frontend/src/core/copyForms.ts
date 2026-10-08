@@ -12,6 +12,7 @@ import {
   degrees,
 } from "pdf-lib";
 import { type Page } from "./model";
+import { rebindAnnotations } from "./copyAnnotations";
 
 type CopiedPage = { original: PDFPage; copied: PDFPage };
 type CopiedWidget = { ref: PDFRef; originalIndex: number };
@@ -64,6 +65,7 @@ export async function copyPagesWithForms(
   const pairs: CopiedPage[] = [];
   for (const page of pages) {
     const [copied] = await target.copyPages(source, [page.sourceIndex]);
+    rebindAnnotations(source.getPage(page.sourceIndex), copied, page.id);
     copied.setRotation(degrees(page.rotation));
     target.addPage(copied);
     pairs.push({ original: source.getPage(page.sourceIndex), copied });

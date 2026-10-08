@@ -27,11 +27,12 @@ metadata. All editing, viewing and ordinary exports consume working bytes.
 Valid opening credentials permit editing; PDF permission flags are advisory.
 Passive pushbuttons retain their appearance without executing their actions.
 
-Use project manifest version 2 only when decrypted working entries are present;
-continue reading/writing version 1 for plain sources. Both restore editing model
-version 1. Project saves confirm that working content is unprotected. Encrypted
+Version 2 introduced decrypted working entries while version 1 covered plain
+sources. Native comments extend new saves to version 3 for both; versions 1 and 2
+remain readable. All restore editing model version 1. Project saves confirm that working content is unprotected. Encrypted
 local drafts require explicit consent, checked again inside the write transaction.
-Draft model revision 3 normalizes earlier data without changing saved edits.
+Draft model revision 3 normalized earlier data without changing saved edits;
+revision 4 adds explicit comments and migrates older drafts.
 
 Offer explicit AES-256 password or certificate-recipient protection on PDF export.
 Recipient protection uses public X.509 certificates and RSA-OAEP/ECDH CMS

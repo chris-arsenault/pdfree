@@ -5,6 +5,7 @@ import { choiceFixture } from "../../tooling/choiceFixture";
 import { appendSource, importPdf } from "../core/importPdf";
 import { emptyDocument, defaultObject } from "../core/model";
 import { deleteDraft, deleteSavedDraft, loadDrafts } from "./drafts";
+import { commentFixture } from "../core/commentFixture";
 
 beforeEach(() => deleteDraft());
 afterEach(() => deleteDraft());
@@ -24,7 +25,7 @@ it("recovers legacy choice descriptors and visible boxes without changing edits 
   const snapshot = { version: 1, revision: "old-revision", document: doc, savedAt: 123 };
   await set("pdfree-draft-v1", snapshot);
   const [draft] = await loadDrafts();
-  expect(draft.modelRevision).toBe(3);
+  expect(draft.modelRevision).toBe(4);
   expect(draft.id).toBe("legacy");
   expect(draft.revision).toBe("old-revision");
   expect(draft.document.pages[0].box).toEqual({ x: 0, y: 0, width: 450, height: 550 });
@@ -59,4 +60,27 @@ it("normalizes revision 2 drafts without refreshing geometry or mutating stored 
   expect(draft.document.sources[0].decryptedBytes).toBe(null);
   expect(draft.document.pages).toEqual(doc.pages);
   expect(await get("pdfree-draft-v2:prior")).toEqual(snapshot);
+});
+it("recovers comments from revision 3 drafts while retaining page identities and saved geometry", async () => {
+  const doc = appendSource(emptyDocument(), await importPdf(await commentFixture(), "notes.pdf"));
+  const pageId = doc.pages[0].id;
+  doc.pages[0].box = { x: 10, y: 20, width: 500, height: 700 };
+  for (const page of doc.pages) Reflect.deleteProperty(page, "comments");
+  const snapshot = {
+    version: 1,
+    modelRevision: 3,
+    revision: "prior-notes",
+    document: doc,
+    savedAt: 123,
+  };
+  await set("pdfree-draft-v2:prior-notes", snapshot);
+  const [draft] = await loadDrafts();
+  expect(draft.modelRevision).toBe(4);
+  expect(draft.document.pages[0].id).toBe(pageId);
+  expect(draft.document.pages[0].box).toEqual(doc.pages[0].box);
+  expect(draft.document.pages[0].comments.map((comment) => comment.text)).toContain(
+    "Review café 東京"
+  );
+  expect(draft.document.pages[0].comments[1].parentId).toBe(draft.document.pages[0].comments[0].id);
+  expect(await get("pdfree-draft-v2:prior-notes")).toEqual(snapshot);
 });

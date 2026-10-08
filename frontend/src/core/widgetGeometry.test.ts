@@ -15,6 +15,7 @@ const page: Page = {
   id: "page",
   sourceId: "source",
   sourceIndex: 0,
+  comments: [],
   rotation: 0,
   box: { x: 12, y: 30, width: 500, height: 700 },
   objects: [],

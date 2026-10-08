@@ -1,6 +1,7 @@
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { type Source, sourceBytes } from "../core/model";
+import { runPdfWorker } from "./workerClient";
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 const documents = new Map<string, Promise<pdfjs.PDFDocumentProxy>>();
 export function localPdf(bytes: Uint8Array) {
@@ -18,7 +19,10 @@ export function localPdf(bytes: Uint8Array) {
 export function sourcePdf(source: Source) {
   let document = documents.get(source.id);
   if (!document) {
-    document = localPdf(sourceBytes(source).slice());
+    document = runPdfWorker<Uint8Array>({
+      kind: "comment-view",
+      bytes: sourceBytes(source).slice(),
+    }).then(localPdf);
     documents.set(source.id, document);
   }
   return document;

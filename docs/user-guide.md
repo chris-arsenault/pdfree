@@ -45,6 +45,26 @@ Search includes existing PDF text and entered text. Image-only scans require
 manual navigation. Zoom, fit width/page, thumbnails, page jump and available
 document outlines navigate the document.
 
+## Comments
+
+Choose Comment in the toolbar (under Add on narrow screens), click a location
+on the page, write your note and post it. A name is optional. Comments above the
+document opens the list; selecting a note jumps to its page and shows its replies.
+Small page markers open the same thread. Edit and delete actions have icon tooltips.
+Deleting a note removes its replies after confirmation; Undo restores the thread.
+
+Existing PDF notes retain their authors, dates and reply relationships. Locked
+notes, state annotations and other markup appear read only; their original
+appearance stays intact. Replies can be added to existing markup. Text-selection
+comments and rich formatting are not included.
+
+Comments save as native PDF annotations, including when form fields are flattened.
+They reopen as comments in PDFree and remain available to readers that support
+PDF annotations. Projects and local drafts retain them alongside page edits.
+Page rotation and reorder keep their anchors; duplication creates independent
+threads. PDFs with comment relationships across pages require complete-document
+export and expose those linked notes read only.
+
 ## Organize and split pages
 
 Use Pages above the document to show thumbnails and page operations. On touch
@@ -67,13 +87,13 @@ field values, page rotations and added objects. See
 
 ## Save and export
 
-| Output               | What it preserves                                                      |
-| -------------------- | ---------------------------------------------------------------------- |
-| PDF, retained fields | Completed page content and supported interactive fields                |
-| PDF, flattened       | Field appearances embedded in page content                             |
-| `.pdfree` project    | Original sources, movable objects, assets, field values and page edits |
-| PNG ZIP              | Raster images of selected pages at 108 dpi                             |
-| Print                | Prepared page output for the browser print flow                        |
+| Output               | What it preserves                                                                |
+| -------------------- | -------------------------------------------------------------------------------- |
+| PDF, retained fields | Completed page content, comments and supported interactive fields                |
+| PDF, flattened       | Field appearances embedded in page content; comments remain annotations          |
+| `.pdfree` project    | Original sources, movable objects, comments, assets, field values and page edits |
+| PNG ZIP              | Raster images of selected pages at 108 dpi                                       |
+| Print                | Prepared page output for the browser print flow                                  |
 
 Export the whole document or selected pages. Download works across supported
 browsers; direct file saving is an optional browser enhancement. Added marks in

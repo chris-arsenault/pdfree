@@ -6,6 +6,7 @@ import {
   Image,
   Minus,
   MousePointer2,
+  MessageSquarePlus,
   MoveUpRight,
   Pencil,
   PenLine,
@@ -17,6 +18,13 @@ import {
 } from "lucide-react";
 
 export const tools = [
+  {
+    id: "comment",
+    label: "Comment",
+    icon: MessageSquarePlus,
+    group: "annotate",
+    hint: "Click the page to add a comment.",
+  },
   {
     id: "select",
     label: "Select",

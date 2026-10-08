@@ -1,4 +1,5 @@
 import { newId, type EditorDocument, type Page } from "./model";
+import { duplicateComments } from "./comments";
 
 export function rotatePages(document: EditorDocument, ids: string[], angle = 90) {
   return {
@@ -23,6 +24,7 @@ export function duplicatePages(document: EditorDocument, ids: string[]) {
             {
               ...page,
               id: newId(),
+              comments: duplicateComments(page.comments),
               objects: page.objects.map((object) => ({
                 ...object,
                 id: newId(),
@@ -55,6 +57,7 @@ export function insertBlank(document: EditorDocument, afterId: string) {
     rotation: 0,
     box: { ...box, x: 0, y: 0 },
     objects: [],
+    comments: [],
   };
   const pages = [...document.pages];
   pages.splice(index + 1, 0, page);

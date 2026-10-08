@@ -1,9 +1,10 @@
 import { useRef, useState, type PointerEvent } from "react";
 import { useEditor } from "./editorContext";
 import { pagePoint } from "../core/coordinates";
-import { defaultObject, type PlacedObject, type Point, type Tool } from "../core/model";
+import { defaultObject, newId, type PlacedObject, type Point, type Tool } from "../core/model";
 import { replaceObjects } from "../core/objectOperations";
 import { hasPlacementAsset } from "../core/editorOperations";
+import { commentPointAt } from "../core/comments";
 
 export function usePlacement() {
   const editor = useEditor();
@@ -14,7 +15,22 @@ export function usePlacement() {
       editor.setObjectIds([]);
       return;
     }
-    if ((event.target as HTMLElement).closest(".placed-object,.native-widget")) return;
+    if ((event.target as HTMLElement).closest(".placed-object,.native-widget,.comment-marker"))
+      return;
+    if (editor.tool === "comment") {
+      editor.setPendingComment({
+        id: newId(),
+        pageId: editor.page.id,
+        point: commentPointAt(
+          pagePoint(event, event.currentTarget, editor.page, editor.zoom),
+          editor.page
+        ),
+      });
+      editor.setObjectIds([]);
+      editor.setCommentsOpen(true);
+      editor.setTool("select");
+      return;
+    }
     if (editor.tool === "image" && !hasPlacementAsset(editor.document, editor.pendingObject)) {
       editor.task.notify("Choose an image in the properties panel first.");
       return;

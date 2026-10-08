@@ -11,6 +11,7 @@ import { Navigator } from "./Navigator";
 import { useInitialZoom } from "../hooks/useInitialZoom";
 import { tools } from "./toolDefinitions";
 import { hasPlacementAsset } from "../core/editorOperations";
+import { CommentMarkers } from "./CommentMarkers";
 
 export function Workspace() {
   const editor = useEditor(),
@@ -44,6 +45,7 @@ export function Workspace() {
           <TextLayer page={page} source={source} scale={editor.zoom} />
           <NativeFields />
           <ObjectLayer />
+          <CommentMarkers />
           {placement.preview && (
             <div
               className={`placement-preview kind-${placement.preview.kind}`}

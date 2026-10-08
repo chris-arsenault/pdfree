@@ -8,6 +8,8 @@ export function Toolbar() {
   const editor = useEditor();
   const select = (tool: Tool) => {
     editor.setObjectIds([]);
+    editor.setPendingComment(null);
+    if (tool === "comment") editor.setCommentsOpen(false);
     if (tool === "signature" || tool === "initials") editor.setDialog(tool);
     else {
       editor.setTool(tool);

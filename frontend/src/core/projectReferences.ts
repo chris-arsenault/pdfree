@@ -6,6 +6,7 @@ import {
   type Source,
 } from "./model";
 import { objectRotationError } from "./editorValidation";
+import { validateCommentThreads } from "./comments";
 
 export function validateProjectReferences(document: EditorDocument) {
   if (document.sources.some((source) => !!source.encryption !== !!source.decryptedBytes))
@@ -15,6 +16,7 @@ export function validateProjectReferences(document: EditorDocument) {
     ...document.pages,
     ...document.assets,
     ...document.pages.flatMap((page) => page.objects),
+    ...document.pages.flatMap((page) => page.comments ?? []),
   ];
   if (new Set(items.map((item) => item.id)).size !== items.length)
     throw new Error("This project has duplicate object identities.");
@@ -41,6 +43,15 @@ function validatePageReferences(page: Page, sources: Map<string, Source>, assets
     if (object.kind === "image" && !assets.has(object.assetId))
       throw new Error("This project refers to a missing image.");
   }
+  validateCommentReferences(page);
+}
+function validateCommentReferences(page: Page) {
+  const annotations = (page.comments ?? []).flatMap((comment) =>
+    comment.annotationIndex === null ? [] : [comment.annotationIndex]
+  );
+  if (new Set(annotations).size !== annotations.length)
+    throw new Error("This project has duplicate annotation references.");
+  validateCommentThreads(page.comments ?? []);
 }
 
 function validateFieldValue(field: NativeField, value: FieldValue) {

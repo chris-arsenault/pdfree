@@ -13,6 +13,7 @@ describe("coordinates", () => {
         id: "p",
         sourceId: "s",
         sourceIndex: 0,
+        comments: [],
         rotation,
         box: { x: 12, y: 30, width: 500, height: 700 },
         objects: [],

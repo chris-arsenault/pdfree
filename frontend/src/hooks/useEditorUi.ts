@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { newId, type PlacedObject, type Tool } from "../core/model";
+import { useCommentUi } from "./useCommentUi";
 export type DialogName =
   "" | "signature" | "initials" | "split" | "export" | "help" | "properties" | "library";
 export function useEditorUi() {
@@ -8,6 +9,8 @@ export function useEditorUi() {
   const [objectIds, updateObjectIds] = useState<string[]>([]);
   const [tool, updateTool] = useState<Tool>("select");
   const [propertiesOpen, setPropertiesOpen] = useState(false);
+  const comments = useCommentUi();
+  const { setCommentsOpen, resetComments } = comments;
   const [pagesOpen, setPagesOpen] = useState(() => window.matchMedia("(min-width: 761px)").matches);
   const [zoom, setZoom] = useState(1);
   const [dialog, setDialog] = useState<DialogName>("");
@@ -16,10 +19,14 @@ export function useEditorUi() {
   const [exportSelected, setExportSelected] = useState(false);
   const [documentEpoch, setDocumentEpoch] = useState(0);
   const [draftId, setDraftId] = useState<string>(newId);
-  const setObjectIds = useCallback((ids: string[]) => {
-    updateObjectIds(ids);
-    setPropertiesOpen(ids.length > 0);
-  }, []);
+  const setObjectIds = useCallback(
+    (ids: string[]) => {
+      updateObjectIds(ids);
+      setPropertiesOpen(ids.length > 0);
+      if (ids.length) setCommentsOpen(false);
+    },
+    [setCommentsOpen]
+  );
   const setTool = useCallback((next: Tool) => {
     updateTool(next);
     if (next === "image") setPropertiesOpen(true);
@@ -34,10 +41,11 @@ export function useEditorUi() {
     setSavedRevision(-1);
     setExportSelected(false);
     setPropertiesOpen(false);
+    resetComments();
     setPagesOpen(window.matchMedia("(min-width: 761px)").matches);
     setDocumentEpoch((epoch) => epoch + 1);
     setDraftId(newId());
-  }, [setObjectIds, setTool]);
+  }, [setObjectIds, setTool, resetComments]);
   return {
     activeId,
     setActiveId,
@@ -46,6 +54,7 @@ export function useEditorUi() {
     objectIds,
     setObjectIds,
     propertiesOpen,
+    ...comments,
     setPropertiesOpen,
     pagesOpen,
     setPagesOpen,

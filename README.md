@@ -9,7 +9,7 @@ PDFs without an application backend or account requirement.
 
 Open a PDF, fill its form fields or place text on a scanned form. Add drawn,
 typed or image signatures, annotate, create fillable fields, rotate/reorder
-pages, merge documents, and split by physical page numbers. Download a PDF or
+pages, add comments and replies, merge documents, and split by physical page numbers. Download a PDF or
 save an editable `.pdfree` project. Export supports certificate signing,
 certification and AES-256 password or recipient-certificate protection. Encrypted
 inputs open with an opening/owner password or a local recipient `.p12`/`.pfx`

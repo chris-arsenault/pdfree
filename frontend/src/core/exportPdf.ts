@@ -6,6 +6,7 @@ import { drawObjects, embedFonts, type FontData } from "./drawObjects";
 import { addAuthoredFields } from "./authoredFields";
 import { validateText } from "./textValidation";
 import { updateChoiceAppearances } from "./choiceFields";
+import { writeComments } from "./exportComments";
 
 export function canPreserveCatalog(document: EditorDocument, pages: Page[]) {
   const source = preservedSource(document, pages);
@@ -77,7 +78,6 @@ async function composeDocument(
       blank.setCropBox(page.box.x, page.box.y, page.box.width, page.box.height);
     } else pdf.addPage(copied[position]);
   }
-  removeOrphanWidgets(pdf);
   pdf.setTitle(document.name.replace(/\.pdf$/i, ""));
   pdf.setCreator("PDFree · Ahara");
   return pdf;
@@ -125,6 +125,8 @@ export async function prepareExport(
   const pdf = canPreserveCatalog(document, pages)
     ? await preserveDocument(document, pages)
     : await composeDocument(document, pages, sourceCache);
+  writeComments(pdf, pages);
+  removeOrphanWidgets(pdf);
   return { pdf, pages };
 }
 function flattenFields(pdf: PDFDocument) {

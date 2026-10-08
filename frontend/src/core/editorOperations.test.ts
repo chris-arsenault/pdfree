@@ -15,6 +15,7 @@ function fixture(): EditorDocument {
     id,
     sourceId: "source",
     sourceIndex: 0,
+    comments: [],
     rotation: 0,
     box: { x: 0, y: 0, width: 600, height: 800 },
     objects: [],

@@ -25,6 +25,11 @@ generation fencing and atomic signature updates. Keep each tab's active entry
 for reload recovery. Replacement documents get independent entries; reopening
 updates the selected entry. Concurrent revisions retain both working copies.
 
+Native comments extend new manifests to version 3 and local drafts to model
+revision 4. Store comment identities, source annotation indices, page anchors,
+metadata and reply parents explicitly. Empty arrays retain deletions across
+recovery; older manifests/drafts derive missing records from immutable sources.
+
 Retain the existing PWA asset cache and explicit update prompt. Browser-only
 processing is the required boundary; offline operation is a retained capability,
 not an interpretation that adds requirements to all future features.
