@@ -106,7 +106,10 @@ it("previews, uses and individually removes signatures without removing placed m
   });
   await openLibrary();
   await expect.element(page.getByRole("img", { name: "Image mark" })).toBeVisible();
+  const library = page.getByRole("dialog", { name: "Library", exact: true });
   await page.getByRole("button", { name: "Use Alice", exact: true }).click();
+  // Placing before the modal Library closes would click the dialog backdrop instead of the page.
+  await expect.element(library).not.toBeInTheDocument();
   await page
     .getByRole("region", { name: "PDF page", exact: true })
     .click({ position: { x: 100, y: 100 } });
@@ -120,6 +123,7 @@ it("previews, uses and individually removes signatures without removing placed m
     .not.toBeInTheDocument();
   expect((await savedSignatures()).map((saved) => saved.label)).toEqual(["Image mark"]);
   await page.getByRole("button", { name: "Use Image mark", exact: true }).click();
+  await expect.element(library).not.toBeInTheDocument();
   await page
     .getByRole("region", { name: "PDF page", exact: true })
     .click({ position: { x: 100, y: 200 } });

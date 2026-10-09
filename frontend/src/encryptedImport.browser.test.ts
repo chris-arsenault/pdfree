@@ -102,7 +102,8 @@ it("retries a wrong opening password, exports edited bytes and excludes credenti
   expect(project.sources[0].encryption?.algorithm).toBe("AES-256");
   expect(project.sources[0].decryptedBytes?.length).toBeGreaterThan(0);
   expect(JSON.stringify(project)).not.toMatch(/reader-fixture|owner-fixture|wrong-fixture/);
-});
+  // Two password key derivations plus PDF and project exports exceed 15 s on CI WebKit.
+}, 30_000);
 it("opens with an owner password and exposes the access mode in document details", async () => {
   await uploadLocked("owner-fixture");
   await unlock();

@@ -63,7 +63,8 @@ export function Tooltip({
     handleClose: safePolygon(),
   });
   const focus = useFocus(context);
-  const dismiss = useDismiss(context);
+  // Pressing the control closes its tooltip so it cannot cover what the press opens.
+  const dismiss = useDismiss(context, { referencePress: true });
   const role = useRole(context, { role: "tooltip" });
   const { getReferenceProps, getFloatingProps } = useInteractions([hover, focus, dismiss, role]);
   return (

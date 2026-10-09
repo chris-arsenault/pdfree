@@ -36,7 +36,10 @@ are excluded from application assets.
 `make ci` runs unit and Chromium browser tests locally. With `CI` set and no
 `PDFREE_BROWSER`, Vitest config selects unit tests only, matching Ahara's shared
 coverage job. The supplemental GitHub matrix sets `PDFREE_BROWSER` and runs
-Chromium, Firefox and WebKit checks. Set `PDFREE_BROWSER=firefox` or `webkit`
+Chromium, Firefox and WebKit checks. Firefox and WebKit run browser test files
+one at a time: parallel test frames share one page's focus, which makes Firefox
+drop keyboard button activation and pushes WebKit tests past their timeouts.
+Set `PDFREE_BROWSER=firefox` or `webkit`
 locally after installing the corresponding Playwright engine. Linux engines
 may require OS packages (`playwright install --with-deps` on supported hosts).
 

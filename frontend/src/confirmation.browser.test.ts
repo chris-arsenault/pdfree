@@ -46,6 +46,8 @@ it("cancels page deletion with Enter or Escape and deletes only after explicit c
   await expect.element(page.getByText("PAGE 1 OF 3", { exact: true })).toBeVisible();
   await expect.element(remove).toHaveFocus();
   await remove.click();
+  // Escape before the dialog has opened would reach the page instead of the dialog.
+  await expect.element(dialog.getByRole("button", { name: "Cancel" })).toHaveFocus();
   await userEvent.keyboard("{Escape}");
   await expect.element(dialog).not.toBeInTheDocument();
   await expect.element(page.getByText("PAGE 1 OF 3", { exact: true })).toBeVisible();

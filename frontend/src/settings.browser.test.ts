@@ -97,7 +97,8 @@ it("persists the browser-wide restriction, applies it to background documents an
   await expect.element(restriction()).not.toBeChecked();
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(320);
   await page.screenshot({ path: "../test-results/protected-autosave-settings-320.png" });
-});
+  // Three documents, a remount and several autosave round trips exceed 15 s on CI WebKit.
+}, 30_000);
 it("reflects browser storage changes and reports a preference write failure without changing the choice", async () => {
   mount();
   await expect.element(page.getByText("Your paperwork.")).toBeVisible();

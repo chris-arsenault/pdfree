@@ -50,6 +50,9 @@ export default defineConfig({
               test: {
                 name: "browser",
                 include: ["src/**/*.browser.test.ts"],
+                // Firefox and WebKit share focus across the parallel test frames of one page:
+                // Firefox then drops Enter's button activation and WebKit runs out of time.
+                fileParallelism: browserName() === "chromium",
                 browser: {
                   enabled: true,
                   headless: true,
