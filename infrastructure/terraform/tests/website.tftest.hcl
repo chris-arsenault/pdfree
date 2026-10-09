@@ -29,6 +29,10 @@ override_resource {
 run "static_editor" {
   command = plan
   assert {
+    condition     = fileexists("${path.module}/../../frontend/dist/ocr/lang/eng.traineddata.gz")
+    error_message = "Build the complete frontend including compressed OCR language data before checking hosting."
+  }
+  assert {
     condition     = module.website.hostname == "pdf.ahara.io"
     error_message = "Hosting must use the PDFree hostname."
   }

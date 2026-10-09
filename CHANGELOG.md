@@ -5,6 +5,8 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Fixed deployment of bundled OCR language data by adding gzip asset support to
+  the shared website module and updating the pinned revision.
 - Protected PDFs now autosave by default. Added a browser-wide “Don't autosave
   protected documents” setting, off by default, replacing per-document consent.
   When enabled, a compact Autosave off control opens Settings without expanding

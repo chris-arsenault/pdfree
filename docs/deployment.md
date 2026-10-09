@@ -17,9 +17,11 @@ S3. Runtime PDFs, drafts and signing credentials remain on the device.
 
 The shared module is pinned in
 [`website.tf`](../infrastructure/terraform/website.tf) to published revision
-`3b311dcc621a8cb5e82a775660dee916a3650e73`. That revision includes `.mjs`
-JavaScript workers, `.bcmap` character maps, `.pfb` binary fonts and `.icc`
-profiles in the MIME map. Static sites skip the dynamic OpenGraph renderer's
+`fff59f90fcf84b58d9328fa58b87e51414bec008`. That revision includes `.mjs`
+JavaScript workers, `.bcmap` character maps, `.pfb` binary fonts, `.icc`
+profiles and `.gz` OCR language data in the MIME map. Gzip files use
+`application/gzip` without HTTP content encoding; the OCR worker decompresses
+the language data. Static sites skip the dynamic OpenGraph renderer's
 single-entry discovery, so application and worker dependency chunks can retain
 Vite's normal filenames. [ADR 0001](adr/0001-browser-only-static-delivery.md)
 records the hosting choice and the demonstrated MIME failure that required repair.

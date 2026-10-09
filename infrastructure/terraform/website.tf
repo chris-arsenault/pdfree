@@ -33,7 +33,7 @@ resource "aws_cloudfront_response_headers_policy" "editor" {
 }
 
 module "website" {
-  source = "git::https://github.com/chris-arsenault/ahara-tf-patterns.git//modules/website?ref=3b311dcc621a8cb5e82a775660dee916a3650e73"
+  source = "git::https://github.com/chris-arsenault/ahara-tf-patterns.git//modules/website?ref=fff59f90fcf84b58d9328fa58b87e51414bec008"
 
   prefix                     = "pdfree"
   hostname                   = "pdf.ahara.io"
