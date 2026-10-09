@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { MessageSquarePlus, Reply, X } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
-import { type Page, type PdfComment } from "../core/model";
-import { addComment, createComment, commentThread } from "../core/comments";
+import { type Page, type PdfComment, newId } from "../core/model";
+import { addComment, createComment, commentThread, commentPointAt } from "../core/comments";
 import { SidePanel } from "./ui/SidePanel";
 import { IconButton } from "./ui/IconButton";
 import { CommentForm } from "./CommentForm";
@@ -33,20 +33,10 @@ export function CommentsPanel() {
         <span className="panel-count">{roots.length}</span>
         <IconButton label="Hide comments" icon={X} onClick={close} />
       </div>
-      <button
-        className="button secondary full"
-        onClick={() => {
-          close();
-          editor.setObjectIds([]);
-          editor.setTool("comment");
-        }}
-      >
-        <MessageSquarePlus size={16} aria-hidden="true" />
-        Add comment
-      </button>
+      <AddCommentButton />
       {editor.pendingComment && <NewComment key={editor.pendingComment.id} />}
       {!roots.length && !editor.pendingComment && (
-        <p className="comments-empty">Add a comment, then click its location on the page.</p>
+        <p className="comments-empty">Add a comment to the current page.</p>
       )}
       <div className="comment-list">
         {roots.map(({ page, comment, index }) => (
@@ -75,6 +65,31 @@ export function CommentsPanel() {
         ))}
       </div>
     </SidePanel>
+  );
+}
+function AddCommentButton() {
+  const editor = useEditor();
+  const add = () => {
+    if (!editor.page) return;
+    editor.setObjectIds([]);
+    editor.setCommentId("");
+    editor.setTool("select");
+    const box = editor.page.box;
+    editor.setPendingComment({
+      id: newId(),
+      pageId: editor.page.id,
+      point: commentPointAt({ x: box.x + box.width / 2, y: box.y + box.height / 2 }, editor.page),
+    });
+  };
+  return (
+    <button
+      className="button secondary full"
+      disabled={!editor.page || !!editor.task.busy || !!editor.pendingComment}
+      onClick={add}
+    >
+      <MessageSquarePlus size={16} aria-hidden="true" />
+      Add comment
+    </button>
   );
 }
 function NewComment() {

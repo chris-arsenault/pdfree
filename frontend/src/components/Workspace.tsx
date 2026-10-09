@@ -7,7 +7,6 @@ import { usePlacement } from "../hooks/usePlacement";
 import { toDisplay } from "../core/coordinates";
 import { ObjectAppearance } from "./ObjectAppearance";
 import { TextLayer } from "./TextLayer";
-import { Navigator } from "./Navigator";
 import { useInitialZoom } from "../hooks/useInitialZoom";
 import { tools } from "./toolDefinitions";
 import { hasPlacementAsset } from "../core/editorOperations";
@@ -24,7 +23,6 @@ export function Workspace() {
   const dimensions = displaySize(page);
   return (
     <main className="workspace" aria-label="Document editor">
-      <Navigator />
       {!!source?.warnings.length && (
         <div className="inline-warning">{source.warnings.join(" ")}</div>
       )}

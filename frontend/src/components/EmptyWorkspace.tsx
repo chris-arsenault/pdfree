@@ -1,10 +1,12 @@
 import { FileUp, ShieldCheck, PenLine, Layers, ArrowRight } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
+import { EditorNotifications } from "./EditorNotifications";
 
 export function EmptyWorkspace() {
   const { importFiles, task } = useEditor();
   return (
     <section className="empty-workspace">
+      <EditorNotifications />
       <div className="intro-label">A LITTLE LESS PAPERWORK</div>
       <h1>
         Your paperwork.

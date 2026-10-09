@@ -72,13 +72,6 @@
   color: var(--muted);
   font-size: 11px;
 }
-.offline-status button {
-  border: 0;
-  background: none;
-  color: #267663;
-  text-decoration: underline;
-  font-size: 12px;
-}
 .offline-indicator {
   display: flex;
   align-items: center;
@@ -87,12 +80,6 @@
 .offline-indicator > span,
 .offline-indicator > svg:last-child {
   display: none;
-}
-.status-notice {
-  flex-basis: 100%;
-  padding: 8px 0;
-  color: #705414;
-  line-height: 1.6;
 }
 .navigator {
   display: flex;
@@ -222,6 +209,17 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  min-width: 0;
+}
+.editor-tools {
+  flex-shrink: 0;
+}
+.editor-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
 }
 .draft-status {
   display: flex;
@@ -235,31 +233,12 @@
   align-items: center;
   gap: 6px;
 }
-.draft-status.status-notice {
-  flex-basis: auto;
-  padding: 0;
-}
 .draft-settings-trigger {
   color: #705414;
   white-space: nowrap;
 }
 .draft-status .draft-settings-trigger > span {
   display: inline;
-}
-.draft-recovery {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.draft-recovery button {
-  border: 0;
-  background: none;
-  color: #267663;
-  text-decoration: underline;
-  font-size: 12px;
-  min-height: 36px;
-  cursor: pointer;
 }
 .page-actions {
   display: flex;
@@ -321,6 +300,7 @@
   display: flex;
   flex: 1;
   min-height: 0;
+  min-width: 0;
 }
 .toolbar {
   display: flex;
@@ -747,7 +727,7 @@
     flex-direction: column;
   }
   .inspector {
-    max-height: 38dvh;
+    max-height: min(38dvh, 60%);
     width: 100%;
     border-left: 0;
     border-top: 1px solid var(--border);
@@ -771,6 +751,8 @@
     display: flex;
   }
   .active-tool {
+    width: 68px;
+    flex-shrink: 0;
     max-width: 68px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -921,12 +903,6 @@
   }
   .navigator input {
     min-height: 44px;
-  }
-  .draft-status > span {
-    display: none;
-  }
-  .draft-status.status-notice > span {
-    display: flex;
   }
   .draft-status .draft-settings-trigger > span {
     display: none;

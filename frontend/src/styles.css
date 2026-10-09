@@ -26,6 +26,15 @@
 body {
   margin: 0;
 }
+/* PDF.js appends this text-measurement canvas directly to the body. */
+.hiddenCanvasElement {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  display: none;
+}
 button,
 input,
 textarea,
@@ -119,6 +128,7 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 .document-name {
   overflow: hidden;
@@ -183,6 +193,7 @@ a {
   color: var(--muted);
 }
 .empty-workspace {
+  position: relative;
   flex: 1;
   text-align: center;
   padding: 70px 20px 56px;
@@ -276,9 +287,14 @@ h1 span {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
   font-size: 11px;
   color: var(--muted);
+}
+.app-footer .popover-trigger {
+  min-width: 36px;
+}
+.app-footer .status-warning {
+  color: #705414;
 }
 .privacy-status {
   display: flex;
@@ -293,6 +309,7 @@ h1 span {
   gap: 2px;
   margin-left: auto;
   align-items: center;
+  flex-shrink: 0;
 }
 .zoom-controls select {
   border: 0;
@@ -326,11 +343,36 @@ h1 span {
   background: #e9f2e5;
   border-bottom: 1px solid var(--border);
 }
+.editor-notifications {
+  position: absolute;
+  z-index: 10;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
+  pointer-events: none;
+}
+.editor-notifications > div {
+  pointer-events: auto;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  box-shadow: 0 4px 18px #17373220;
+}
+.editor-notifications > div > span:not(.spinner) {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.editor-notifications .icon-button {
+  margin-left: auto;
+}
 .error-banner {
   color: #963c35;
   background: #fff0e8;
 }
-.error-banner button,
 .notice-banner button {
   margin-left: auto;
   background: none;
@@ -363,6 +405,21 @@ h1 span {
 }
 .full {
   width: 100%;
+}
+@media (max-width: 1000px) {
+  .app-footer .popover-trigger > span,
+  .app-footer .popover-trigger > svg:last-child:not(:first-child),
+  .save-status {
+    display: none;
+  }
+  .draft-message > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
 }
 @media (max-width: 760px) {
   .app-header {
@@ -417,6 +474,15 @@ h1 span {
   }
   .save-status {
     display: none;
+  }
+}
+@media (max-width: 480px) {
+  .app-footer {
+    flex-wrap: wrap;
+  }
+  .zoom-controls {
+    flex-basis: 100%;
+    justify-content: flex-end;
   }
 }
 @media (max-width: 380px) {

@@ -138,10 +138,13 @@ afterEach(async () => {
 it("disables draft recovery and the library while another document task is running", async () => {
   await saveDraft(documentFixture("Recovery.pdf"), await draftSession("closed-tab"));
   mount(BusyProbe);
+  await page.getByRole("button", { name: "Saved document", exact: true }).click();
   await expect
     .element(page.getByRole("button", { name: "Recover draft", exact: true }))
     .toBeEnabled();
+  await userEvent.keyboard("{Escape}");
   await page.getByRole("button", { name: "Block", exact: true }).click();
+  await page.getByRole("button", { name: "Saved document", exact: true }).click();
   await expect
     .element(page.getByRole("button", { name: "Recover draft", exact: true }))
     .toBeDisabled();

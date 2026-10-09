@@ -5,6 +5,12 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Comments now open a new-note composer inside the panel. Shared navigation
+  stays above side panels, and task notifications overlay the document area
+  so opening panels or showing notices does not resize or move editor rails.
+- Fixed extra outer scrolling caused by PDF.js's text-measurement canvas.
+  Update, offline and draft-storage notices now use compact footer controls
+  with explanations in tooltips or popovers instead of expanding the bottom rail.
 - Fixed deployment of bundled OCR language data by adding gzip asset support to
   the shared website module and updating the pinned revision.
 - Protected PDFs now autosave by default. Added a browser-wide “Don't autosave

@@ -77,6 +77,9 @@ bookmarks targeting the original page.
 
 ## Comments
 
+In the Comments panel, Add comment opens a note at the center of the current
+page without closing the panel. Write your note and post it.
+
 Choose Comment in the toolbar (under Add on narrow screens), click a location
 on the page, write your note and post it. A name is optional. Comments above the
 document opens the list; selecting a note jumps to its page and shows its replies.

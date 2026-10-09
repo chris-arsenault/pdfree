@@ -153,6 +153,7 @@ it("cancels an update without reloading and surfaces failure after accepting", a
   offline.update.mockRejectedValueOnce(new Error("offline"));
   await update.click();
   await dialog.getByRole("button", { name: "Update and reload", exact: true }).click();
+  await page.getByRole("button", { name: "Offline unavailable", exact: true }).click();
   await expect
     .element(page.getByText("The update could not load.", { exact: false }))
     .toBeVisible();

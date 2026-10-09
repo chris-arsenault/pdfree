@@ -13,6 +13,8 @@ import { Dialogs } from "./components/Dialogs";
 import { ConfirmationDialog } from "./components/ConfirmationDialog";
 import { useKeyboard } from "./hooks/useKeyboard";
 import { CommentsPanel } from "./components/CommentsPanel";
+import { Navigator } from "./components/Navigator";
+import { EditorNotifications } from "./components/EditorNotifications";
 
 export default function App() {
   return (
@@ -36,48 +38,21 @@ function EditorSurface() {
     >
       <Header />
       <DocumentTabs />
-      {editor.task.busy && (
-        <div className="busy-banner" role="status">
-          <span className="spinner" />
-          {editor.task.busy}…
-          {editor.task.busy === "Opening files" && (
-            <button
-              className="button secondary"
-              onClick={() => {
-                editor.confirmation.answer(false);
-                editor.password.cancel();
-              }}
-            >
-              Cancel opening
-            </button>
-          )}
-        </div>
-      )}
-      {editor.task.error && (
-        <div className="error-banner" role="alert">
-          {editor.task.error}
-          <button onClick={editor.task.dismiss} aria-label="Dismiss error">
-            ×
-          </button>
-        </div>
-      )}
-      {editor.task.message && (
-        <div className="busy-banner" role="status">
-          {editor.task.message}
-          <button onClick={editor.task.dismiss} aria-label="Dismiss notification">
-            ×
-          </button>
-        </div>
-      )}
       <Keyboard />
       {editor.document.pages.length ? (
-        <div className="editor-content" inert={!!editor.task.busy}>
-          <Toolbar />
-          <div className="editor-layout">
-            {editor.pagesOpen && <PageSidebar />}
-            <Workspace />
-            <Inspector />
-            <CommentsPanel />
+        <div className="editor-content">
+          <div className="editor-tools" inert={!!editor.task.busy}>
+            <Toolbar />
+            <Navigator />
+          </div>
+          <div className="editor-body">
+            <EditorNotifications />
+            <div className="editor-layout" inert={!!editor.task.busy}>
+              {editor.pagesOpen && <PageSidebar />}
+              <Workspace />
+              <Inspector />
+              <CommentsPanel />
+            </div>
           </div>
         </div>
       ) : (

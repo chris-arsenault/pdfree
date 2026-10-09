@@ -158,7 +158,9 @@ it("reports exhausted draft storage and still downloads the filled PDF", async (
   });
   await openFixture(page);
   await page.getByRole("textbox", { name: "name", exact: true }).fill("Quota Ada");
+  await page.getByRole("button", { name: "Draft not saved", exact: true }).click();
   await page.getByText("Draft could not be saved.", { exact: false }).waitFor();
+  await page.keyboard.press("Escape");
   const pdf = await PDFDocument.load(await downloadPdf(page));
   expect(pdf.getForm().getTextField("name").getText()).toBe("Quota Ada");
   await context.close();

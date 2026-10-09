@@ -1,27 +1,36 @@
 import { useDraft } from "../hooks/useDraft";
 import { useEditor } from "../hooks/editorContext";
-import { Library, FileCheck2, FileLock2 } from "lucide-react";
+import { Library, FileCheck2, FileLock2, FileWarning, FileClock } from "lucide-react";
 import { LibraryDialog } from "./LibraryDialog";
 import { IconButton } from "./ui/IconButton";
 import { Tooltip } from "./ui/Tooltip";
+import { ActionPopover } from "./ui/ActionPopover";
 export function DraftStatus() {
   const editor = useEditor(),
     draft = useDraft();
-  const routine =
-    !draft.status || ["Saving draft…", "Draft saved on this device"].includes(draft.status);
   const showLibrary = () => editor.setDialog("library");
   return (
-    <div className={`draft-status ${routine ? "" : "status-notice"}`}>
+    <div className="draft-status">
       {!editor.document.pages.length && draft.recoveries.length ? (
         draft.recoveries.slice(0, 1).map((recovery) => (
-          <div className="draft-recovery" key={recovery.id}>
-            <span>
-              Recover {recovery.document.name} · {new Date(recovery.savedAt).toLocaleString()}
-            </span>
-            <button onClick={() => draft.restore(recovery)} disabled={!!editor.task.busy}>
-              Recover draft
-            </button>
-          </div>
+          <ActionPopover label="Saved document" icon={FileClock} key={recovery.id}>
+            {(close) => (
+              <>
+                <p>
+                  {recovery.document.name} · {new Date(recovery.savedAt).toLocaleString()}
+                </p>
+                <button
+                  onClick={() => {
+                    draft.restore(recovery);
+                    close();
+                  }}
+                  disabled={!!editor.task.busy}
+                >
+                  Recover draft
+                </button>
+              </>
+            )}
+          </ActionPopover>
         ))
       ) : (
         <DraftMessage />
@@ -44,7 +53,7 @@ function DraftMessage() {
   const showSettings = () => editor.setDialog("settings");
   if (draft.autosaveOff)
     return (
-      <span role="status">
+      <span role="status" className="draft-message">
         <Tooltip
           label="Autosave off"
           detail="Your browser settings disable autosave for protected PDFs. Open Settings to change this for all documents."
@@ -62,10 +71,28 @@ function DraftMessage() {
         </Tooltip>
       </span>
     );
+  const routine =
+    !draft.status || ["Saving draft…", "Draft saved on this device"].includes(draft.status);
+  if (!routine) {
+    const removed = draft.status.startsWith("Removed from library.");
+    return (
+      <span role="status">
+        <ActionPopover
+          label={removed ? "Removed from library" : "Draft not saved"}
+          icon={removed ? FileClock : FileWarning}
+          className="status-warning"
+        >
+          {() => <p>{draft.status}</p>}
+        </ActionPopover>
+      </span>
+    );
+  }
   return (
-    <span role="status">
-      <FileCheck2 size={14} aria-hidden="true" />
-      {draft.status || "Local drafts"}
-    </span>
+    <Tooltip label={draft.status || "Local drafts"}>
+      <span role="status" className="draft-message">
+        <FileCheck2 size={14} aria-hidden="true" />
+        <span>{draft.status || "Local drafts"}</span>
+      </span>
+    </Tooltip>
   );
 }
