@@ -134,6 +134,29 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+input.document-name {
+  width: min(320px, 100%);
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+}
+input.document-name:hover {
+  border-color: var(--border);
+}
+input.document-name:focus {
+  border-color: var(--accent);
+  background: #fff;
+  text-align: left;
+}
+.document-name-error {
+  color: #a03d3d;
+  font-size: 11px;
+}
 .header-actions {
   display: flex;
   align-items: center;
@@ -141,6 +164,29 @@ a {
 }
 .mobile-document-menu {
   display: none;
+}
+.open-group {
+  display: inline-flex;
+  align-items: stretch;
+}
+.open-group .button {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.open-group .open-menu {
+  min-height: 38px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-left: 0;
+  border-radius: 0 7px 7px 0;
+  background: #fff;
+  color: var(--ink);
+}
+.action-popover button small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--muted);
 }
 .button {
   display: inline-flex;
@@ -260,6 +306,52 @@ h1 span {
   padding: 13px 23px;
   color: #fff;
 }
+.saved-work {
+  width: min(100%, 465px);
+  margin: 14px auto 0;
+}
+.recent-document {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  color: var(--muted);
+}
+.recent-document > span {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.recent-document strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-document small {
+  font-size: 11px;
+}
+.saved-work-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 10px;
+}
+.saved-work-links .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
 .intro-features {
   display: flex;
   justify-content: center;
@@ -299,9 +391,10 @@ h1 span {
 .zoom-controls {
   display: flex;
   gap: 2px;
-  margin-left: auto;
   align-items: center;
   flex-shrink: 0;
+  padding-left: 6px;
+  border-left: 1px solid var(--border);
 }
 .zoom-controls select {
   border: 0;
@@ -446,7 +539,8 @@ h1 span {
   .mobile-document-menu > svg:last-child {
     display: none;
   }
-  .button {
+  .button,
+  .open-group .open-menu {
     min-height: 44px;
   }
   .empty-workspace {
@@ -465,9 +559,19 @@ h1 span {
   .app-footer {
     flex-wrap: wrap;
   }
-  .zoom-controls {
-    flex-basis: 100%;
-    justify-content: flex-end;
+  .open-group .button > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .open-group .button {
+    padding: 10px 12px;
+  }
+  .zoom-controls .fit-width {
+    display: none;
   }
 }
 @media (max-width: 380px) {

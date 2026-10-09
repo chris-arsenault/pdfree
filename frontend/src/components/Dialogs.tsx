@@ -3,29 +3,25 @@ import { useCloseDialog } from "../hooks/useCloseDialog";
 import { SignatureDialog } from "./SignatureDialog";
 import { ExportDialog } from "./ExportDialog";
 import { Modal } from "./Modal";
-import { SplitDialog } from "./SplitDialog";
 import { DocumentDialog } from "./DocumentDialog";
 import { PdfPasswordDialog } from "./PdfPasswordDialog";
 import { OcrDialog } from "./OcrDialog";
-import { BookmarksDialog } from "./BookmarksDialog";
 import { CleanupDialog } from "./CleanupDialog";
 import { RepeatedDialog } from "./RepeatedDialog";
 import { BatchDialog } from "./BatchDialog";
-import { SettingsDialog } from "./SettingsDialog";
+import { LibraryDialog } from "./LibraryDialog";
 import { type ComponentType } from "react";
 import { type DialogName } from "../hooks/useEditorUi";
 const components: Partial<Record<DialogName, ComponentType>> = {
   signature: SignatureDialog,
   initials: SignatureDialog,
   export: ExportDialog,
-  split: SplitDialog,
   ocr: OcrDialog,
-  bookmarks: BookmarksDialog,
   cleanup: CleanupDialog,
   repeat: RepeatedDialog,
   batch: BatchDialog,
   properties: DocumentDialog,
-  settings: SettingsDialog,
+  library: LibraryDialog,
   help: HelpDialog,
 };
 export function Dialogs() {

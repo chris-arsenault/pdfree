@@ -6,19 +6,20 @@ import { runProcessingWorker } from "../services/workerClient";
 import { fontData } from "../services/resources";
 import { PdfPreview } from "./PdfPreview";
 import { ProcessingStatus } from "./ProcessingStatus";
-export function NupControls({
+/** Printable-sheets Export format options; `pageIds` empty means the whole document. */
+export function NupSheets({
   options,
   onChange,
-  selected,
+  pageIds,
 }: {
   options: NupOptions;
   onChange: (options: NupOptions) => void;
-  selected: boolean;
+  pageIds: string[];
 }) {
   const editor = useEditor(),
     task = useProcessing(),
     [preview, setPreview] = useState<{ bytes: Uint8Array; key: string } | null>(null);
-  const key = JSON.stringify([options, selected, editor.selectedPageIds, editor.history.revision]);
+  const key = JSON.stringify([options, pageIds, editor.history.revision]);
   const change = (options: NupOptions) => {
     setPreview(null);
     onChange(options);
@@ -30,7 +31,7 @@ export function NupControls({
           kind: "export",
           document: editor.document,
           flatten: true,
-          pageIds: selected ? editor.selectedPageIds : [],
+          pageIds,
           fonts: await fontData(),
         },
         signal,
@@ -46,26 +47,20 @@ export function NupControls({
       };
     }, setPreview);
   return (
-    <details className="utility-details">
-      <summary>Pages per printed sheet</summary>
-      <fieldset className="utility-fields" disabled={task.busy}>
-        <NupFields options={options} change={change} />
-      </fieldset>
-      {options.count !== 1 && (
-        <>
-          <p className="field-note">
-            Creates a separate printable PDF with baked field and annotation appearances.
-            Interactive fields, comment threads and navigation stay in your ordinary PDF/project.
-            Print this derivative at actual size.
-          </p>
-          <button className="button secondary" disabled={task.busy} onClick={generate}>
-            Preview first sheet
-          </button>
-          <ProcessingStatus task={task} />
-          {preview?.key === key && <PdfPreview bytes={preview.bytes} />}
-        </>
-      )}
-    </details>
+    <fieldset className="utility-fields" disabled={task.busy}>
+      <legend>Pages per printed sheet</legend>
+      <NupFields options={options} change={change} />
+      <p className="field-note">
+        Places several pages on each sheet with field and comment appearances baked in. Interactive
+        fields, comment threads and navigation are left out; keep a PDF or editing project for
+        those. Print at actual size.
+      </p>
+      <button className="button secondary" disabled={task.busy} onClick={generate}>
+        Preview first sheet
+      </button>
+      <ProcessingStatus task={task} />
+      {preview?.key === key && <PdfPreview bytes={preview.bytes} />}
+    </fieldset>
   );
 }
 function NupFields({
@@ -85,13 +80,12 @@ function NupFields({
             change({ ...options, count: Number(event.target.value) as NupOptions["count"] })
           }
         >
-          <option value="1">1 · ordinary PDF</option>
           <option value="2">2</option>
           <option value="4">4</option>
           <option value="6">6</option>
         </select>
       </label>
-      {options.count !== 1 && <NupPaperFields options={options} change={change} />}
+      <NupPaperFields options={options} change={change} />
     </div>
   );
 }

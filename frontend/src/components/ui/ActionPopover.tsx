@@ -18,11 +18,14 @@ export function ActionPopover({
   icon: Icon,
   children,
   className = "",
+  compact = false,
 }: {
   label: string;
   icon: LucideIcon;
   children: (close: () => void) => ReactNode;
   className?: string;
+  /** Shows only the chevron, for a menu attached to an adjacent button. */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const {
@@ -53,9 +56,9 @@ export function ActionPopover({
         aria-label={label}
         {...getReferenceProps()}
       >
-        <Icon size={17} strokeWidth={1.75} aria-hidden="true" />
-        <span>{label}</span>
-        <ChevronDown size={13} aria-hidden="true" />
+        {!compact && <Icon size={17} strokeWidth={1.75} aria-hidden="true" />}
+        <span className={compact ? "sr-only" : undefined}>{label}</span>
+        <ChevronDown size={compact ? 16 : 13} aria-hidden="true" />
       </button>
       {open && (
         <FloatingFocusManager context={context} modal={false}>

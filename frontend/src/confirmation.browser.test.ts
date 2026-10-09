@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { type Root } from "react-dom/client";
 import { page, userEvent } from "vitest/browser";
-import { openEditor, selectDocument } from "../tooling/editorHarness";
+import { openEditor, openLibrary, selectDocument } from "../tooling/editorHarness";
 import { formFixture } from "./core/fixtures";
 import { encryptedFixture } from "../tooling/encryptedFixture";
 import { deleteDraft, loadDraft, loadDrafts, saveDraft, draftSession } from "./services/drafts";
@@ -93,7 +93,7 @@ it("cancels individual document deletion and keeps other saved documents and the
     { ...(await loadDraft())!.document, name: "Other.pdf" },
     await draftSession("other")
   );
-  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await openLibrary();
   const remove = page.getByRole("button", { name: "Delete test.pdf", exact: true });
   const dialog = page.getByRole("dialog", { name: "Delete test.pdf?", exact: true });
   await remove.click();
@@ -121,6 +121,7 @@ it("cancels unprotected project download without losing export settings or downl
   await page.getByRole("button", { name: "Export", exact: true }).click();
   await page.getByRole("textbox", { name: "File name", exact: true }).fill("Private copy.pdf");
   const urls = vi.spyOn(URL, "createObjectURL");
+  await page.getByRole("radio", { name: "Editing project", exact: true }).click();
   const project = page.getByRole("button", { name: "Download editing project", exact: true });
   await project.click();
   const dialog = page.getByRole("dialog", {

@@ -1,7 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useId, type ChangeEvent } from "react";
 import { FileText, Trash2 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
-import { type useDraft } from "../hooks/useDraft";
+import { useDraft } from "../hooks/useDraft";
+import { useProtectedAutosaveDisabled } from "../hooks/useSettings";
+import { setProtectedAutosaveDisabled } from "../services/settings";
 import { useSavedSignatures } from "../hooks/useSavedSignatures";
 import { useCloseDialog } from "../hooks/useCloseDialog";
 import { loadDrafts, deleteSavedDraft, onDraftsRemoved, type Draft } from "../services/drafts";
@@ -10,8 +12,9 @@ import { Modal } from "./Modal";
 import { IconButton } from "./ui/IconButton";
 import { ObjectImage } from "./ObjectAppearance";
 
-export function LibraryDialog({ draft }: { draft: ReturnType<typeof useDraft> }) {
+export function LibraryDialog() {
   const editor = useEditor(),
+    draft = useDraft(),
     close = useCloseDialog(),
     library = useLibraryDocuments(draft.status),
     signatures = useSavedSignatures();
@@ -54,7 +57,36 @@ export function LibraryDialog({ draft }: { draft: ReturnType<typeof useDraft> })
           ))}
         </ul>
       </section>
+      <StorageSettings />
     </Modal>
+  );
+}
+
+function StorageSettings() {
+  const disabled = useProtectedAutosaveDisabled();
+  const noteId = useId();
+  const [error, setError] = useState("");
+  const change = (event: ChangeEvent<HTMLInputElement>) => {
+    try {
+      setProtectedAutosaveDisabled(event.target.checked);
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "This browser could not save the setting.");
+    }
+  };
+  return (
+    <section className="library-section" aria-label="Storage settings">
+      <h3>Storage</h3>
+      <label className="checkbox-label">
+        <input type="checkbox" checked={disabled} onChange={change} aria-describedby={noteId} />
+        Don&apos;t autosave protected documents
+      </label>
+      <p className="field-note" id={noteId}>
+        Applies to all documents in this browser. Saved drafts contain unlocked document content.
+        Turning this on stops new saves from protected PDFs; existing saved documents stay above.
+      </p>
+      {error && <p role="alert">{error}</p>}
+    </section>
   );
 }
 

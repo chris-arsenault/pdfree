@@ -91,6 +91,7 @@ it("uses the production CSP, remains offline, downloads editable projects and fi
   expect(pdf.getForm().getTextField("name").getText()).toBe("Offline Ada");
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const projectDownload = page.waitForEvent("download");
+  await page.getByRole("radio", { name: "Editing project", exact: true }).click();
   await page.getByRole("button", { name: "Download editing project" }).click();
   const archive = await downloadBytes(await projectDownload);
   expect((await readProject(archive)).pages).toHaveLength(3);

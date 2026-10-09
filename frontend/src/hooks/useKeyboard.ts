@@ -11,8 +11,7 @@ type Editor = ReturnType<typeof useEditor>;
 function handleCommand(editor: Editor, key: string, event: KeyboardEvent) {
   if (key === "s") {
     event.preventDefault();
-    editor.setExportSelected(false);
-    editor.setDialog("export");
+    editor.openExport("document");
     return true;
   }
   if (key === "z" || key === "y") {

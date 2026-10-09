@@ -10,12 +10,13 @@ import { PdfPreview } from "./PdfPreview";
 export function CompressionControls({
   options,
   onChange,
-  selected,
+  pageIds,
   flatten,
 }: {
   options: CompressionOptions;
   onChange: (options: CompressionOptions) => void;
-  selected: boolean;
+  /** Export page ids; empty means the whole document. */
+  pageIds: string[];
   flatten: boolean;
 }) {
   const editor = useEditor(),
@@ -24,13 +25,7 @@ export function CompressionControls({
       null
     );
   const [previewKey, setPreviewKey] = useState("");
-  const key = JSON.stringify([
-    options,
-    selected,
-    flatten,
-    editor.selectedPageIds,
-    editor.history.revision,
-  ]);
+  const key = JSON.stringify([options, pageIds, flatten, editor.history.revision]);
   const change = (value: CompressionOptions) => {
     setPreview(null);
     onChange(value);
@@ -43,7 +38,7 @@ export function CompressionControls({
             kind: "export",
             document: editor.document,
             flatten,
-            pageIds: selected ? editor.selectedPageIds : [],
+            pageIds,
             fonts: await fontData(),
           },
           signal,

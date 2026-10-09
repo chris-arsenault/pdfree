@@ -1,18 +1,14 @@
 import { useState, useMemo } from "react";
-import { useCloseDialog } from "../hooks/useCloseDialog";
 import { useEditor } from "../hooks/editorContext";
 import { splitGroups, outputName, type SplitMode } from "../core/pageRanges";
 import { useSplitExport } from "../hooks/useSplitExport";
-import { Modal } from "./Modal";
-import { hasEncryptedSources } from "../core/model";
 
-export function SplitDialog() {
+/** Export format body for splitting the document into several PDFs. */
+export function SplitExport({ prefix, flatten }: { prefix: string; flatten: boolean }) {
   const editor = useEditor(),
     [mode, setMode] = useState<SplitMode>("after"),
     [input, setInput] = useState("1");
-  const [name, setName] = useState(editor.document.name.replace(/\.pdf$/i, "")),
-    [flatten, setFlatten] = useState(false);
-  const close = useCloseDialog();
+  const name = prefix.replace(/\.pdf$/i, "");
   const { groups, error } = useMemo(() => {
     try {
       return { groups: splitGroups(mode, input, editor.document.pages.length), error: "" };
@@ -22,17 +18,11 @@ export function SplitDialog() {
   }, [mode, input, editor.document.pages.length]);
   const exports = useSplitExport(groups, name, flatten);
   return (
-    <Modal title="Split into PDFs" onClose={close}>
-      <p className="modal-description">
-        Use physical page numbers from the sidebar. Your current fields and edits are included in
-        every output.
+    <>
+      <p className="field-note">
+        Use physical page numbers from the Pages panel. Your current fields and edits are included
+        in every output. Split files are not signed or protected.
       </p>
-      {hasEncryptedSources(editor.document) && (
-        <p className="inline-warning">
-          Split downloads contain decrypted content without encryption. To protect an output, open
-          it and choose protection in Export.
-        </p>
-      )}
       <label>
         Split method
         <select value={mode} onChange={(event) => setMode(event.target.value as SplitMode)}>
@@ -50,18 +40,6 @@ export function SplitDialog() {
           <input value={input} onChange={(event) => setInput(event.target.value)} />
         </label>
       )}
-      <label>
-        Output name prefix
-        <input value={name} onChange={(event) => setName(event.target.value)} />
-      </label>
-      <label className="checkbox-label">
-        <input
-          type="checkbox"
-          checked={flatten}
-          onChange={(event) => setFlatten(event.target.checked)}
-        />{" "}
-        Flatten form fields
-      </label>
       <SplitPreview groups={groups} name={name} error={error} exports={exports} />
       <div className="modal-actions">
         <button
@@ -72,7 +50,7 @@ export function SplitDialog() {
           Download {groups.length} PDFs as ZIP
         </button>
       </div>
-    </Modal>
+    </>
   );
 }
 function SplitPreview({

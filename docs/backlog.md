@@ -321,6 +321,20 @@ requirements, pause for an architectural decision rather than inventing a servic
 Technical lead: [LibPDF PAdES capabilities](https://libpdf.documenso.com/).
 Repo basis: `core/securePdf.ts`, `core/signatureCms.ts`, `services/securityClient.ts`.
 
+## Workflow and information architecture
+
+The 2026-10-09 workflow review is implemented; its findings and region model are
+recorded in [ADR 0008](adr/0008-workflow-regions.md) and the shipped controls in
+the [user guide](user-guide.md). Remaining follow-ups:
+
+- Give phones an in-place document rename so the Document dialog no longer
+  needs its own rename field.
+- Let the Highlight tool select text by touch; touch drags currently draw area
+  highlights because the page surface disables touch scrolling while a tool is
+  active.
+- Fit the navigation bar on 320px screens in two rows; page position, zoom and
+  the panel toggles currently wrap to a third row.
+
 ## Manual verification
 
 - Exercise real macOS/iOS Safari with native fields, touch signatures,
@@ -333,3 +347,6 @@ Repo basis: `core/securePdf.ts`, `core/signatureCms.ts`, `services/securityClien
   and confirm the save/reload prompt.
 - Assess keyboard, screen-reader and PDF document accessibility beyond automated
   Axe checks.
+- Check native file drag-and-drop from the desktop into the editor and onto the
+  Pages thumbnail list in Chromium, Firefox and Safari; browser tests synthesize
+  the drop events.

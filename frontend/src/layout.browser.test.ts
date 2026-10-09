@@ -62,8 +62,11 @@ async function checkRails() {
     expect(bounds.bottom).toBeLessThanOrEqual(window.innerHeight);
     expect(rail.scrollWidth).toBeLessThanOrEqual(rail.clientWidth);
   }
-  await expect.element(page.getByRole("button", { name: "Library", exact: true })).toBeVisible();
+  await expect
+    .element(page.getByRole("button", { name: "Open options", exact: true }))
+    .toBeVisible();
   await expect.element(page.getByRole("button", { name: "Fit page", exact: true })).toBeVisible();
+  expect(document.querySelector(".app-footer .zoom-controls")).toBeNull();
 }
 
 it("keeps the PDF.js text measurement canvas out of the viewport layout", async () => {

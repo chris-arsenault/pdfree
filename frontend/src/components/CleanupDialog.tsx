@@ -8,6 +8,8 @@ import { fontData } from "../services/resources";
 import { Modal } from "./Modal";
 import { ProcessingStatus } from "./ProcessingStatus";
 import { PdfPreview } from "./PdfPreview";
+import { PageScopeField } from "./PageScopeField";
+import { usePageScope, selectionDefault } from "../hooks/usePageScope";
 const defaults: CleanupOptions = {
   angle: 0,
   contrast: 1,
@@ -43,13 +45,13 @@ export function CleanupDialog() {
   const editor = useEditor(),
     task = useProcessing();
   const [options, setOptions] = useState(defaults),
-    [all, setAll] = useState(false);
+    scope = usePageScope(selectionDefault(editor));
   const [preview, setPreview] = useState<{
     document: EditorDocument;
     before: Uint8Array;
     after: Uint8Array;
   } | null>(null);
-  const ids = all ? editor.document.pages.map((page) => page.id) : editor.selectedPageIds;
+  const ids = scope.pageIds;
   const change = (options: CleanupOptions) => {
     setPreview(null);
     setOptions(options);
@@ -74,17 +76,15 @@ export function CleanupDialog() {
       </p>
       <fieldset className="utility-fields" disabled={task.busy}>
         <CleanupFields options={options} change={change} />
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={all}
-            onChange={(event) => {
-              setAll(event.target.checked);
-              setPreview(null);
-            }}
-          />
-          All pages
-        </label>
+        <PageScopeField
+          scope={scope.scope}
+          onChange={(next) => {
+            scope.setScope(next);
+            setPreview(null);
+          }}
+          pageIds={ids}
+          error={scope.error}
+        />
       </fieldset>
       <ProcessingStatus task={task} />
       {preview && (
@@ -97,7 +97,7 @@ export function CleanupDialog() {
         <button className="button secondary" disabled={task.busy} onClick={() => change(defaults)}>
           Reset settings
         </button>
-        <button className="button secondary" disabled={task.busy} onClick={generate}>
+        <button className="button secondary" disabled={task.busy || !ids.length} onClick={generate}>
           Preview
         </button>
         <button

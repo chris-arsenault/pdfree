@@ -7,15 +7,16 @@ import { printPdf } from "../services/print";
 import { type SecuritySettings } from "../core/securitySettings";
 import { useExportPdf, type ExportProcessing } from "./useExportPdf";
 import { hasEncryptedSources } from "../core/model";
+/** `pageIds` empty exports the whole document; otherwise only those pages in that order. */
 export function useExport(
   name: string,
-  selected: boolean,
+  pageIds: string[],
   flatten: boolean,
   security: SecuritySettings,
   processing: ExportProcessing = {}
 ) {
   const editor = useEditor(),
-    pageIds = selected ? editor.selectedPageIds : [];
+    selected = pageIds.length > 0;
   const pdfBytes = useExportPdf(pageIds, flatten, security, processing);
   const saveProject = () =>
     editor.task.run("Saving editing project", async () => {

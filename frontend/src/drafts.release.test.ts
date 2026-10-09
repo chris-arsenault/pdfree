@@ -18,6 +18,10 @@ afterAll(async () => {
   await browser?.close();
   await server?.close();
 });
+async function openLibrary(page: Page) {
+  await page.getByRole("button", { name: "Open options", exact: true }).click();
+  await page.getByRole("button", { name: "Library", exact: true }).click();
+}
 async function fillDraft(page: Page, name: string, value: string) {
   await page.goto(server.url);
   await page
@@ -49,8 +53,8 @@ it("keeps two tabs drafts separate across reload and deletes only the selected l
       "Second tab"
     );
     await second.getByText("Saved", { exact: true }).waitFor();
-    await first.getByRole("button", { name: "Library", exact: true }).click();
-    await second.getByRole("button", { name: "Library", exact: true }).click();
+    await openLibrary(first);
+    await openLibrary(second);
     await second.getByRole("button", { name: "Delete First.pdf", exact: true }).click();
     await second
       .getByRole("dialog", { name: "Delete First.pdf?", exact: true })
@@ -86,7 +90,7 @@ it("keeps two tabs drafts separate across reload and deletes only the selected l
     await first.getByRole("textbox", { name: "name", exact: true }).fill("First new edit");
     await first.getByText("Saving…", { exact: true }).waitFor();
     await first.getByText("Saved", { exact: true }).waitFor();
-    await first.getByRole("button", { name: "Library", exact: true }).click();
+    await openLibrary(first);
     await first.getByRole("button", { name: "Open First.pdf", exact: true }).waitFor();
   } finally {
     await context.close();
@@ -101,7 +105,7 @@ it.each([1280, 320])("keeps the library accessible and contained at %ipx", async
     await prepareSignature(page, "Alice");
     await page.getByRole("button", { name: "Use signature" }).click();
     await page.getByRole("dialog").waitFor({ state: "hidden" });
-    await page.getByRole("button", { name: "Library", exact: true }).click();
+    await openLibrary(page);
     const library = page.getByRole("dialog", { name: "Library", exact: true });
     await library
       .getByRole("button", { name: "Open A long saved document filename.pdf", exact: true })

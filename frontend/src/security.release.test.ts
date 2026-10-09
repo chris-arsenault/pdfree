@@ -188,10 +188,10 @@ it("signs and encrypts the completed N-up print derivative", async () => {
     page = await context.newPage();
   try {
     await setupExport(page, "signer.p12");
-    await page.getByText("Pages per printed sheet", { exact: true }).click();
+    await page.getByRole("radio", { name: "Printable sheets", exact: true }).click();
     await page.getByRole("combobox", { name: "Pages per sheet", exact: true }).selectOption("2");
     const ready = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Download PDF", exact: true }).click();
+    await page.getByRole("button", { name: "Download 2-up PDF", exact: true }).click();
     const bytes = new Uint8Array(await readFile((await (await ready).path())!));
     expect(verifyDownloadedSignature(bytes)).toBe(true);
     const pdf = await getDocument({

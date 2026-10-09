@@ -1,5 +1,15 @@
-import { FileUp, ShieldCheck, PenLine, Layers, ArrowRight } from "lucide-react";
+import {
+  FileUp,
+  ShieldCheck,
+  PenLine,
+  Layers,
+  ArrowRight,
+  FileClock,
+  Library,
+  Files,
+} from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
+import { useDraft } from "../hooks/useDraft";
 import { EditorNotifications } from "./EditorNotifications";
 
 export function EmptyWorkspace() {
@@ -36,6 +46,7 @@ export function EmptyWorkspace() {
           onChange={(e) => importFiles(Array.from(e.target.files ?? []))}
         />
       </label>
+      <SavedWork />
       <div className="intro-features">
         <span>
           <PenLine size={18} /> Fill & sign
@@ -49,5 +60,41 @@ export function EmptyWorkspace() {
       </div>
       <div className="privacy-note">No uploads. No account. No watermarks.</div>
     </section>
+  );
+}
+
+/** Most recent recoverable draft beside the drop card, plus the other ways to start. */
+function SavedWork() {
+  const editor = useEditor(),
+    draft = useDraft(),
+    busy = !!editor.task.busy;
+  const recovery = draft.recoveries[0];
+  return (
+    <div className="saved-work">
+      {recovery && (
+        <section className="recent-document" aria-label="Saved document">
+          <FileClock size={20} aria-hidden="true" />
+          <span>
+            <strong>{recovery.document.name}</strong>
+            <small>Saved {new Date(recovery.savedAt).toLocaleString()}</small>
+          </span>
+          <button
+            className="button secondary"
+            disabled={busy}
+            onClick={() => draft.restore(recovery)}
+          >
+            Recover draft
+          </button>
+        </section>
+      )}
+      <div className="saved-work-links">
+        <button className="text-button" disabled={busy} onClick={() => editor.setDialog("library")}>
+          <Library size={15} aria-hidden="true" /> Saved documents
+        </button>
+        <button className="text-button" disabled={busy} onClick={() => editor.setDialog("batch")}>
+          <Files size={15} aria-hidden="true" /> Process multiple PDFs
+        </button>
+      </div>
+    </div>
   );
 }

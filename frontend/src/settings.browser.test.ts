@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { page, userEvent } from "vitest/browser";
 import App from "./App";
 import { encryptedFixture } from "../tooling/encryptedFixture";
-import { openEditor, selectDocument } from "../tooling/editorHarness";
+import { openEditor, openLibrary, selectDocument } from "../tooling/editorHarness";
 import { formFixture } from "./core/fixtures";
 import { deleteDraft, loadDrafts } from "./services/drafts";
 import { protectedAutosaveDisabled, setProtectedAutosaveDisabled } from "./services/settings";
@@ -31,11 +31,8 @@ function mount() {
   root = createRoot(host);
   root.render(createElement(App));
 }
-async function openSettings() {
-  if (window.innerWidth <= 760)
-    await page.getByRole("button", { name: "Document actions", exact: true }).click();
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
-}
+// The browser-wide storage preference lives in Library, reached from the Open menu at every width.
+const openSettings = openLibrary;
 const restriction = () =>
   page.getByRole("checkbox", { name: "Don't autosave protected documents", exact: true });
 async function hasSaved(value: string) {
@@ -46,7 +43,9 @@ async function openAnother(bytes: Uint8Array, name: string) {
     document.querySelector<HTMLInputElement>('.app-header input[type="file"]')!,
     new File([Uint8Array.from(bytes)], name, { type: "application/pdf" })
   );
-  await expect.element(page.getByText(name, { exact: true }).first()).toBeVisible();
+  await expect
+    .element(page.getByRole("button", { name: `Close ${name}`, exact: true }))
+    .toBeVisible();
 }
 
 it("persists the browser-wide restriction, applies it to background documents and resumes saving when off", async () => {

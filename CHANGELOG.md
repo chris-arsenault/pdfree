@@ -5,6 +5,30 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Dropping files on the editor now opens them in new document tabs, matching
+  Open. Drop onto the Pages thumbnail list to append pages to the current
+  document.
+- Export now starts with an output choice (PDF, Printable sheets, Split into
+  files, Page images, Editing project). Each shows only its own settings and its
+  main button names the file it produces, so choosing pages per sheet no longer
+  silently changes Download PDF. Extract and Split open Export.
+- Added one page-scope control (All, Current, Selected or a range, with the page
+  count) to the Pages panel, Export, Recognize text, Clean up scans and Repeat
+  across pages. Export defaults to all pages; Extract starts from the selection.
+- Moved Recognize text, Clean up scans and Repeat across pages from the toolbar
+  Tools menu into the Pages panel's More menu, and grouped Blank page, Pages from
+  file and Merge PDFs under a Pages panel Insert menu. Process multiple PDFs and
+  Library now sit in a menu beside Open.
+- Settings is now Library's Storage section. The footer shows status only; draft
+  recovery appears on the start screen and zoom sits beside page navigation.
+  Rename the document directly in the header.
+- The toolbar Highlight tool now highlights PDF or recognized text when dragged
+  across it, replacing the separate Highlight selected text button.
+- Bookmarks is now a left-panel tab beside Pages for browsing and editing the
+  outline. Search results no longer show bookmark editing.
+- Authored form fields have a Tab order control (earlier/later, with position)
+  instead of a Bring to front button that changed meaning for fields. Comments
+  panel Add comment places the note in the visible part of the page.
 - Removed redundant privacy and offline-status dropdowns, mode-like editing/export
   labels and the empty header tagline. The footer keeps Library, zoom, brief draft
   save feedback and actionable warnings or updates.

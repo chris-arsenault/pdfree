@@ -46,6 +46,8 @@ async function download(buttonName: string, mime: string, action = "Export") {
   try {
     if (action === "Extract") await page.getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("button", { name: action, exact: true }).click();
+    if (buttonName === "Download editing project")
+      await page.getByRole("radio", { name: "Editing project", exact: true }).click();
     await page.getByRole("button", { name: buttonName, exact: true }).click();
     await expect.poll(() => files.length, { timeout: 10_000 }).toBe(1);
     return new Uint8Array(await files[0]);
@@ -188,7 +190,8 @@ it("rejects oversized PNG pages before creating an export raster", async () => {
   await open(await pdf.save());
   const width = vi.spyOn(HTMLCanvasElement.prototype, "width", "set");
   await page.getByRole("button", { name: "Export", exact: true }).click();
-  await page.getByRole("button", { name: "Page images (PNG ZIP)", exact: true }).click();
+  await page.getByRole("radio", { name: "Page images", exact: true }).click();
+  await page.getByRole("button", { name: "Download page images (ZIP)", exact: true }).click();
   await expect
     .element(page.getByRole("alert"))
     .toHaveTextContent("too large for PNG export at 108 dpi");

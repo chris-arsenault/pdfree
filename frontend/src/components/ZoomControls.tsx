@@ -24,6 +24,7 @@ export function ZoomControls() {
     <div className="zoom-controls" aria-label="Zoom controls">
       <IconButton
         label="Zoom out"
+        className="zoom-step"
         icon={Minus}
         onClick={() => editor.setZoom(Math.max(0.25, editor.zoom - 0.1))}
       />
@@ -42,11 +43,17 @@ export function ZoomControls() {
       </select>
       <IconButton
         label="Zoom in"
+        className="zoom-step"
         icon={Plus}
         onClick={() => editor.setZoom(Math.min(3, editor.zoom + 0.1))}
       />
       <IconButton label="Fit page" icon={Maximize} onClick={() => fit(false)} />
-      <IconButton label="Fit width" icon={MoveHorizontal} onClick={() => fit(true)} />
+      <IconButton
+        label="Fit width"
+        className="fit-width"
+        icon={MoveHorizontal}
+        onClick={() => fit(true)}
+      />
     </div>
   );
 }

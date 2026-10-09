@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { type Root } from "react-dom/client";
 import { page, userEvent } from "vitest/browser";
-import { openEditor, editorDownload } from "../tooling/editorHarness";
+import { openEditor, editorDownload, openLibrary } from "../tooling/editorHarness";
 import { formFixture } from "./core/fixtures";
 import { deleteDraft, loadDrafts } from "./services/drafts";
 import { clearSignatures, rememberSignature, savedSignatures } from "./services/signatures";
@@ -52,7 +52,7 @@ it("retains documents in tabs and focuses their library entries without duplicat
     )
     .toContain("Second edit");
   expect(await loadDrafts()).toHaveLength(2);
-  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await openLibrary();
   const open = page.getByRole("button", { name: "Open First.pdf", exact: true });
   await open.click();
   await expect
@@ -104,7 +104,7 @@ it("previews, uses and individually removes signatures without removing placed m
     },
     object: { kind: "image", assetId: "mark", width: 160, height: 40 },
   });
-  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await openLibrary();
   await expect.element(page.getByRole("img", { name: "Image mark" })).toBeVisible();
   await page.getByRole("button", { name: "Use Alice", exact: true }).click();
   await page
@@ -113,7 +113,7 @@ it("previews, uses and individually removes signatures without removing placed m
   await expect
     .element(page.getByRole("button", { name: "text: Alice", exact: true }))
     .toBeVisible();
-  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await openLibrary();
   await page.getByRole("button", { name: "Delete signature Alice", exact: true }).click();
   await expect
     .element(page.getByRole("button", { name: "Use Alice", exact: true }))

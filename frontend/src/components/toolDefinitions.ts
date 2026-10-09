@@ -74,7 +74,7 @@ export const tools = [
     label: "Highlight",
     icon: Highlighter,
     group: "annotate",
-    hint: "Drag across the page to highlight an area.",
+    hint: "Drag across PDF text to highlight it, or drag elsewhere to highlight an area.",
   },
   {
     id: "ink",

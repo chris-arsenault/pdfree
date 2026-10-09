@@ -172,10 +172,10 @@ it("explains protected-document autosave without expanding or overflowing the fo
   await page.getByRole("button", { name: "Autosave off", exact: true }).hover();
   await expect
     .element(page.getByRole("tooltip"))
-    .toHaveTextContent("Your browser settings disable autosave for protected PDFs");
+    .toHaveTextContent("Autosave is off for protected PDFs in this browser");
   await page.getByRole("button", { name: "Autosave off", exact: true }).click();
   expect(await loadDraft()).toBe(null);
-  await expect.element(page.getByRole("dialog", { name: "Settings", exact: true })).toBeVisible();
+  await expect.element(page.getByRole("dialog", { name: "Library", exact: true })).toBeVisible();
   await expect
     .element(
       page.getByRole("checkbox", { name: "Don't autosave protected documents", exact: true })
@@ -192,7 +192,9 @@ it("explains protected-document autosave without expanding or overflowing the fo
     expect(footer.scrollWidth).toBeLessThanOrEqual(footer.clientWidth);
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
     expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight);
-    await expect.element(page.getByRole("button", { name: "Library", exact: true })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Open options", exact: true }))
+      .toBeVisible();
     await expect.element(page.getByRole("button", { name: "Fit page", exact: true })).toBeVisible();
     await page.screenshot({ path: `../test-results/autosave-footer-${width}.png` });
   }

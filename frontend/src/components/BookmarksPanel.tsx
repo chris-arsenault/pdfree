@@ -1,11 +1,66 @@
-import { useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { newId, type Bookmark } from "../core/model";
 import { validateUtilities } from "../core/utilityModel";
-import { Modal } from "./Modal";
+import { documentOutline, type NavigationItem } from "../services/navigation";
 import { IconButton } from "./ui/IconButton";
-function useBookmarkDraft() {
+
+/** Left-panel outline: jump to bookmarked pages, or edit the outline in place. */
+export function BookmarksPanel() {
+  const [editing, setEditing] = useState(false);
+  return editing ? (
+    <BookmarkEditor onDone={() => setEditing(false)} />
+  ) : (
+    <BookmarkOutline onEdit={() => setEditing(true)} />
+  );
+}
+function BookmarkOutline({ onEdit }: { onEdit: () => void }) {
+  const editor = useEditor(),
+    [items, setItems] = useState<NavigationItem[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    documentOutline(editor.document)
+      .then((outline) => {
+        if (!cancelled) setItems(outline);
+      })
+      .catch(() => {
+        if (!cancelled) setItems([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [editor.document]);
+  return (
+    <div className="bookmark-outline">
+      <button className="button secondary full" onClick={onEdit}>
+        <Pencil size={15} aria-hidden="true" /> Edit bookmarks
+      </button>
+      {items === null && <p className="field-note">Reading bookmarks…</p>}
+      {items?.length === 0 && <p className="field-note">This document has no bookmarks.</p>}
+      <ul aria-label="Document outline">
+        {items?.map((item, index) => (
+          <li key={`${item.pageId}-${index}`}>
+            <button
+              aria-current={item.pageId === editor.page?.id ? "page" : undefined}
+              onClick={() => {
+                editor.setActiveId(item.pageId);
+                editor.setObjectIds([]);
+                if (window.matchMedia("(max-width: 760px)").matches) editor.setPagesOpen(false);
+              }}
+            >
+              <span>{item.title}</span>
+              <small>
+                {editor.document.pages.findIndex((page) => page.id === item.pageId) + 1}
+              </small>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+function useBookmarkDraft(onDone: () => void) {
   const editor = useEditor(),
     [bookmarks, setBookmarks] = useState(editor.document.bookmarks ?? []);
   const [dragged, setDragged] = useState(""),
@@ -56,7 +111,7 @@ function useBookmarkDraft() {
       const next = { ...editor.document, bookmarks };
       validateUtilities(next);
       editor.commit(next);
-      editor.setDialog("");
+      onDone();
     } catch (error) {
       setError(error instanceof Error ? error.message : "Invalid bookmarks.");
     }
@@ -77,74 +132,81 @@ function useBookmarkDraft() {
     reorder,
   };
 }
-export function BookmarksDialog() {
-  const {
-    editor,
-    bookmarks,
-    setBookmarks,
-    dragged,
-    setDragged,
-    error,
-    add,
-    save,
-    unsupported,
-    change,
-    depth,
-    descendants,
-    reorder,
-  } = useBookmarkDraft();
+function BookmarkEditor({ onDone }: { onDone: () => void }) {
+  const draft = useBookmarkDraft(onDone);
   return (
-    <Modal title="Bookmarks" onClose={() => editor.setDialog("")}>
+    <div className="bookmark-editor" role="group" aria-label="Edit bookmarks">
       <p className="field-note">
         Bookmarks follow their target page when pages move. Deleting a target removes its bookmark
         and disables links to it. Duplicating a page keeps existing bookmarks pointing to the
         original.
       </p>
-      {unsupported ? (
-        <p className="inline-warning">
-          This source contains unsupported navigation or catalog structures. Keep its original
-          outline intact; editing bookmarks is unavailable.
-        </p>
-      ) : (
+      {draft.unsupported ? (
         <>
-          {bookmarks.map((bookmark, index) => (
-            <BookmarkRow
-              key={bookmark.id}
-              bookmark={bookmark}
-              index={index}
-              bookmarks={bookmarks}
-              depth={depth(bookmark)}
-              change={change}
-              reorder={reorder}
-              parents={bookmarks.filter(
-                (item) => item.id !== bookmark.id && !descendants(bookmark.id).includes(item.id)
-              )}
-              start={() => setDragged(bookmark.id)}
-              drop={() => reorder(dragged, bookmark.id)}
-              remove={() => {
-                const ids = new Set([bookmark.id, ...descendants(bookmark.id)]);
-                setBookmarks(bookmarks.filter((item) => !ids.has(item.id)));
-              }}
-            />
-          ))}
-          {!bookmarks.length && <p className="field-note">No bookmarks yet.</p>}
-          <button className="button secondary" onClick={add}>
-            <Plus size={16} />
-            Add current page
+          <p className="inline-warning">
+            This source contains unsupported navigation or catalog structures. Keep its original
+            outline intact; editing bookmarks is unavailable.
+          </p>
+          <button className="button secondary" onClick={onDone}>
+            Back to outline
           </button>
-          {error && (
-            <p role="alert" className="inline-warning">
-              {error}
-            </p>
-          )}
-          <div className="modal-actions">
-            <button className="button primary" onClick={save}>
-              Save bookmarks
-            </button>
-          </div>
         </>
+      ) : (
+        <BookmarkRows draft={draft} onDone={onDone} />
       )}
-    </Modal>
+    </div>
+  );
+}
+function BookmarkRows({
+  draft,
+  onDone,
+}: {
+  draft: ReturnType<typeof useBookmarkDraft>;
+  onDone: () => void;
+}) {
+  const { bookmarks, setBookmarks, dragged, setDragged, error, add, save } = draft;
+  const { change, depth, descendants, reorder } = draft;
+  return (
+    <>
+      {bookmarks.map((bookmark, index) => (
+        <BookmarkRow
+          key={bookmark.id}
+          bookmark={bookmark}
+          index={index}
+          bookmarks={bookmarks}
+          depth={depth(bookmark)}
+          change={change}
+          reorder={reorder}
+          parents={bookmarks.filter(
+            (item) => item.id !== bookmark.id && !descendants(bookmark.id).includes(item.id)
+          )}
+          start={() => setDragged(bookmark.id)}
+          drop={() => reorder(dragged, bookmark.id)}
+          remove={() => {
+            const ids = new Set([bookmark.id, ...descendants(bookmark.id)]);
+            setBookmarks(bookmarks.filter((item) => !ids.has(item.id)));
+          }}
+        />
+      ))}
+      {!bookmarks.length && <p className="field-note">No bookmarks yet.</p>}
+      <button className="button secondary" onClick={add}>
+        <Plus size={16} />
+        Add current page
+      </button>
+      {error && (
+        <p role="alert" className="inline-warning">
+          {error}
+        </p>
+      )}
+      <div className="bookmark-actions">
+        <button className="button secondary" onClick={onDone}>
+          Cancel
+        </button>
+        <button className="button primary" onClick={save}>
+          Save bookmarks
+        </button>
+      </div>
+    </>
   );
 }
 type BookmarkRowProps = {

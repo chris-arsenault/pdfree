@@ -32,7 +32,8 @@ function EditorSurface() {
       onDrop={(e) => {
         if (e.dataTransfer.files.length) {
           e.preventDefault();
-          editor.importFiles(Array.from(e.dataTransfer.files));
+          // Dropped files open like header Open; the Pages list is the append target.
+          editor.importFiles(Array.from(e.dataTransfer.files), true);
         }
       }}
     >

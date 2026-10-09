@@ -157,6 +157,7 @@ it("keeps export settings when canceling a nested confirmation and downloads dec
     await open(page, await encryptedFixture("AES-256", ""));
     await page.getByRole("button", { name: "Export", exact: true }).click();
     await page.getByRole("textbox", { name: "File name", exact: true }).fill("Private.pdf");
+    await page.getByRole("radio", { name: "Editing project", exact: true }).click();
     const project = page.getByRole("button", { name: "Download editing project", exact: true });
     const dialog = page.getByRole("dialog", {
       name: "Download an unprotected project?",
@@ -266,19 +267,20 @@ it.each([390, 320])(
       await page.getByRole("button", { name: "Hide properties", exact: true }).tap();
       await page.getByRole("button", { name: "Pages", exact: true }).tap();
       await page.getByRole("button", { name: "Current page", exact: true }).tap();
-      await page.getByRole("button", { name: "Select all pages", exact: true }).tap();
+      await page.getByRole("radio", { name: "All pages", exact: true }).tap();
       await expect
-        .poll(() => page.getByRole("button", { name: "3 selected pages", exact: true }).count())
+        .poll(() => page.getByRole("button", { name: "All pages", exact: true }).count())
         .toBe(1);
-      await page.getByRole("button", { name: "More", exact: true }).tap();
+      await page.keyboard.press("Escape");
+      await page.getByRole("button", { name: "Insert", exact: true }).tap();
       await expect
         .poll(() => page.getByRole("button", { name: /^Merge PDFs/ }).isVisible())
         .toBe(true);
       await accessible(page);
-      await page.getByRole("button", { name: /^Insert pages/ }).focus();
+      await page.getByRole("button", { name: /^Merge PDFs/ }).focus();
       await page.keyboard.press("Tab");
       await expect
-        .poll(() => page.getByRole("dialog", { name: "More", exact: true }).count())
+        .poll(() => page.getByRole("dialog", { name: "Insert", exact: true }).count())
         .toBe(0);
       expect(
         await page

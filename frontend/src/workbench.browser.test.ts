@@ -35,20 +35,53 @@ it("distinguishes current-page actions from selected-page actions and rejects in
   await page.getByRole("checkbox", { name: "Select page 3", exact: true }).click();
   await page.getByRole("checkbox", { name: "Select page 1", exact: true }).click();
   await page.getByRole("button", { name: "2 selected pages", exact: true }).click();
-  await page.getByRole("textbox", { name: "Page range", exact: true }).fill("99");
-  await page.getByRole("button", { name: "Select range", exact: true }).click();
-  await expect.element(page.getByRole("alert")).toBeVisible();
+  await expect
+    .element(page.getByRole("radio", { name: "Selected pages", exact: true }))
+    .toBeChecked();
+  await page.getByRole("radio", { name: "Page range", exact: true }).click();
+  await page.getByRole("textbox", { name: "Pages to include", exact: true }).fill("99");
+  await expect.element(page.getByText("Page range 99 must be between 1 and 3.")).toBeVisible();
   await expect
     .element(page.getByRole("checkbox", { name: "Select page 3", exact: true }))
     .toBeChecked();
-  await page.getByRole("button", { name: "Use current page", exact: true }).click();
+  await page.getByRole("textbox", { name: "Pages to include", exact: true }).fill("2-3");
+  await expect
+    .element(page.getByRole("checkbox", { name: "Select page 1", exact: true }))
+    .not.toBeChecked();
+  await expect
+    .element(page.getByRole("checkbox", { name: "Select page 2", exact: true }))
+    .toBeChecked();
+  await page.getByRole("radio", { name: "Current page", exact: true }).click();
   await expect
     .element(page.getByRole("button", { name: "Current page", exact: true }))
     .toBeVisible();
-  await page.getByRole("button", { name: "Dismiss error", exact: true }).click();
+  await userEvent.keyboard("{Escape}");
   await page.getByRole("button", { name: "Export", exact: true }).click();
+  await expect.element(page.getByRole("radio", { name: "All pages", exact: true })).toBeChecked();
+  await expect.element(page.getByText("3 of 3 page(s)")).toBeVisible();
+});
+
+it("starts Extract with the page selection and Export with the whole document", async () => {
+  root = await openEditor(await formFixture());
+  await page.getByRole("checkbox", { name: "Select page 2", exact: true }).click();
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("button", { name: "Extract", exact: true }).click();
   await expect
-    .element(page.getByRole("checkbox", { name: "Export current page (1)", exact: true }))
+    .element(page.getByRole("radio", { name: "Selected pages", exact: true }))
+    .toBeChecked();
+  await expect.element(page.getByText("1 of 3 page(s)")).toBeVisible();
+  await page.getByRole("radio", { name: "Printable sheets", exact: true }).click();
+  await page.getByRole("combobox", { name: "Pages per sheet", exact: true }).selectOptions("4");
+  await expect
+    .element(page.getByRole("button", { name: "Download 4-up PDF", exact: true }))
+    .toBeVisible();
+  await expect
+    .element(page.getByRole("button", { name: "Download PDF", exact: true }))
+    .not.toBeInTheDocument();
+  await page.getByRole("radio", { name: "Split into files", exact: true }).click();
+  await expect.element(page.getByRole("radio", { name: "All pages" })).not.toBeInTheDocument();
+  await expect
+    .element(page.getByRole("button", { name: "Download 2 PDFs as ZIP", exact: true }))
     .toBeVisible();
 });
 

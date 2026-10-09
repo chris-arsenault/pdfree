@@ -32,12 +32,15 @@ async function accessible(page: Page) {
   ).toEqual([]);
 }
 async function tool(page: Page, name: string) {
-  await page.getByRole("button", { name: "Tools", exact: true }).click();
+  const more = page.getByRole("button", { name: "More", exact: true });
+  if (!(await more.isVisible()))
+    await page.getByRole("button", { name: "Pages", exact: true }).click();
+  await more.click();
   await page.getByRole("button", { name, exact: true }).click();
 }
-async function downloadPdf(page: Page) {
+async function downloadPdf(page: Page, button = "Download PDF") {
   const downloading = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download PDF", exact: true }).click();
+  await page.getByRole("button", { name: button, exact: true }).click();
   const path = await (await downloading).path();
   return new Uint8Array(await readFile(path!));
 }
@@ -100,7 +103,7 @@ it.each([1280, 320])(
         await pdf.destroy();
       }
       await page.getByRole("button", { name: "Export", exact: true }).click();
-      await page.getByText("Pages per printed sheet", { exact: true }).click();
+      await page.getByRole("radio", { name: "Printable sheets", exact: true }).click();
       await page.getByRole("combobox", { name: "Pages per sheet", exact: true }).selectOption("2");
       await page.getByRole("button", { name: "Preview first sheet", exact: true }).click();
       await expect
@@ -112,7 +115,7 @@ it.each([1280, 320])(
         .toBe(true);
       await accessible(page);
       await page.screenshot({ path: `test-results/${engine}-utilities-${width}.png` });
-      const print = await PDFDocument.load(await downloadPdf(page));
+      const print = await PDFDocument.load(await downloadPdf(page, "Download 2-up PDF"));
       expect(print.getPageCount()).toBe(2);
       expect(print.getForm().getFields()).toHaveLength(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(

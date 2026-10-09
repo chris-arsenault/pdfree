@@ -36,24 +36,34 @@ Drag, resize, rotate, duplicate and align added objects. Shift-click selects
 multiple objects; arrow keys nudge, Delete removes, Ctrl/⌘ Z undoes and Ctrl/⌘ C/V
 copies/pastes. Native text selection remains available for copying PDF text.
 
-Use images/stamps, ink, rectangles, lines/arrows and area highlights. Select PDF
-text for text highlights where a text layer exists. Covering content with shapes
+Use images/stamps, ink, rectangles, lines/arrows and highlights. With Highlight,
+drag across PDF or recognized text to highlight that text, or drag elsewhere to
+highlight an area; text already selected on the page is highlighted as soon as
+you choose Highlight. Covering content with shapes
 does not remove it. Use the Field tool to author genuine fillable fields; configure
-their names, options, required flags and tab order in the inspector.
+their names, options and required flags in the inspector, and use its Tab order
+control to move a field earlier or later among the page's authored fields. Other
+added objects offer Bring to front instead.
 
-Search includes existing PDF text, recognized words, entered text and repeated labels.
-Zoom, fit width/page, thumbnails, page jump and available
-document outlines navigate the document.
+The bar above the document changes the view only: the Pages and Bookmarks panel
+toggles, text search, page position, zoom and fit page/width (fit width is hidden
+on phones), and the Properties and Comments toggles. Search includes existing PDF
+text, recognized words, entered text and repeated labels.
 
-Open another document with the plus icon beside the document tabs. Each document
+Open another document with Open, the plus icon beside the document tabs or by
+dropping files onto the editor; each opens in its own tab. To add a dropped PDF's
+pages to the current document instead, drop it onto the Pages thumbnail list,
+which appends them at the end. Each document
 keeps its own edits, undo, selection and clipboard. Closing an edited document asks
 for confirmation; saved library entries remain available.
 
 ## Scan and repeated tools
 
-Tools opens Recognize text, Clean up scans, Repeat across pages and Process multiple
-PDFs. Recognition and cleanup default to the current page selection; repeated
-rules default to all pages. Recognition starts with English and adds searchable/selectable text
+The Pages panel's More menu opens Recognize text, Clean up scans and Repeat across
+pages; Process multiple PDFs is in the menu beside Open. Each page tool shows the
+page-scope control. Recognition and cleanup start from the checked thumbnails, or
+the current page when none are checked; repeated rules start from all pages.
+Recognition starts with English and adds searchable/selectable text
 without changing the scanned image. Existing PDF text is skipped. Review recognition
 accuracy; Remove recognition and Undo leave the source image intact.
 
@@ -70,15 +80,18 @@ reports errors per file and downloads successful PDFs individually or as ZIP.
 Password/certificate prompts are not supported in this batch flow; open protected
 documents individually.
 
-Edit bookmarks in the Pages outline control. Add the current page, rename, choose
-a target/parent, reorder by drag or arrow buttons and save. Deleted targets remove
+Bookmarks shares the left panel with Pages. It lists the document outline; choose
+an entry to go to its page. Edit bookmarks switches the panel to editing: add the
+current page, rename, choose a target/parent, reorder by drag or arrow buttons and
+save, or cancel to discard the changes. Deleted targets remove
 their bookmarks and disable incoming internal links. Duplicates keep existing
 bookmarks targeting the original page.
 
 ## Comments
 
-In the Comments panel, Add comment opens a note at the center of the current
-page without closing the panel. Write your note and post it.
+In the Comments panel, Add comment opens a note at the centre of the part of the
+current page that is in view, without closing the panel. Write your note and
+post it.
 
 Choose Comment in the toolbar (under Add on narrow screens), click a location
 on the page, write your note and post it. A name is optional. Comments above the
@@ -100,18 +113,22 @@ export and expose those linked notes read only.
 
 ## Organize and split pages
 
-Use Pages above the document to show thumbnails and page operations. On touch
-screens, it opens a drawer. The scope control says Current page when no page
-checkboxes are selected, or shows the selected count. It also offers all-page
-and range selection. More contains Extract, Split, Merge PDFs (append at the
-end), and Insert pages (insert after the current page).
+Use Pages above the document to show thumbnails and every operation that changes
+the page set. On touch screens, it opens a drawer. The scope control at the top
+says Current page when no thumbnails are checked, the selected count, or All
+pages. Open it to choose All pages, Current page or a page range; these update
+the thumbnail checkboxes. Rotate, Duplicate and Delete apply to that scope.
 
-Thumbnails select, navigate and reorder pages. Rotate selected pages or the whole
-document; duplicate, delete or extract pages. Merge PDFs and insert PDFs,
-PNG/JPG images or blank pages. Page numbers refer to the current physical page
-order, beginning at 1, rather than printed labels on the original form.
+Insert adds a Blank page or Pages from file (PDF, PNG or JPG) after the current
+page, or Merge PDFs at the end. Dropping files onto the thumbnail list also
+appends them. More holds Extract, Split, Repeat across pages, Clean up scans and
+Recognize text; Extract and Split open Export.
 
-Split after page numbers, every N pages, into individual pages or by output
+Thumbnails select, navigate and reorder pages. Page numbers refer to the current
+physical page order, beginning at 1, rather than printed labels on the original
+form.
+
+Split (in Export) after page numbers, every N pages, into individual pages or by output
 ranges. Splitting after `3,7` produces pages 1–3, 4–7 and 8–end. Explicit ranges
 such as `1-3; 5-end` produce two outputs. Review previews and omitted-page notices,
 then download individual PDFs or all outputs as ZIP. Outputs contain current
@@ -120,30 +137,37 @@ field values, page rotations and added objects. See
 
 ## Save and export
 
-| Output               | What it preserves                                                                |
-| -------------------- | -------------------------------------------------------------------------------- |
-| PDF, retained fields | Completed page content, comments and supported interactive fields                |
-| PDF, flattened       | Field appearances embedded in page content; comments remain annotations          |
-| `.pdfree` project    | Original sources, movable objects, comments, assets, field values and page edits |
-| PNG ZIP              | Raster images of selected pages at 108 dpi                                       |
-| Print                | Prepared page output for the browser print flow                                  |
+Export starts with an output choice. Each output shows only the settings that
+change its file, and the main button names what it downloads.
 
-Export the whole document or selected pages. Download works across supported
-browsers; direct file saving is an optional browser enhancement. Added marks in
-a PDF export reopen as PDF page content, not movable PDFree objects. Save a
-`.pdfree` project to continue editing. A flattened PDF alone provides neither
-certificate signing nor tamper protection.
+| Output           | What it preserves                                                                     | Main button                 |
+| ---------------- | ------------------------------------------------------------------------------------- | --------------------------- |
+| PDF              | Page content, comments and supported interactive fields; flatten to bake field values | Download PDF                |
+| Printable sheets | 2, 4 or 6 pages per sheet with baked field and comment appearances                    | Download 2-up PDF (or 4, 6) |
+| Split into files | Several PDFs with current fields and edits                                            | Download N PDFs as ZIP      |
+| Page images      | Raster images of the chosen pages at 108 dpi                                          | Download page images (ZIP)  |
+| Editing project  | Original sources, movable objects, comments, assets, field values and page edits      | Download editing project    |
 
-The Export dialog can also [sign, certify or protect its PDF output](security.md).
+PDF, Printable sheets and Page images use the page-scope control: All pages
+(the default), Current page, Selected pages or a page range, with the resulting
+page count shown below it. Extract in the Pages panel opens Export as PDF with
+the selected pages. Split in the Pages panel opens Export with Split into files.
+
+PDF and Printable sheets also offer Print and, in browsers that support it, Save
+to file. Added marks in a PDF reopen as PDF page content, not movable PDFree
+objects; download an editing project to continue editing. A flattened PDF alone
+provides neither certificate signing nor tamper protection.
+
+PDF and Printable sheets can [sign, certify or protect the output](security.md).
 PDF size and quality offers supported-image compression and an actual byte-size
 preview. Unsupported image resources keep their quality; a target size is not a
-promise. Pages per printed sheet creates a separate 2/4/6-up PDF with paper,
-orientation, ordering and margin controls. Review its first-sheet preview and print
-at actual size. It bakes field/comment appearances but omits interactive fields,
-threads and navigation. Keep an ordinary PDF or editing project for those features.
+promise. Printable sheets offers paper, orientation, ordering and margin controls
+and a first-sheet preview; print it at actual size. Sheets omit interactive
+fields, threads and navigation, so keep an ordinary PDF or editing project for
+those features.
 
-Those settings apply to PDF download and direct PDF save only; projects, drafts,
-PNGs, print and Split outputs are unprotected.
+Signing and protection apply to PDF and Printable sheets downloads and direct
+saves only; projects, drafts, page images, print and split files are unprotected.
 
 Encryption is not automatically carried into a new PDF: enable password or
 recipient protection for its PDF export. Projects retain the encrypted original
@@ -152,29 +176,34 @@ it requires no PDF password. Keep these projects private.
 
 ## Local storage and updates
 
-Documents autosave in this browser. Open Library in the bottom status strip to
-view saved documents, reopen one or delete it individually. Opening a replacement
-keeps previously saved documents in the library; reopening updates the same entry.
-Saved open documents and the active tab restore after reload. Library also offers
-other saved documents. Download an editing project for durable backup
-because browsers can evict stored data.
+Documents autosave in this browser. Open Library from the menu beside Open to
+view saved documents, reopen one or delete it individually. With no document
+open, the start screen offers the most recent saved document (Recover draft) and
+links to Saved documents and Process multiple PDFs. Opening a replacement keeps
+previously saved documents in the library; reopening updates the same entry.
+Saved open documents and the active tab restore after reload. Download an editing
+project for durable backup because browsers can evict stored data.
 
 Protected PDFs also autosave by default; saved drafts contain unlocked content.
-Open Settings in the header (under Document actions on a phone) to enable “Don't
-autosave protected documents.” This browser-wide option is off by default and
-applies to all open documents, including background tabs. Turning it on stops new
-saves for protected PDFs; delete a document in Library to remove its existing
-local copy. Turning it off resumes saving. Downloaded projects remain separate files.
+Library's Storage section has “Don't autosave protected documents.” This
+browser-wide option is off by default and applies to all open documents,
+including background tabs. Turning it on stops new saves for protected PDFs;
+delete a document in Library to remove its existing local copy. Turning it off
+resumes saving. Downloaded projects remain separate files.
 
 Library also previews remembered signatures. Use one in the open document or
 delete it individually; deleting a remembered signature keeps already placed
 marks. Document deletion requires confirmation and keeps the open document in
 memory. Saving that document resumes after the next edit; other saved documents
 are unaffected. Queued writes cannot recreate a deleted entry.
-The Document action opens source information. Settings apply to this browser and
-stay outside document undo and editing projects. The strip shows brief Saving/Saved
-feedback, storage failures, an Autosave off control when the restriction is enabled,
-and update prompts. Browser-only processing is always active; there is no cloud mode.
+Rename the document in place by editing its name in the header; Enter keeps the
+name and Escape restores it. The Document action opens source information and
+also offers rename on phones, where the header name is hidden. Storage settings
+apply to this browser and stay outside document undo and editing projects. The
+bottom strip reports status only: brief Saving/Saved feedback, storage failures,
+an Autosave off control (which opens Library storage) when the restriction is
+enabled, and update prompts. Browser-only processing is always active; there is
+no cloud mode.
 
 The app automatically caches its assets for offline use. Once installation completes,
 editing, English OCR and downloads can run without an origin connection. Installation

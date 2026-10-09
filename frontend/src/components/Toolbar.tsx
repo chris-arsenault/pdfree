@@ -1,4 +1,6 @@
-import { Plus, Redo2, Undo2, Wrench, ScanText, ScanLine, ListOrdered, Files } from "lucide-react";
+import { type PointerEvent } from "react";
+import { Plus, Redo2, Undo2 } from "lucide-react";
+import { highlightTextSelection } from "../hooks/usePlacement";
 import { useEditor } from "../hooks/editorContext";
 import { type Tool } from "../core/model";
 import { tools } from "./toolDefinitions";
@@ -7,6 +9,9 @@ import { ActionPopover } from "./ui/ActionPopover";
 export function Toolbar() {
   const editor = useEditor();
   const select = (tool: Tool) => {
+    // Text already selected on the page is highlighted immediately.
+    const surface = document.querySelector<HTMLElement>(".page-surface");
+    if (tool === "highlight" && surface && highlightTextSelection(editor, surface)) return;
     editor.setObjectIds([]);
     editor.setPendingComment(null);
     if (tool === "signature" || tool === "initials") editor.setDialog(tool);
@@ -18,7 +23,6 @@ export function Toolbar() {
   return (
     <div className="toolbar" role="toolbar" aria-label="Editing tools">
       <HistoryButtons />
-      <UtilityTools />
       <div className="desktop-tools">
         {["select", "fill", "sign", "annotate", "field"].map((group) => (
           <div className="tool-group" key={group}>
@@ -32,6 +36,7 @@ export function Toolbar() {
                   detail={tool.hint}
                   aria-pressed={editor.tool === tool.id}
                   className={editor.tool === tool.id ? "active" : ""}
+                  onPointerDown={tool.id === "highlight" ? keepSelection : undefined}
                   onClick={() => select(tool.id)}
                 />
               ))}
@@ -41,53 +46,6 @@ export function Toolbar() {
       <MobileTools select={select} />
       <span className="active-tool">{tools.find((tool) => tool.id === editor.tool)?.label}</span>
     </div>
-  );
-}
-function UtilityTools() {
-  const editor = useEditor();
-  return (
-    <ActionPopover label="Tools" icon={Wrench}>
-      {(close) => (
-        <>
-          <button
-            onClick={() => {
-              editor.setDialog("ocr");
-              close();
-            }}
-          >
-            <ScanText size={17} aria-hidden="true" />
-            Recognize text
-          </button>
-          <button
-            onClick={() => {
-              editor.setDialog("cleanup");
-              close();
-            }}
-          >
-            <ScanLine size={17} aria-hidden="true" />
-            Clean up scans
-          </button>
-          <button
-            onClick={() => {
-              editor.setDialog("repeat");
-              close();
-            }}
-          >
-            <ListOrdered size={17} aria-hidden="true" />
-            Repeat across pages
-          </button>
-          <button
-            onClick={() => {
-              editor.setDialog("batch");
-              close();
-            }}
-          >
-            <Files size={17} aria-hidden="true" />
-            Process multiple PDFs
-          </button>
-        </>
-      )}
-    </ActionPopover>
   );
 }
 function MobileTools({ select }: { select: (tool: Tool) => void }) {
@@ -120,6 +78,9 @@ function MobileTools({ select }: { select: (tool: Tool) => void }) {
     </div>
   );
 }
+
+// Pressing a tool must not clear a PDF text selection the Highlight tool can use.
+const keepSelection = (event: PointerEvent) => event.preventDefault();
 
 function HistoryButtons() {
   const editor = useEditor();

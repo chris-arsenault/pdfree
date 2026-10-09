@@ -1,48 +1,13 @@
 import { useDraft } from "../hooks/useDraft";
 import { useEditor } from "../hooks/editorContext";
-import { Library, FileCheck2, FileLock2, FileWarning, FileClock } from "lucide-react";
-import { LibraryDialog } from "./LibraryDialog";
-import { IconButton } from "./ui/IconButton";
+import { FileCheck2, FileLock2, FileWarning, FileClock } from "lucide-react";
 import { Tooltip } from "./ui/Tooltip";
 import { ActionPopover } from "./ui/ActionPopover";
+/** Footer save status; recovery lives in the empty workspace and Library in the Open menu. */
 export function DraftStatus() {
-  const editor = useEditor(),
-    draft = useDraft();
-  const showLibrary = () => editor.setDialog("library");
   return (
     <div className="draft-status">
-      {!editor.document.pages.length && draft.recoveries.length ? (
-        draft.recoveries.slice(0, 1).map((recovery) => (
-          <ActionPopover label="Saved document" icon={FileClock} key={recovery.id}>
-            {(close) => (
-              <>
-                <p>
-                  {recovery.document.name} · {new Date(recovery.savedAt).toLocaleString()}
-                </p>
-                <button
-                  onClick={() => {
-                    draft.restore(recovery);
-                    close();
-                  }}
-                  disabled={!!editor.task.busy}
-                >
-                  Recover draft
-                </button>
-              </>
-            )}
-          </ActionPopover>
-        ))
-      ) : (
-        <DraftMessage />
-      )}
-      <IconButton
-        label="Library"
-        detail="Reopen or delete documents saved on this device."
-        icon={Library}
-        disabled={!!editor.task.busy}
-        onClick={showLibrary}
-      />
-      {editor.dialog === "library" && <LibraryDialog draft={draft} />}
+      <DraftMessage />
     </div>
   );
 }
@@ -50,20 +15,20 @@ export function DraftStatus() {
 function DraftMessage() {
   const editor = useEditor(),
     draft = useDraft();
-  const showSettings = () => editor.setDialog("settings");
+  const showStorage = () => editor.setDialog("library");
   if (draft.autosaveOff)
     return (
       <span role="status" className="draft-message">
         <Tooltip
           label="Autosave off"
-          detail="Your browser settings disable autosave for protected PDFs. Open Settings to change this for all documents."
+          detail="Autosave is off for protected PDFs in this browser. Open Library storage settings to change this for all documents."
         >
           <button
             type="button"
             className="popover-trigger draft-settings-trigger"
             aria-label="Autosave off"
             disabled={!!editor.task.busy}
-            onClick={showSettings}
+            onClick={showStorage}
           >
             <FileLock2 size={17} aria-hidden="true" />
             <span>Autosave off</span>

@@ -6,13 +6,20 @@ import {
   Scissors,
   Files,
   Download,
+  File,
   ListChecks,
+  ListOrdered,
   MoreHorizontal,
   FilePlus2,
+  ScanLine,
+  ScanText,
+  type LucideIcon,
 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
-import { rotatePages, duplicatePages, removePages } from "../core/pageOperations";
-import { parsePageRange } from "../core/pageRanges";
+import { rotatePages, duplicatePages, removePages, insertBlank } from "../core/pageOperations";
+import { selectionScope, type PageScope, type PageScopeKind } from "../core/pageScope";
+import { resolveScope } from "../hooks/usePageScope";
+import { PageScopeField } from "./PageScopeField";
 import { IconButton } from "./ui/IconButton";
 import { ActionPopover } from "./ui/ActionPopover";
 import { FileButton } from "./ui/FileButton";
@@ -57,13 +64,16 @@ export function PageActions() {
         detail={`Delete ${pageScope(editor)}. You can undo this.`}
         onClick={remove}
       />
+      <ActionPopover label="Insert" icon={FilePlus2}>
+        {(close) => <InsertChoices close={close} />}
+      </ActionPopover>
       <ActionPopover label="More" icon={MoreHorizontal}>
-        {(close) => <PageExtras close={close} />}
+        {(close) => <PageTools close={close} />}
       </ActionPopover>
     </div>
   );
 }
-function PageExtras({ close }: { close: () => void }) {
+function InsertChoices({ close }: { close: () => void }) {
   const editor = useEditor();
   const merge = (files: File[]) => {
     editor.importFiles(files);
@@ -77,21 +87,26 @@ function PageExtras({ close }: { close: () => void }) {
     <>
       <button
         onClick={() => {
-          editor.setExportSelected(true);
-          editor.setDialog("export");
+          editor.commit(insertBlank(editor.document, editor.page?.id ?? ""));
           close();
         }}
       >
-        <Download size={17} aria-hidden="true" /> Extract
+        <File size={17} aria-hidden="true" />
+        <span>
+          Blank page
+          <small aria-hidden="true">After the current page</small>
+        </span>
       </button>
-      <button
-        onClick={() => {
-          editor.setDialog("split");
-          close();
-        }}
-      >
-        <Scissors size={17} aria-hidden="true" /> Split
-      </button>
+      <FileButton
+        label="Pages from file"
+        multiple
+        icon={FilePlus2}
+        detail="PDF, PNG or JPG after the current page"
+        className="file-action"
+        accept="application/pdf,image/png,image/jpeg,.pdf"
+        disabled={!!editor.task.busy}
+        onFiles={insert}
+      />
       <FileButton
         label="Merge PDFs"
         multiple
@@ -102,84 +117,79 @@ function PageExtras({ close }: { close: () => void }) {
         disabled={!!editor.task.busy}
         onFiles={merge}
       />
-      <FileButton
-        label="Insert pages"
-        multiple
-        icon={FilePlus2}
-        detail="Insert after the current page"
-        className="file-action"
-        accept="application/pdf,image/png,image/jpeg,.pdf"
-        disabled={!!editor.task.busy}
-        onFiles={insert}
+    </>
+  );
+}
+function PageTools({ close }: { close: () => void }) {
+  const editor = useEditor();
+  const items: { label: string; icon: LucideIcon; open: () => void }[] = [
+    { label: "Extract", icon: Download, open: () => editor.openExport("extract") },
+    { label: "Split", icon: Scissors, open: () => editor.openExport("split") },
+    { label: "Repeat across pages", icon: ListOrdered, open: () => editor.setDialog("repeat") },
+    { label: "Clean up scans", icon: ScanLine, open: () => editor.setDialog("cleanup") },
+    { label: "Recognize text", icon: ScanText, open: () => editor.setDialog("ocr") },
+  ];
+  return items.map((item) => (
+    <button
+      key={item.label}
+      onClick={() => {
+        item.open();
+        close();
+        // On phones the Pages drawer is modal; leave the dialog over the document instead.
+        if (window.matchMedia("(max-width: 760px)").matches) editor.setPagesOpen(false);
+      }}
+    >
+      <item.icon size={17} aria-hidden="true" /> {item.label}
+    </button>
+  ));
+}
+function PageSelection() {
+  const editor = useEditor(),
+    kind = selectionScope(editor.document, editor.pageIds);
+  const labels = {
+    all: "All pages",
+    selected: `${editor.selectedPageIds.length} selected pages`,
+    current: "Current page",
+    range: "",
+  };
+  return (
+    <ActionPopover label={labels[kind]} icon={ListChecks}>
+      {() => <SelectionScope initial={kind} />}
+    </ActionPopover>
+  );
+}
+/** Edits the shared thumbnail selection through the same scope control dialogs use. */
+function SelectionScope({ initial }: { initial: PageScopeKind }) {
+  const editor = useEditor(),
+    [scope, setScope] = useState<PageScope>({ kind: initial, range: "" });
+  const resolved = resolveScope(editor, scope);
+  const change = (next: PageScope) => {
+    setScope(next);
+    const { pageIds, error } = resolveScope(editor, next);
+    if (next.kind === "all") editor.setPageIds(pageIds);
+    else if (next.kind === "current") editor.setPageIds([]);
+    else if (next.kind === "range" && !error) editor.setPageIds(pageIds);
+  };
+  return (
+    <>
+      <p>Rotate, duplicate, delete and Extract apply to these pages.</p>
+      <PageScopeField
+        scope={scope}
+        onChange={change}
+        pageIds={reportedPageIds(scope, resolved.pageIds, editor.selectedPageIds)}
+        error={scope.kind === "range" && scope.range.trim() ? resolved.error : ""}
       />
     </>
   );
 }
-function PageSelection() {
-  const editor = useEditor(),
-    [range, setRange] = useState("");
-  const selectRange = () =>
-    editor.task.run("Selecting pages", () =>
-      editor.setPageIds(
-        parsePageRange(range, editor.document.pages.length).map(
-          (number) => editor.document.pages[number - 1].id
-        )
-      )
-    );
-  return (
-    <ActionPopover
-      label={
-        editor.pageIds.length ? `${editor.selectedPageIds.length} selected pages` : "Current page"
-      }
-      icon={ListChecks}
-    >
-      {(close) => (
-        <>
-          <p>
-            Actions apply to {pageScope(editor)}. Without a selection, they apply to the current
-            page.
-          </p>
-          <button
-            onClick={() => {
-              editor.setPageIds(editor.document.pages.map((page) => page.id));
-              close();
-            }}
-          >
-            Select all pages
-          </button>
-          <button
-            onClick={() => {
-              editor.setPageIds([]);
-              close();
-            }}
-          >
-            Use current page
-          </button>
-          <form
-            className="range-picker"
-            onSubmit={(event) => {
-              event.preventDefault();
-              selectRange();
-            }}
-          >
-            <label>
-              Page range
-              <input
-                placeholder="1-3, 5"
-                value={range}
-                onChange={(event) => setRange(event.target.value)}
-              />
-            </label>
-            <button disabled={!range.trim()}>Select range</button>
-          </form>
-        </>
-      )}
-    </ActionPopover>
-  );
-}
+// An unfinished range leaves the previous selection in effect, so report that selection.
+const reportedPageIds = (scope: PageScope, resolved: string[], selected: string[]) =>
+  scope.kind === "range" && !resolved.length ? selected : resolved;
 
 function pageScope(editor: ReturnType<typeof useEditor>) {
-  return editor.pageIds.length
+  const kind = selectionScope(editor.document, editor.pageIds);
+  if (kind === "all") return "all pages";
+  return kind === "selected"
     ? `${editor.selectedPageIds.length} selected pages`
     : `page ${editor.document.pages.findIndex((page) => page.id === editor.page?.id) + 1}`;
 }

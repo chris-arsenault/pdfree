@@ -1,36 +1,67 @@
-import { Plus, ChevronUp, ChevronDown, X } from "lucide-react";
+import { useState, type DragEvent } from "react";
+import { ChevronUp, ChevronDown, X } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { displaySize } from "../core/coordinates";
 import { type Page } from "../core/model";
-import { movePage, insertBlank } from "../core/pageOperations";
+import { movePage } from "../core/pageOperations";
 import { PageCanvas } from "./PageCanvas";
 import { usePageWindow, thumbnailHeight } from "../hooks/usePageWindow";
 import { PageActions } from "./PageActions";
+import { BookmarksPanel } from "./BookmarksPanel";
 import { IconButton } from "./ui/IconButton";
 import { SidePanel } from "./ui/SidePanel";
+/** Left panel: what is in the document, in order — page thumbnails or the bookmark outline. */
 export function PageSidebar() {
-  const editor = useEditor();
-  const {
-    ref: listRef,
-    start,
-    visible,
-  } = usePageWindow(editor.document.pages, editor.page?.id ?? "");
+  const editor = useEditor(),
+    tab = editor.leftTab;
   return (
     <SidePanel
       id="pages-panel"
-      label="Pages"
+      label={tab === "pages" ? "Pages" : "Bookmarks"}
       className="page-sidebar"
       open={editor.pagesOpen}
       onClose={() => editor.setPagesOpen(false)}
       drawer
     >
       <div className="panel-heading">
-        <strong>Pages</strong>
-        <span className="panel-count">{editor.document.pages.length}</span>
-        <IconButton label="Hide pages" icon={X} onClick={() => editor.setPagesOpen(false)} />
+        <div className="panel-tabs" role="tablist" aria-label="Document contents">
+          {(["pages", "bookmarks"] as const).map((item) => (
+            <button
+              key={item}
+              role="tab"
+              aria-selected={tab === item}
+              onClick={() => editor.setLeftTab(item)}
+            >
+              {item === "pages" ? "Pages" : "Bookmarks"}
+              {item === "pages" && (
+                <span className="panel-count">{editor.document.pages.length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <IconButton label={`Hide ${tab}`} icon={X} onClick={() => editor.setPagesOpen(false)} />
       </div>
+      {tab === "pages" ? <PagesView /> : <BookmarksPanel />}
+    </SidePanel>
+  );
+}
+function PagesView() {
+  const editor = useEditor();
+  const {
+    ref: listRef,
+    start,
+    visible,
+  } = usePageWindow(editor.document.pages, editor.page?.id ?? "");
+  const { dropping, ...dropTarget } = useAppendDrop();
+  return (
+    <>
       <PageActions />
-      <div className="thumbnail-list" ref={listRef}>
+      <div className={`thumbnail-list ${dropping ? "dropping" : ""}`} ref={listRef} {...dropTarget}>
+        {dropping && (
+          <p className="drop-hint" role="status">
+            Drop to add pages at the end
+          </p>
+        )}
         <div
           className="thumbnail-space"
           style={{ "--list-height": `${editor.document.pages.length * thumbnailHeight}px` }}
@@ -40,14 +71,35 @@ export function PageSidebar() {
           ))}
         </div>
       </div>
-      <button
-        className="button secondary full"
-        onClick={() => editor.commit(insertBlank(editor.document, editor.page?.id ?? ""))}
-      >
-        <Plus size={15} /> Blank page
-      </button>
-    </SidePanel>
+    </>
   );
+}
+const carriesFiles = (event: DragEvent) => event.dataTransfer.types.includes("Files");
+function useAppendDrop() {
+  const editor = useEditor(),
+    [dropping, setDropping] = useState(false);
+  return {
+    dropping,
+    onDragOver: (event: DragEvent<HTMLDivElement>) => {
+      if (!carriesFiles(event)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setDropping(true);
+    },
+    onDragLeave: (event: DragEvent<HTMLDivElement>) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropping(false);
+    },
+    onDrop: (event: DragEvent<HTMLDivElement>) => {
+      if (!carriesFiles(event)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setDropping(false);
+      const files = Array.from(event.dataTransfer.files);
+      // A project replaces page content wholesale, so it opens as its own document instead.
+      const project = files.some((file) => file.name.toLowerCase().endsWith(".pdfree"));
+      editor.importFiles(files, project);
+    },
+  };
 }
 function Thumbnail({ page, index }: { page: Page; index: number }) {
   const editor = useEditor(),
@@ -65,6 +117,7 @@ function Thumbnail({ page, index }: { page: Page; index: number }) {
         onDragStart={(event) => event.dataTransfer.setData("text/plain", page.id)}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
+          if (carriesFiles(event)) return;
           event.preventDefault();
           editor.commit(movePage(editor.document, event.dataTransfer.getData("text/plain"), index));
         }}

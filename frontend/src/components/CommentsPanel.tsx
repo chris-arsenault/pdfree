@@ -3,6 +3,7 @@ import { MessageSquarePlus, Reply, X } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { type Page, type PdfComment, newId } from "../core/model";
 import { addComment, createComment, commentThread, commentPointAt } from "../core/comments";
+import { pagePoint } from "../core/coordinates";
 import { SidePanel } from "./ui/SidePanel";
 import { IconButton } from "./ui/IconButton";
 import { CommentForm } from "./CommentForm";
@@ -74,11 +75,10 @@ function AddCommentButton() {
     editor.setObjectIds([]);
     editor.setCommentId("");
     editor.setTool("select");
-    const box = editor.page.box;
     editor.setPendingComment({
       id: newId(),
       pageId: editor.page.id,
-      point: commentPointAt({ x: box.x + box.width / 2, y: box.y + box.height / 2 }, editor.page),
+      point: commentPointAt(visibleCentre(editor.page, editor.zoom), editor.page),
     });
   };
   return (
@@ -90,6 +90,27 @@ function AddCommentButton() {
       <MessageSquarePlus size={16} aria-hidden="true" />
       Add comment
     </button>
+  );
+}
+/** Centre of the page area currently scrolled into view, so a new note lands where the user looks. */
+function visibleCentre(page: Page, zoom: number) {
+  const surface = document.querySelector<HTMLElement>(".page-surface"),
+    scroll = document.querySelector<HTMLElement>(".page-scroll");
+  const box = page.box;
+  const fallback = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  if (!surface || !scroll) return fallback;
+  const shown = surface.getBoundingClientRect(),
+    view = scroll.getBoundingClientRect();
+  const left = Math.max(shown.left, view.left),
+    right = Math.min(shown.right, view.right),
+    top = Math.max(shown.top, view.top),
+    bottom = Math.min(shown.bottom, view.bottom);
+  if (right <= left || bottom <= top) return fallback;
+  return pagePoint(
+    { clientX: (left + right) / 2, clientY: (top + bottom) / 2 },
+    surface,
+    page,
+    zoom
   );
 }
 function NewComment() {

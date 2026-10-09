@@ -88,6 +88,7 @@ it.each([1280, 320])(
       expect(reply.parentId).toBe(imported.pages[0].comments[0].id);
       await page.getByRole("button", { name: "Export", exact: true }).click();
       const projectDownloading = page.waitForEvent("download");
+      await page.getByRole("radio", { name: "Editing project", exact: true }).click();
       await page.getByRole("button", { name: "Download editing project", exact: true }).click();
       const projectFile = await projectDownloading;
       const project = await readProject(

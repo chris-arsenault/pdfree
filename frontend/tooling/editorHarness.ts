@@ -24,6 +24,11 @@ export async function openEditor(bytes: Uint8Array, name = "test.pdf") {
     throw error;
   }
 }
+/** Library lives in the menu beside header Open. */
+export async function openLibrary() {
+  await page.getByRole("button", { name: "Open options", exact: true }).click();
+  await page.getByRole("button", { name: "Library", exact: true }).click();
+}
 export async function selectDocument(name: string) {
   const button = [
     ...document.querySelectorAll<HTMLButtonElement>(".document-tab > button:first-child"),
@@ -32,6 +37,13 @@ export async function selectDocument(name: string) {
   await userEvent.click(button);
 }
 
+/** Export output format that owns a download button; PDF is the dialog default. */
+function exportFormat(buttonName: string) {
+  if (buttonName === "Download editing project") return "Editing project";
+  if (buttonName === "Download page images (ZIP)") return "Page images";
+  if (/^Download \d-up PDF$/.test(buttonName)) return "Printable sheets";
+  return "";
+}
 export async function editorDownload(
   buttonName: string,
   mime: string,
@@ -46,6 +58,8 @@ export async function editorDownload(
   });
   try {
     if (action) await page.getByRole("button", { name: action, exact: true }).click();
+    const format = exportFormat(buttonName);
+    if (format) await page.getByRole("radio", { name: format, exact: true }).click();
     if (flatten) await page.getByRole("checkbox", { name: /Flatten/ }).click();
     await page.getByRole("button", { name: buttonName, exact: true }).click();
     // Certificate parsing and password key derivation can outlast the default poll timeout.

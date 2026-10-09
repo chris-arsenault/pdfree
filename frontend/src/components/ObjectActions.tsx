@@ -4,7 +4,8 @@ import {
   AlignStartVertical,
   AlignEndHorizontal,
   BringToFront,
-  ListEnd,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { type PlacedObject } from "../core/model";
@@ -76,15 +77,48 @@ export function ObjectActions({ objects }: { objects: PlacedObject[] }) {
           />
         </div>
       )}
-      {objects.length === 1 && (
+      {objects.length === 1 && object.kind !== "field" && (
         <div className="object-actions">
-          <IconButton
-            label={object.kind === "field" ? "Move field tab order last" : "Bring to front"}
-            icon={object.kind === "field" ? ListEnd : BringToFront}
-            onClick={front}
-          />
+          <IconButton label="Bring to front" icon={BringToFront} onClick={front} />
         </div>
       )}
+      {objects.length === 1 && object.kind === "field" && <FieldTabOrder object={object} />}
     </>
+  );
+}
+/** Authored fields tab in page object order; moving swaps with the neighbouring field only. */
+function FieldTabOrder({ object }: { object: PlacedObject }) {
+  const editor = useEditor();
+  const page = editor.page;
+  if (!page) return null;
+  const fields = page.objects.filter((item) => item.kind === "field");
+  const position = fields.findIndex((item) => item.id === object.id);
+  const move = (step: -1 | 1) => {
+    const neighbour = fields[position + step];
+    if (!neighbour) return;
+    const objects = page.objects.map((item) => {
+      if (item.id === object.id) return neighbour;
+      return item.id === neighbour.id ? object : item;
+    });
+    editor.commit(replaceObjects(editor.document, page.id, objects));
+  };
+  return (
+    <div className="object-actions field-tab-order" role="group" aria-label="Field tab order">
+      <span>
+        Tab order {position + 1} of {fields.length}
+      </span>
+      <IconButton
+        label="Move earlier in tab order"
+        icon={ChevronUp}
+        disabled={position <= 0}
+        onClick={() => move(-1)}
+      />
+      <IconButton
+        label="Move later in tab order"
+        icon={ChevronDown}
+        disabled={position >= fields.length - 1}
+        onClick={() => move(1)}
+      />
+    </div>
   );
 }

@@ -15,7 +15,8 @@ import {
 } from "./services/drafts";
 import App from "./App";
 import { formFixture } from "./core/fixtures";
-import { DraftStatus } from "./components/DraftStatus";
+import { EmptyWorkspace } from "./components/EmptyWorkspace";
+import { OpenMenu } from "./components/Header";
 import { useDraftState } from "./hooks/useDraft";
 import { DraftContext } from "./hooks/draftContext";
 
@@ -45,7 +46,12 @@ function BusyProbe() {
 }
 function BusyDraft() {
   const draft = useDraftState();
-  return createElement(DraftContext.Provider, { value: draft }, createElement(DraftStatus));
+  return createElement(
+    DraftContext.Provider,
+    { value: draft },
+    createElement(OpenMenu),
+    createElement(EmptyWorkspace)
+  );
 }
 function documentFixture(name = "First.pdf"): EditorDocument {
   return {
@@ -138,16 +144,19 @@ afterEach(async () => {
 it("disables draft recovery and the library while another document task is running", async () => {
   await saveDraft(documentFixture("Recovery.pdf"), await draftSession("closed-tab"));
   mount(BusyProbe);
-  await page.getByRole("button", { name: "Saved document", exact: true }).click();
+  const saved = page.getByRole("region", { name: "Saved document", exact: true });
+  await expect.element(saved).toHaveTextContent("Recovery.pdf");
   await expect
-    .element(page.getByRole("button", { name: "Recover draft", exact: true }))
+    .element(saved.getByRole("button", { name: "Recover draft", exact: true }))
     .toBeEnabled();
-  await userEvent.keyboard("{Escape}");
   await page.getByRole("button", { name: "Block", exact: true }).click();
-  await page.getByRole("button", { name: "Saved document", exact: true }).click();
   await expect
-    .element(page.getByRole("button", { name: "Recover draft", exact: true }))
+    .element(saved.getByRole("button", { name: "Recover draft", exact: true }))
     .toBeDisabled();
+  await expect
+    .element(page.getByRole("button", { name: "Saved documents", exact: true }))
+    .toBeDisabled();
+  await page.getByRole("button", { name: "Open options", exact: true }).click();
   await expect.element(page.getByRole("button", { name: "Library", exact: true })).toBeDisabled();
 });
 
