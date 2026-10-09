@@ -10,11 +10,22 @@ const offline = vi.hoisted(() => ({
   refresh: () => {},
   update: vi.fn(async () => {}),
 }));
-vi.mock("virtual:pwa-register", () => ({
-  registerSW: (options: { onNeedRefresh: () => void }) => {
+// An earlier offline choice registers the worker on load, which owns update prompts.
+vi.mock("./services/offline", () => ({
+  offlineSupported: () => true,
+  offlineChosen: async () => true,
+  offlineSize: async () => null,
+  precachedFiles: async () => 0,
+  enableOffline: async (options: { onNeedRefresh: () => void }) => {
     offline.refresh = options.onNeedRefresh;
     return offline.update;
   },
+  keepOfflineCopy: async () => true,
+  offlineCopyKept: async () => true,
+  removeOffline: async () => {},
+  canInstallApp: () => false,
+  onInstallChange: () => () => {},
+  installApp: async () => false,
 }));
 
 let root: Root | null = null;

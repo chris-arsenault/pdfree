@@ -22,11 +22,22 @@ vi.mock("./services/drafts", async (importOriginal) => {
         : original.saveDraft(...args),
   };
 });
-vi.mock("virtual:pwa-register", () => ({
-  registerSW: (options: typeof offline.options) => {
+// An earlier offline choice registers the worker on load, which owns update prompts.
+vi.mock("./services/offline", () => ({
+  offlineSupported: () => true,
+  offlineChosen: async () => true,
+  offlineSize: async () => null,
+  precachedFiles: async () => 0,
+  enableOffline: async (options: typeof offline.options) => {
     offline.options = options;
     return offline.update;
   },
+  keepOfflineCopy: async () => true,
+  offlineCopyKept: async () => true,
+  removeOffline: async () => {},
+  canInstallApp: () => false,
+  onInstallChange: () => () => {},
+  installApp: async () => false,
 }));
 
 let root: Root | null = null;

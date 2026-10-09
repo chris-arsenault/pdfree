@@ -92,6 +92,35 @@ button[aria-disabled="true"] {
 .action-popover button:hover {
   background: #f1f4ed;
 }
+.offline-panel {
+  width: min(300px, calc(100vw - 34px));
+  padding: 4px;
+}
+.offline-panel p {
+  margin: 0 0 10px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.offline-panel progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.offline-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.action-popover .offline-actions .button {
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+.action-popover .offline-actions .button.primary {
+  background: var(--ink);
+  color: #fff;
+}
+.action-popover .offline-actions .button.primary:hover {
+  background: #235247;
+}
 .action-popover button.danger {
   color: #a03d3d;
 }

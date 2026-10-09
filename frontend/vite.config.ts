@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
@@ -25,6 +26,20 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: "/index.html",
         cleanupOutdatedCaches: true,
+        // The app reads this before opting in, to state the download size and track progress.
+        manifestTransforms: [
+          (entries) => {
+            mkdirSync("dist", { recursive: true });
+            writeFileSync(
+              "dist/offline-manifest.json",
+              JSON.stringify({
+                files: entries.length,
+                bytes: entries.reduce((sum, entry) => sum + entry.size, 0),
+              })
+            );
+            return { manifest: entries, warnings: [] };
+          },
+        ],
       },
     }),
   ],

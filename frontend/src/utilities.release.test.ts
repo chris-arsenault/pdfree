@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { startTestServer } from "../tooling/testServer";
+import { enableOfflineCopy } from "../tooling/offlineCopy";
 import { formFixture } from "./core/fixtures";
 let browser: Browser, server: Awaited<ReturnType<typeof startTestServer>>;
 const engine = process.env.PDFREE_BROWSER ?? "chromium";
@@ -161,7 +162,7 @@ it("runs English OCR from the production offline cache with no external requests
   });
   try {
     await page.goto(server.url);
-    await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+    await enableOfflineCopy(page);
     await page
       .locator(".drop-card input")
       .setInputFiles({ name: "Scan.pdf", mimeType: "application/pdf", buffer: await scan(page) });

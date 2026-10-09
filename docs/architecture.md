@@ -27,8 +27,11 @@ flowchart LR
 ```
 
 The network boundary is defined in [ADR 0001](adr/0001-browser-only-static-delivery.md).
-Application asset caching and updates are described in
-[ADR 0004](adr/0004-projects-drafts-and-retained-pwa.md).
+The service worker is registered only after the user opts in from the footer
+(`services/offline.ts`), then precaches the full build and owns update prompts;
+see [ADR 0010](adr/0010-opt-in-offline-copy.md). The build writes
+`offline-manifest.json` with the precache file count and size for the opt-in
+panel's size and progress.
 
 ## Editing model and coordinates
 
@@ -201,7 +204,8 @@ dialog and the page scan notice share it. OCR renders bounded page images, skips
 pages with existing text, keeps earlier recognition unless asked to replace it,
 reports a per-page outcome and runs English
 recognition in a disposable outer worker owning a Tesseract.js 7 worker. Engine
-variants and language data ship as same-origin PWA assets. Stable-page word boxes
+variants and language data ship as same-origin assets, included in the opt-in
+offline copy. Stable-page word boxes
 are stored in PDF coordinates and exported as invisible Unicode text. Cancellation
 terminates the worker tree; recognition never replaces source content.
 

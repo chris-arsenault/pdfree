@@ -229,9 +229,15 @@ an Autosave off control (which opens Library storage) when the restriction is
 enabled, and update prompts. Browser-only processing is always active; there is
 no cloud mode.
 
-The app automatically caches its assets for offline use. Once installation completes,
-editing, English OCR and downloads can run without an origin connection. Installation
-failures appear in the strip. Updates prompt before reloading; save an editing project
+PDFree loads from the internet on each visit and stores nothing for offline use
+until you ask. To use it without a connection, choose **Use offline** in the
+bottom strip, then **Make available offline**. The panel states the download size
+(about 29 MB, including text recognition) and shows progress; the strip then
+reads **Works offline**, and editing, English OCR and downloads run without a
+connection. Where the browser supports it, **Install app** adds PDFree as an app
+and saves the offline copy too. **Remove offline copy** in the same panel deletes
+it; documents in your Library stay on the device. Failures appear in the strip.
+With an offline copy, updates prompt before reloading; save an editing project
 before accepting the update.
 
 Opening a replacement or saved document, deleting pages or a saved document, downloading

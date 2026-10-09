@@ -10,6 +10,7 @@ import { readProject } from "./core/projects";
 import { scanFixture } from "../tooling/scanFixture";
 import { installSplitProbe, readSplitProbe, restoreSplitProbe } from "../tooling/splitProbe";
 import { savedPdfText } from "../tooling/pdfText";
+import { enableOfflineCopy, workerState } from "../tooling/offlineCopy";
 let server: Awaited<ReturnType<typeof startTestServer>>, browser: Browser;
 const engineName = process.env.PDFREE_BROWSER ?? "chromium";
 beforeAll(async () => {
@@ -37,7 +38,6 @@ async function openFixture(page: Page) {
     buffer: Buffer.from(await formFixture()),
   });
   await page.getByText("PAGE 1 OF 3", { exact: true }).waitFor();
-  await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
 }
 async function downloadPdf(page: Page) {
   await page.getByRole("button", { name: "Export", exact: true }).click();
@@ -61,6 +61,8 @@ it("uses the production CSP, remains offline, downloads editable projects and fi
   page.on("request", (request) => requests.push({ url: request.url(), method: request.method() }));
   page.on("pageerror", (error) => errors.push(error.message));
   await openFixture(page);
+  expect((await workerState(page)).registrations).toBe(0);
+  await enableOfflineCopy(page);
   await page.getByRole("textbox", { name: "name", exact: true }).fill("Offline Ada");
   const accessibility = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
@@ -111,6 +113,37 @@ it("uses the production CSP, remains offline, downloads editable projects and fi
   ).toEqual([]);
   await context.close();
   server.reconnect();
+});
+it("registers no service worker until the user opts in, and removes the offline copy", async () => {
+  const context = await browser.newContext(),
+    page = await context.newPage();
+  try {
+    await page.goto(server.url);
+    await page.getByText("Your paperwork.").waitFor();
+    // Give an eager registration time to happen if it were still wired to page load.
+    await page.waitForTimeout(1500);
+    expect(await workerState(page)).toEqual({ registrations: 0, caches: 0 });
+    await enableOfflineCopy(page);
+    const saved = await workerState(page);
+    expect(saved.registrations).toBe(1);
+    expect(saved.caches).toBeGreaterThan(0);
+    // The choice survives reloads without asking again.
+    await page.reload();
+    await page.getByRole("button", { name: "Works offline", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Works offline", exact: true }).click();
+    await page.getByRole("button", { name: "Remove offline copy", exact: true }).click();
+    await page
+      .getByRole("dialog", { name: "Remove offline copy?", exact: true })
+      .getByRole("button", { name: "Remove offline copy", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Use offline", exact: true }).waitFor();
+    expect(await workerState(page)).toEqual({ registrations: 0, caches: 0 });
+    await page.reload();
+    await page.getByRole("button", { name: "Use offline", exact: true }).waitFor();
+    expect((await workerState(page)).registrations).toBe(0);
+  } finally {
+    await context.close();
+  }
 });
 it("supports a touch-sized workspace, drawn signatures, splitting and project downloads", async () => {
   const context = await browser.newContext({

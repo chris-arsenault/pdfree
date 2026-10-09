@@ -111,14 +111,16 @@ a patch until an upstream replacement passes the independent fixtures.
 Production tests use `frontend/security-headers.json` and the actual worker and
 asset URLs. They cover security exports, local request boundaries, desktop/touch
 layout, accessibility probes, projects/drafts, clear fencing across two tabs,
-downloads and retained PWA behavior. Chromium additionally runs a 64-page scan
+downloads, and the opt-in offline copy: no service worker before opting in,
+offline editing and OCR after it, and removal. Offline tests opt in through the
+footer first. Chromium additionally runs a 64-page scan
 workload. The split responsiveness probe measures the worker request/response
 interval and has a deliberate main-thread-stall negative control.
 
 Linux WebKit testing may use the official Playwright container matching the
-installed version. Its origin-disconnect workaround exists for retained PWA
+installed version. Its origin-disconnect workaround exists for offline-copy
 tests because Playwright WebKit's offline switch blocks service-worker replies.
-Offline behavior is a retained feature, not a consequence of the no-backend
+Offline use is an opt-in feature, not a consequence of the no-backend
 requirement. Temporary test servers and containers must be stopped afterward.
 
 Generated screenshots, accessibility output and scan measurements live in ignored

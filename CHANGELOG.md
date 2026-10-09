@@ -5,6 +5,12 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- PDFree no longer installs itself for offline use on every visit. Choose Use
+  offline in the bottom strip to save it to the device (about 29 MB, including
+  text recognition) with visible progress, install it as an app where the
+  browser allows, or remove the offline copy later. Browsers that already had
+  the offline copy keep it.
+
 - Recognize text and Clean up scans now sit in a labelled Scan tools group in
   the toolbar (the Add menu on phones) instead of the Pages panel More menu. A
   notice above scanned pages without text offers both, and recognized pages show

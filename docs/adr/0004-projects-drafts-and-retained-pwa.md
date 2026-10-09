@@ -1,6 +1,6 @@
 # 0004 — Portable projects, local recovery and retained PWA
 
-- Status: Accepted
+- Status: Accepted; the retained-PWA clause is superseded by [0010](0010-opt-in-offline-copy.md).
 - Encrypted project/draft lifecycle extended by [0007](0007-encrypted-document-lifecycle.md).
 - Date: 2026-10-08
 
