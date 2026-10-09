@@ -172,13 +172,14 @@ marks. Document deletion requires confirmation and keeps the open document in
 memory. Saving that document resumes after the next edit; other saved documents
 are unaffected. Queued writes cannot recreate a deleted entry.
 The Document action opens source information. Settings apply to this browser and
-stay outside document undo and editing projects. The offline indicator opens
-application-cache status. Storage failures, an Autosave off control when the
-restriction is enabled, and update prompts remain visible in the strip.
+stay outside document undo and editing projects. The strip shows brief Saving/Saved
+feedback, storage failures, an Autosave off control when the restriction is enabled,
+and update prompts. Browser-only processing is always active; there is no cloud mode.
 
-The retained PWA caches application assets. After “Ready to work offline,”
-editing, English OCR and downloads can run without an origin connection. Updates prompt
-before reloading; save an editing project before accepting the update.
+The app automatically caches its assets for offline use. Once installation completes,
+editing, English OCR and downloads can run without an origin connection. Installation
+failures appear in the strip. Updates prompt before reloading; save an editing project
+before accepting the update.
 
 Opening a replacement or saved document, deleting pages or a saved document, downloading
 an unprotected project and applying an update use custom confirmation dialogs.

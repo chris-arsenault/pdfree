@@ -25,9 +25,7 @@ async function fillDraft(page: Page, name: string, value: string) {
     .setInputFiles({ name, mimeType: "application/pdf", buffer: Buffer.from(await formFixture()) });
   await page.getByText("PAGE 1 OF 3", { exact: true }).waitFor();
   await page.getByRole("textbox", { name: "name", exact: true }).fill(value);
-  await page
-    .getByText("Draft saved on this device", { exact: true })
-    .waitFor({ state: "attached" });
+  await page.getByText("Saved", { exact: true }).waitFor({ state: "attached" });
 }
 
 it("keeps two tabs drafts separate across reload and deletes only the selected library document", async () => {
@@ -44,13 +42,13 @@ it("keeps two tabs drafts separate across reload and deletes only the selected l
     expect(await first.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(
       "First tab"
     );
-    await first.getByText("Draft saved on this device", { exact: true }).waitFor();
+    await first.getByText("Saved", { exact: true }).waitFor();
     await second.reload();
     await second.getByRole("textbox", { name: "name", exact: true }).waitFor();
     expect(await second.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(
       "Second tab"
     );
-    await second.getByText("Draft saved on this device", { exact: true }).waitFor();
+    await second.getByText("Saved", { exact: true }).waitFor();
     await first.getByRole("button", { name: "Library", exact: true }).click();
     await second.getByRole("button", { name: "Library", exact: true }).click();
     await second.getByRole("button", { name: "Delete First.pdf", exact: true }).click();
@@ -74,8 +72,8 @@ it("keeps two tabs drafts separate across reload and deletes only the selected l
       "Second tab"
     );
     await second.getByRole("textbox", { name: "name", exact: true }).fill("Second continued");
-    await second.getByText("Saving draft…", { exact: true }).waitFor();
-    await second.getByText("Draft saved on this device", { exact: true }).waitFor();
+    await second.getByText("Saving…", { exact: true }).waitFor();
+    await second.getByText("Saved", { exact: true }).waitFor();
     await second.reload();
     await second.getByRole("textbox", { name: "name", exact: true }).waitFor();
     expect(await second.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(
@@ -86,8 +84,8 @@ it("keeps two tabs drafts separate across reload and deletes only the selected l
       "First tab"
     );
     await first.getByRole("textbox", { name: "name", exact: true }).fill("First new edit");
-    await first.getByText("Saving draft…", { exact: true }).waitFor();
-    await first.getByText("Draft saved on this device", { exact: true }).waitFor();
+    await first.getByText("Saving…", { exact: true }).waitFor();
+    await first.getByText("Saved", { exact: true }).waitFor();
     await first.getByRole("button", { name: "Library", exact: true }).click();
     await first.getByRole("button", { name: "Open First.pdf", exact: true }).waitFor();
   } finally {

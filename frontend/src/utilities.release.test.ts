@@ -47,9 +47,7 @@ function readPdf(data: Uint8Array) {
 }
 async function restoredSession(page: Page, value: string) {
   page.on("dialog", (dialog) => dialog.accept());
-  await page
-    .getByText("Draft saved on this device", { exact: true })
-    .waitFor({ state: "attached" });
+  await page.getByText("Saved", { exact: true }).waitFor({ state: "attached" });
   await page.reload();
   await page.getByRole("textbox", { name: "name", exact: true }).waitFor();
   expect(await page.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(value);
@@ -160,7 +158,7 @@ it("runs English OCR from the production offline cache with no external requests
   });
   try {
     await page.goto(server.url);
-    await page.getByRole("button", { name: "Ready to work offline", exact: true }).waitFor();
+    await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
     await page
       .locator(".drop-card input")
       .setInputFiles({ name: "Scan.pdf", mimeType: "application/pdf", buffer: await scan(page) });

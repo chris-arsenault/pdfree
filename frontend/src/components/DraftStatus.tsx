@@ -87,11 +87,17 @@ function DraftMessage() {
       </span>
     );
   }
+  if (!draft.status) return null;
+  const saving = draft.status === "Saving draft…";
   return (
-    <Tooltip label={draft.status || "Local drafts"}>
+    <Tooltip label={saving ? "Saving draft…" : "Draft saved"}>
       <span role="status" className="draft-message">
-        <FileCheck2 size={14} aria-hidden="true" />
-        <span>{draft.status || "Local drafts"}</span>
+        {saving ? (
+          <FileClock size={14} aria-hidden="true" />
+        ) : (
+          <FileCheck2 size={14} aria-hidden="true" />
+        )}
+        <span>{saving ? "Saving…" : "Saved"}</span>
       </span>
     </Tooltip>
   );

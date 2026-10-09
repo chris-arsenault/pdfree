@@ -72,15 +72,6 @@
   color: var(--muted);
   font-size: 11px;
 }
-.offline-indicator {
-  display: flex;
-  align-items: center;
-  padding: 6px;
-}
-.offline-indicator > span,
-.offline-indicator > svg:last-child {
-  display: none;
-}
 .navigator {
   display: flex;
   position: relative;

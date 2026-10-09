@@ -25,15 +25,11 @@ export function Header() {
           PDFree<span className="brand-by">by AHARA</span>
         </span>
       </a>
-      <div className="header-document">
-        {editor.document.pages.length ? (
-          <>
-            <span className="document-name">{editor.document.name}</span>
-          </>
-        ) : (
-          <span>Your files. Your device.</span>
-        )}
-      </div>
+      {editor.document.pages.length > 0 && (
+        <div className="header-document">
+          <span className="document-name">{editor.document.name}</span>
+        </div>
+      )}
       <HeaderActions />
     </header>
   );

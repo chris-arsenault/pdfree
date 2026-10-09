@@ -37,7 +37,7 @@ async function openFixture(page: Page) {
     buffer: Buffer.from(await formFixture()),
   });
   await page.getByText("PAGE 1 OF 3", { exact: true }).waitFor();
-  await page.getByRole("button", { name: "Ready to work offline", exact: true }).waitFor();
+  await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
 }
 async function downloadPdf(page: Page) {
   await page.getByRole("button", { name: "Export", exact: true }).click();

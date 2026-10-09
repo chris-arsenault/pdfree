@@ -5,6 +5,9 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Removed redundant privacy and offline-status dropdowns, mode-like editing/export
+  labels and the empty header tagline. The footer keeps Library, zoom, brief draft
+  save feedback and actionable warnings or updates.
 - Comments now open a new-note composer inside the panel. Shared navigation
   stays above side panels, and task notifications overlay the document area
   so opening panels or showing notices does not resize or move editor rails.
