@@ -54,16 +54,17 @@ function DraftMessage() {
   }
   if (!draft.status) return null;
   const saving = draft.status === "Saving draft…";
+  // Plain status text: a hover tooltip here only repeated it and could open over
+  // the page list whenever autosave ran under a resting pointer.
   return (
-    <Tooltip label={saving ? "Saving draft…" : "Draft saved"}>
-      <span role="status" className="draft-message">
-        {saving ? (
-          <FileClock size={14} aria-hidden="true" />
-        ) : (
-          <FileCheck2 size={14} aria-hidden="true" />
-        )}
-        <span>{saving ? "Saving…" : "Saved"}</span>
-      </span>
-    </Tooltip>
+    <span role="status" className="draft-message">
+      {saving ? (
+        <FileClock size={14} aria-hidden="true" />
+      ) : (
+        <FileCheck2 size={14} aria-hidden="true" />
+      )}
+      <span>{saving ? "Saving…" : "Saved"}</span>
+      <span className="sr-only">{saving ? " draft" : " draft on this device"}</span>
+    </span>
   );
 }
