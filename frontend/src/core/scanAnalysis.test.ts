@@ -24,17 +24,20 @@ type Scan = {
 };
 const width = 900,
   height = 1100;
-/** Word-shaped ink blocks on lines 28px apart. */
+/**
+ * Upright mask of word-shaped ink blocks, 12px tall on lines 28px apart. Drawing
+ * the mask once keeps generation linear in pixels, which matters under coverage.
+ */
 function words() {
-  const found: { x: number; y: number; w: number }[] = [];
+  const mask = new Uint8Array(width * height);
   const wordRandom = grain(11);
   for (let line = 120; line < height - 120; line += 28)
     for (let x = 100; x < width - 160;) {
       const w = 30 + Math.floor((wordRandom() + 0.5) * 70);
-      found.push({ x, y: line, w });
+      for (let y = line; y < line + 12; y++) mask.fill(1, y * width + x, y * width + x + w);
       x += w + 14;
     }
-  return found;
+  return mask;
 }
 /**
  * A synthetic text scan tilted counter-clockwise (in PDF orientation) by
@@ -51,7 +54,7 @@ function textScan(options: Partial<Scan>): Levels {
   };
   const random = grain(7),
     data = new Uint8Array(width * height),
-    blocks = words();
+    mask = words();
   const radians = (-tilt * Math.PI) / 180,
     cos = Math.cos(radians),
     sin = Math.sin(radians);
@@ -62,9 +65,9 @@ function textScan(options: Partial<Scan>): Levels {
         dy = height - 1 - row - height / 2;
       const ux = dx * cos - dy * sin + width / 2,
         uy = height - 1 - (dx * sin + dy * cos + height / 2);
-      const inked = blocks.some(
-        (word) => ux >= word.x && ux < word.x + word.w && uy >= word.y && uy < word.y + 12
-      );
+      const mx = Math.floor(ux),
+        my = Math.floor(uy);
+      const inked = mx >= 0 && my >= 0 && mx < width && my < height && mask[my * width + mx] === 1;
       let level = (inked ? ink : paper) + random() * noise * 2;
       if (x < border.left || row < border.top) level = 15 + random() * 6;
       data[row * width + x] = Math.max(0, Math.min(255, Math.round(level)));
