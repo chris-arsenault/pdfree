@@ -248,7 +248,7 @@ history, page position, zoom and selection without adding side-by-side workspace
 
 **Approach/uncertainty:** Give each document an isolated editor session and library
 identity. Mount only the active viewer; release inactive canvases and bound cached
-PDF handles. Scope clipboard/assets, pending dialogs, autosave consent and worker
+PDF handles. Scope clipboard/assets, pending dialogs, queued autosaves and worker
 responses to the owning session. Preserve the browser close/reload safeguard.
 The existing global editor orchestration makes this more than a visual tab strip;
 check switches during export, credential prompts, autosave and cancellation, and

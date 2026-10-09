@@ -5,6 +5,10 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Protected PDFs now autosave by default. Added a browser-wide “Don't autosave
+  protected documents” setting, off by default, replacing per-document consent.
+  When enabled, a compact Autosave off control opens Settings without expanding
+  the bottom rail. Existing projects and drafts remain readable.
 - Added browser-local English OCR, supported-image compression with size preview,
   scan crop/deskew/contrast/background cleanup and editable native bookmarks.
 - Added durable numbering/Bates labels, watermarks and stamps, sequential multi-PDF
@@ -35,8 +39,8 @@ identify the application version; they do not imply a published Git tag.
 - Added Adobe.PubSec recipient encryption: open with a local PKCS#12 identity
   and export AES-256 protection for selected RSA/ECDH recipient certificates.
 - Preserve original encrypted bytes alongside decrypted working sources in
-  version-2 editing projects. Credentials remain transient. Decrypted local
-  drafts require consent and unprotected project saves require confirmation.
+  version-2 editing projects. Credentials remain transient; unprotected project
+  saves require confirmation.
 - Fixed permission-only PDFs being rejected, passive form buttons blocking
   import, authentication before encrypted object streams, legacy password
   encoding, and RSA-OAEP/ECDH CMS interoperability.

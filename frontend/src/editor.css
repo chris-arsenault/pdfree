@@ -235,6 +235,17 @@
   align-items: center;
   gap: 6px;
 }
+.draft-status.status-notice {
+  flex-basis: auto;
+  padding: 0;
+}
+.draft-settings-trigger {
+  color: #705414;
+  white-space: nowrap;
+}
+.draft-status .draft-settings-trigger > span {
+  display: inline;
+}
 .draft-recovery {
   display: flex;
   align-items: center;
@@ -917,7 +928,7 @@
   .draft-status.status-notice > span {
     display: flex;
   }
-  .draft-status .popover-trigger > span {
+  .draft-status .draft-settings-trigger > span {
     display: none;
   }
   .page-scroll {

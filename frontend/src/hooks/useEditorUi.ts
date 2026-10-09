@@ -9,6 +9,7 @@ export type DialogName =
   | "split"
   | "export"
   | "help"
+  | "settings"
   | "properties"
   | "library"
   | "ocr"

@@ -156,19 +156,22 @@ Saved open documents and the active tab restore after reload. Library also offer
 other saved documents. Download an editing project for durable backup
 because browsers can evict stored data.
 
-Decrypted documents do not autosave by default. In Document details, explicitly
-enable “Save decrypted drafts on this device” to allow unprotected recovery.
-Disabling it stops future writes; delete the document in Library to remove its
-previously saved local copy. Downloaded projects are separate files and are kept.
+Protected PDFs also autosave by default; saved drafts contain unlocked content.
+Open Settings in the header (under Document actions on a phone) to enable “Don't
+autosave protected documents.” This browser-wide option is off by default and
+applies to all open documents, including background tabs. Turning it on stops new
+saves for protected PDFs; delete a document in Library to remove its existing
+local copy. Turning it off resumes saving. Downloaded projects remain separate files.
 
 Library also previews remembered signatures. Use one in the open document or
 delete it individually; deleting a remembered signature keeps already placed
 marks. Document deletion requires confirmation and keeps the open document in
 memory. Saving that document resumes after the next edit; other saved documents
 are unaffected. Queued writes cannot recreate a deleted entry.
-The Document action opens source information and draft consent settings. The
-offline indicator opens application-cache status. Storage failures, encrypted-input
-draft notices and update prompts remain visible in the strip.
+The Document action opens source information. Settings apply to this browser and
+stay outside document undo and editing projects. The offline indicator opens
+application-cache status. Storage failures, an Autosave off control when the
+restriction is enabled, and update prompts remain visible in the strip.
 
 The retained PWA caches application assets. After “Ready to work offline,”
 editing, English OCR and downloads can run without an origin connection. Updates prompt

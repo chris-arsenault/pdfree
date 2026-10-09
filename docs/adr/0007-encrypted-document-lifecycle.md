@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-08
+- Updated: 2026-10-09 — browser-wide autosave preference replaces document consent.
 - Partially supersedes: [0003](0003-pdf-engines-and-preservation.md),
   [0004](0004-projects-drafts-and-retained-pwa.md),
   [0005](0005-secured-export-pipeline.md)
@@ -30,7 +31,13 @@ Passive pushbuttons retain their appearance without executing their actions.
 Version 2 introduced decrypted working entries while version 1 covered plain
 sources. Native comments extend new saves to version 3 for both; versions 1 and 2
 remain readable. All restore editing model version 1. Project saves confirm that working content is unprotected. Encrypted
-local drafts require explicit consent, checked again inside the write transaction.
+local drafts autosave by default. A browser-wide “Don't autosave protected
+documents” preference defaults off and can stop future protected-document saves.
+Recheck it inside the write transaction, and apply changes to every open session.
+Preferences stay outside document history and projects; ignore the former
+`allowDecryptedDrafts` field when reading older projects and drafts. This replaces
+the original per-document opt-in policy, which interrupted normal recovery and
+treated permission-only PDFs as requiring an extra saving decision.
 Draft model revision 3 normalized earlier data without changing saved edits;
 revision 4 adds explicit comments and migrates older drafts.
 
@@ -57,7 +64,7 @@ tools only. Application processing and dependencies remain browser-local.
 ## Consequences
 
 Permission-only, password and recipient-encrypted documents can be edited and
-re-protected locally. Projects and opted-in drafts contain plaintext; credentials
+re-protected locally. Projects and saved drafts contain plaintext; credentials
 do not. Unsupported proprietary handlers and CMS algorithms fail explicitly.
 Dependency upgrades must pass the interoperability regressions before patches
 are removed. Current limits live in [compatibility](../compatibility.md).

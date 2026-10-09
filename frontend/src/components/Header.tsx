@@ -6,6 +6,7 @@ import {
   FileText,
   FileCog,
   MoreHorizontal,
+  Settings,
 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { IconButton } from "./ui/IconButton";
@@ -43,6 +44,7 @@ function HeaderActions() {
   const openFiles = (files: File[]) => editor.importFiles(files, true);
   const showDocument = () => editor.setDialog("properties");
   const showHelp = () => editor.setDialog("help");
+  const showSettings = () => editor.setDialog("settings");
   return (
     <nav className="header-actions" aria-label="Document actions">
       {editor.document.pages.length > 0 && (
@@ -50,10 +52,17 @@ function HeaderActions() {
           label="Document"
           className="document-action"
           icon={FileCog}
-          detail="Document details, source information and draft settings."
+          detail="Document details and source information."
           onClick={showDocument}
         />
       )}
+      <IconButton
+        label="Settings"
+        className="settings-action"
+        icon={Settings}
+        detail="Settings for this browser."
+        onClick={showSettings}
+      />
       <IconButton
         label="Help"
         className="help-action"
@@ -105,6 +114,14 @@ function MobileDocumentMenu() {
               <FileCog size={17} aria-hidden="true" /> Document
             </button>
           )}
+          <button
+            onClick={() => {
+              editor.setDialog("settings");
+              close();
+            }}
+          >
+            <Settings size={17} aria-hidden="true" /> Settings
+          </button>
           <button
             onClick={() => {
               editor.setDialog("help");

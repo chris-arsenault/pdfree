@@ -9,7 +9,7 @@ import {
 } from "../../tooling/encryptedFixture";
 import { appendSource, importPdf } from "./importPdf";
 import { exportPdf } from "./exportPdf";
-import { emptyDocument, fieldKey, defaultObject, canSaveDraft } from "./model";
+import { emptyDocument, fieldKey, defaultObject } from "./model";
 import { readProject, writeProject } from "./projects";
 import { rotatePages, duplicatePages } from "./pageOperations";
 import { refreshSources } from "./refreshSources";
@@ -100,16 +100,26 @@ it("preserves encrypted originals and decrypted working sources in version-4 pro
   expect(JSON.stringify(restored)).not.toMatch(/reader-fixture|owner-fixture/);
   expect((await PDFDocument.load(await exportPdf(restored))).getPageCount()).toBe(4);
 });
-it("keeps encrypted-source drafts opt-in and preserves consent when reopening projects", async () => {
+it("ignores legacy document consent and excludes autosave preferences from projects", async () => {
   const doc = appendSource(
     emptyDocument(),
     await importPdf(await encryptedFixture("AES-256", ""), "locked.pdf")
   );
-  expect(canSaveDraft(doc)).toBe(false);
-  doc.allowDecryptedDrafts = true;
-  expect(canSaveDraft(doc)).toBe(true);
-  expect(canSaveDraft(await readProject(writeProject(doc)))).toBe(true);
-  expect(canSaveDraft(emptyDocument())).toBe(true);
+  const files = unzipSync(writeProject(doc));
+  const manifest = JSON.parse(strFromU8(files["manifest.json"]));
+  expect(manifest).not.toHaveProperty("allowDecryptedDrafts");
+  for (const consent of [false, true]) {
+    manifest.allowDecryptedDrafts = consent;
+    const restored = await readProject(
+      zipSync({ ...files, "manifest.json": strToU8(JSON.stringify(manifest)) })
+    );
+    expect(restored).not.toHaveProperty("allowDecryptedDrafts");
+    expect(restored.sources[0].bytes).toEqual(doc.sources[0].bytes);
+    expect(restored.pages).toEqual(doc.pages);
+    expect(
+      JSON.parse(strFromU8(unzipSync(writeProject(restored))["manifest.json"]))
+    ).not.toHaveProperty("allowDecryptedDrafts");
+  }
 });
 it.each(["R2", "R3", "R4-RC4", "R4-AES", "R5", "R6"])(
   "opens independently generated %s legacy/Unicode credentials",

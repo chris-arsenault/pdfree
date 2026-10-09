@@ -48,14 +48,14 @@ it("normalizes revision 2 drafts without refreshing geometry or mutating stored 
     emptyDocument(),
     await importPdf(await choiceFixture("dropdown"), "old.pdf")
   );
-  Reflect.deleteProperty(doc, "allowDecryptedDrafts");
+  Reflect.set(doc, "allowDecryptedDrafts", true);
   Reflect.deleteProperty(doc.sources[0], "encryption");
   Reflect.deleteProperty(doc.sources[0], "decryptedBytes");
   doc.pages[0].objects.push({ ...defaultObject("text", { x: 20, y: 200 }), text: "Retained edit" });
   const snapshot = { version: 1, modelRevision: 2, revision: "prior", document: doc, savedAt: 123 };
   await set("pdfree-draft-v2:prior", snapshot);
   const [draft] = await loadDrafts();
-  expect(draft.document.allowDecryptedDrafts).toBe(false);
+  expect(draft.document).not.toHaveProperty("allowDecryptedDrafts");
   expect(draft.document.sources[0].encryption).toBe(null);
   expect(draft.document.sources[0].decryptedBytes).toBe(null);
   expect(draft.document.pages).toEqual(doc.pages);

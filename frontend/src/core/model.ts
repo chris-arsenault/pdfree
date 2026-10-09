@@ -131,15 +131,12 @@ export type EditorDocument = {
   pages: Page[];
   values: Record<string, FieldValue>;
   assets: Asset[];
-  allowDecryptedDrafts: boolean;
   bookmarks?: Bookmark[];
   rules?: PageRule[];
 };
 export const sourceBytes = (source: Source) => source.decryptedBytes ?? source.bytes;
 export const hasEncryptedSources = (document: EditorDocument) =>
   document.sources.some((source) => !!source.encryption);
-export const canSaveDraft = (document: EditorDocument) =>
-  !hasEncryptedSources(document) || document.allowDecryptedDrafts === true;
 export const newId = () => crypto.randomUUID();
 export const emptyDocument = (): EditorDocument => ({
   version: 1,
@@ -148,7 +145,6 @@ export const emptyDocument = (): EditorDocument => ({
   pages: [],
   values: {},
   assets: [],
-  allowDecryptedDrafts: false,
   bookmarks: [],
   rules: [],
 });

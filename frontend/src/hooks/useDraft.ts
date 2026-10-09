@@ -17,7 +17,9 @@ import {
   type Draft,
   type DraftSession,
 } from "../services/drafts";
-import { type EditorDocument, canSaveDraft } from "../core/model";
+import { type EditorDocument } from "../core/model";
+import { canSaveDraft } from "../services/settings";
+import { useProtectedAutosaveDisabled } from "./useSettings";
 import { releaseViewers } from "../services/viewer";
 import { SessionContext } from "./sessionContext";
 import { DraftContext } from "./draftContext";
@@ -30,8 +32,9 @@ export function useDraft() {
 export function useDraftState(active = true) {
   const editor = useEditor();
   const sessions = useContext(SessionContext);
-  const [recoveries, setRecoveries] = useState<Draft[]>([]),
-    [status, setStatus] = useState("");
+  const disableProtectedAutosave = useProtectedAutosaveDisabled();
+  const [status, setStatus] = useState("");
+  const [recoveries, setRecoveries] = useRecoveries(setStatus);
   const { document: doc, history, savedRevision } = editor;
   const opened = useRef<{ id: string; revision: string } | null>(null);
   useDraftSync(
@@ -41,22 +44,9 @@ export function useDraftState(active = true) {
     setStatus,
     setRecoveries,
     editor.setDraftId,
-    active
+    active,
+    disableProtectedAutosave
   );
-  useEffect(() => {
-    let cancelled = false;
-    loadDrafts()
-      .then((drafts) => {
-        if (!cancelled) setRecoveries(drafts);
-      })
-      .catch(() => {
-        if (!cancelled)
-          setStatus("Draft storage is unavailable. Download an editing project to keep your work.");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       if (doc.pages.length && savedRevision !== history.revision) {
@@ -98,10 +88,34 @@ export function useDraftState(active = true) {
       editor.setDraftId(draft.id);
       setRecoveries([]);
     });
-  return { recoveries, status, restore };
+  return {
+    recoveries,
+    status,
+    restore,
+    autosaveOff: !!doc.pages.length && !canSaveDraft(doc),
+  };
 }
 
-// eslint-disable-next-line max-lines-per-function -- The queued save and generation/consent checks share this session lifecycle.
+function useRecoveries(setStatus: Dispatch<SetStateAction<string>>) {
+  const [recoveries, setRecoveries] = useState<Draft[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    loadDrafts()
+      .then((drafts) => {
+        if (!cancelled) setRecoveries(drafts);
+      })
+      .catch(() => {
+        if (!cancelled)
+          setStatus("Draft storage is unavailable. Download an editing project to keep your work.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [setStatus]);
+  return [recoveries, setRecoveries] as const;
+}
+
+// eslint-disable-next-line max-lines-per-function -- The queued save and generation/preference checks share this session lifecycle.
 function useDraftSync(
   doc: EditorDocument,
   { id, opened }: { id: string; opened: RefObject<{ id: string; revision: string } | null> },
@@ -109,7 +123,8 @@ function useDraftSync(
   setStatus: Dispatch<SetStateAction<string>>,
   setRecoveries: Dispatch<SetStateAction<Draft[]>>,
   setDraftId: Dispatch<SetStateAction<string>>,
-  active: boolean
+  active: boolean,
+  disableProtectedAutosave: boolean
 ) {
   const writes = useRef<Promise<void>>(Promise.resolve());
   const session = useRef<Promise<DraftSession> | null>(null);
@@ -144,9 +159,7 @@ function useDraftSync(
   useEffect(() => {
     if (!doc.pages.length || paused.current === doc) return;
     if (!canSaveDraft(doc)) {
-      setStatus(
-        "Encrypted input: decrypted drafts are disabled. Enable them in Document details or save a project."
-      );
+      setStatus("Autosave off for protected documents. Change this in Settings.");
       return;
     }
     const writer = (session.current ??= draftSession(id));
@@ -178,7 +191,7 @@ function useDraftSync(
         });
     }, 600);
     return () => clearTimeout(timer);
-  }, [doc, id, epoch, setStatus, setDraftId]);
+  }, [doc, id, epoch, setStatus, setDraftId, disableProtectedAutosave]);
 }
 function remainingDrafts(saved: Draft[], removed: string | null) {
   return removed === null ? [] : saved.filter((draft) => draft.id !== removed);

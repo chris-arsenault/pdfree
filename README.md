@@ -48,7 +48,8 @@ PDF verifiers, other engines and production-bundle tests.
 React/TypeScript uses one versioned editing model with immutable source PDFs.
 PDF.js renders pages; a pdf-lib worker writes PDFs and portable projects.
 A separate worker handles each credential-bearing import or signing/encryption
-operation. Drafts use IndexedDB; decrypted drafts require explicit consent.
+operation. Drafts use IndexedDB, including unlocked PDFs by default. A browser-wide
+setting can disable autosave for protected documents.
 See [architecture](docs/architecture.md).
 
 Ahara's standard reusable CI deploys `main` through the registered PDFree OIDC

@@ -11,6 +11,7 @@ import { BookmarksDialog } from "./BookmarksDialog";
 import { CleanupDialog } from "./CleanupDialog";
 import { RepeatedDialog } from "./RepeatedDialog";
 import { BatchDialog } from "./BatchDialog";
+import { SettingsDialog } from "./SettingsDialog";
 import { type ComponentType } from "react";
 import { type DialogName } from "../hooks/useEditorUi";
 const components: Partial<Record<DialogName, ComponentType>> = {
@@ -24,6 +25,7 @@ const components: Partial<Record<DialogName, ComponentType>> = {
   repeat: RepeatedDialog,
   batch: BatchDialog,
   properties: DocumentDialog,
+  settings: SettingsDialog,
   help: HelpDialog,
 };
 export function Dialogs() {

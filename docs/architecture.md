@@ -34,15 +34,14 @@ Application asset caching and updates are described in
 
 [`model.ts`](../frontend/src/core/model.ts) defines `EditorDocument.version = 1`:
 
-| Member                 | Contract                                                                                                                    |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `sources`              | Stable IDs, immutable original PDF bytes, nullable decrypted working bytes/encryption metadata, derived fields and warnings |
-| `pages`                | Stable page IDs, source ID/index, rotation, visible box, objects, comments, OCR words, scan adjustments and internal links  |
-| `bookmarks` / `rules`  | Native outline hierarchy with stable destinations; dynamic numbering, watermarks and stamps scoped to page IDs              |
-| `values`               | Native values keyed by source ID and field name, distinct from displayed choice labels                                      |
-| `assets`               | Stable asset IDs and local PNG/JPEG bytes referenced by placed objects                                                      |
-| `name`                 | Validated output/project name                                                                                               |
-| `allowDecryptedDrafts` | Explicit consent to store unprotected working content in local drafts; defaults false                                       |
+| Member                | Contract                                                                                                                    |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `sources`             | Stable IDs, immutable original PDF bytes, nullable decrypted working bytes/encryption metadata, derived fields and warnings |
+| `pages`               | Stable page IDs, source ID/index, rotation, visible box, objects, comments, OCR words, scan adjustments and internal links  |
+| `bookmarks` / `rules` | Native outline hierarchy with stable destinations; dynamic numbering, watermarks and stamps scoped to page IDs              |
+| `values`              | Native values keyed by source ID and field name, distinct from displayed choice labels                                      |
+| `assets`              | Stable asset IDs and local PNG/JPEG bytes referenced by placed objects                                                      |
+| `name`                | Validated output/project name                                                                                               |
 
 Page identities survive reorder; source indices address original pages. Blank
 pages use an empty source reference. Added content uses PDF page coordinates;
@@ -181,8 +180,12 @@ Legacy drafts refresh derived
 source descriptors while retaining edits; revision-2/3 drafts derive missing
 comments and normalize nullable source properties without changing saved geometry.
 Current drafts retain explicit comment arrays so deletion survives recovery.
-Encrypted-source drafts default off
-and require document-level consent. Generation and current consent checks share a
+Encrypted-source drafts autosave by default. `services/settings.ts` stores the
+browser-wide `pdfree-settings-v1:disable-protected-autosave` preference in local
+storage, defaulting false. React subscriptions and native storage events apply
+changes to all sessions and browser tabs. The setting stays outside document
+history, projects and drafts; old `allowDecryptedDrafts` fields are discarded on
+read. Generation and current global preference checks share a
 transaction: stale queued writes cannot resurrect deleted entries. Deleting one
 entry increments its generation and leaves other entries untouched. BroadcastChannel
 and local events notify open tabs of deletion; matching open documents remain in
@@ -219,7 +222,7 @@ signing/encryption; they do not modify the editing document.
 Each document session owns history, selection, clipboard, dialogs, tasks and draft
 identity. Inactive sessions keep autosave mounted; only the active session mounts
 viewers. Session storage remembers saved document IDs and the active ID for reload.
-Encrypted sessions retain the existing document-level decrypted-draft consent.
+Encrypted sessions follow the shared browser-wide autosave preference.
 
 ## Source ownership
 

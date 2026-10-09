@@ -3,7 +3,6 @@ import { useCloseDialog } from "../hooks/useCloseDialog";
 import { Modal } from "./Modal";
 import { useId, useState } from "react";
 import { documentNameError, editorLimits } from "../core/editorValidation";
-import { hasEncryptedSources } from "../core/model";
 export function DocumentDialog() {
   const editor = useEditor();
   const close = useCloseDialog();
@@ -31,7 +30,6 @@ export function DocumentDialog() {
         {editor.document.pages.length} pages · {editor.document.sources.length} source PDFs ·{" "}
         {editor.document.assets.length} local images
       </p>
-      <DraftConsent />
       {editor.document.sources.map((source) => (
         <div className="document-source" key={source.id}>
           <strong>{source.name}</strong>
@@ -65,27 +63,5 @@ export function DocumentDialog() {
         do not provide certificate signing or secure redaction.
       </p>
     </Modal>
-  );
-}
-function DraftConsent() {
-  const editor = useEditor();
-  if (!hasEncryptedSources(editor.document)) return null;
-  return (
-    <>
-      <label className="checkbox-label">
-        <input
-          type="checkbox"
-          checked={editor.document.allowDecryptedDrafts === true}
-          onChange={(event) =>
-            editor.commit({ ...editor.document, allowDecryptedDrafts: event.target.checked })
-          }
-        />
-        Save decrypted drafts on this device (without a password)
-      </label>
-      <p className="field-note">
-        Drafts include decrypted content without password protection. Disabling stops new saves;
-        Delete the saved document in Library to remove its existing local copy.
-      </p>
-    </>
   );
 }

@@ -11,6 +11,7 @@ import { importPdf, appendSource } from "./core/importPdf";
 import { emptyDocument } from "./core/model";
 import { readProject } from "./core/projects";
 import { editorDownload, openEditor } from "../tooling/editorHarness";
+import { setProtectedAutosaveDisabled } from "./services/settings";
 import "./styles.css";
 import recipientCertificate from "../tooling/fixtures/encryption/recipient.crt?raw";
 
@@ -42,13 +43,18 @@ async function chooseIdentity(password: string) {
 }
 
 let root: Root | null = null;
-beforeEach(() => deleteDraft());
+beforeEach(async () => {
+  setProtectedAutosaveDisabled(false);
+  await deleteDraft();
+});
 afterEach(async () => {
   root?.unmount();
   root = null;
   document.body.replaceChildren();
   vi.restoreAllMocks();
+  setProtectedAutosaveDisabled(false);
   await deleteDraft();
+  await page.viewport(1280, 720);
 });
 async function uploadLocked(password = "reader-fixture") {
   const host = document.createElement("div");
@@ -103,12 +109,14 @@ it("opens with an owner password and exposes the access mode in document details
   await page.getByRole("button", { name: "Document", exact: true }).click();
   await expect.element(page.getByText(/using owner access/)).toBeVisible();
 });
-it("opens permission-only encryption without prompting and does not autosave decrypted content", async () => {
+it("opens permission-only encryption without prompting and autosaves by default", async () => {
   root = await openEditor(await encryptedFixture("AES-256", ""));
   await page.getByRole("textbox", { name: "name", exact: true }).fill("Private Ada");
-  await expect.element(page.getByText(/decrypted drafts are disabled/)).toBeVisible();
+  await expect.element(page.getByRole("button", { name: "Autosave off" })).not.toBeInTheDocument();
   await expect.element(page.getByRole("dialog", { name: "Unlock PDF" })).not.toBeInTheDocument();
-  expect(await loadDraft()).toBe(null);
+  await expect
+    .poll(async () => Object.values((await loadDraft())?.document.values ?? {}))
+    .toContain("Private Ada");
 });
 it("cancels opening another encrypted file without replacing the current edited document", async () => {
   root = await openEditor(await formFixture());
@@ -127,15 +135,13 @@ it("cancels opening another encrypted file without replacing the current edited 
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Retained Ada");
 });
-it("requires decrypted-draft consent, preserves recovery and excludes the opening password", async () => {
+it("autosaves unlocked PDFs, preserves recovery and excludes the opening password", async () => {
   await uploadLocked();
   await unlock();
   await page.getByRole("textbox", { name: "name", exact: true }).fill("Recovered encrypted Ada");
-  await page.getByRole("button", { name: "Document", exact: true }).click();
-  await page
-    .getByRole("checkbox", { name: "Save decrypted drafts on this device (without a password)" })
-    .click();
-  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await expect
+    .element(page.getByRole("button", { name: "Autosave off", exact: true }))
+    .not.toBeInTheDocument();
   await expect
     .poll(
       async () =>
@@ -159,18 +165,57 @@ it("requires decrypted-draft consent, preserves recovery and excludes the openin
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Recovered encrypted Ada");
 });
-it("rejects direct draft saves without consent and fences revoked consent inside the transaction", async () => {
+it("explains protected-document autosave without expanding or overflowing the footer", async () => {
+  setProtectedAutosaveDisabled(true);
+  await uploadLocked();
+  await unlock();
+  await page.getByRole("button", { name: "Autosave off", exact: true }).hover();
+  await expect
+    .element(page.getByRole("tooltip"))
+    .toHaveTextContent("Your browser settings disable autosave for protected PDFs");
+  await page.getByRole("button", { name: "Autosave off", exact: true }).click();
+  expect(await loadDraft()).toBe(null);
+  await expect.element(page.getByRole("dialog", { name: "Settings", exact: true })).toBeVisible();
+  await expect
+    .element(
+      page.getByRole("checkbox", { name: "Don't autosave protected documents", exact: true })
+    )
+    .toBeChecked();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await page.getByRole("button", { name: "Hide pages", exact: true }).click();
+  for (const width of [1280, 768, 320]) {
+    await page.viewport(width, 720);
+    const footer = document.querySelector<HTMLElement>(".app-footer")!;
+    await expect
+      .poll(() => footer.getBoundingClientRect().height)
+      .toBeLessThanOrEqual(width === 320 ? 110 : 60);
+    expect(footer.scrollWidth).toBeLessThanOrEqual(footer.clientWidth);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
+    expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight);
+    await expect.element(page.getByRole("button", { name: "Library", exact: true })).toBeVisible();
+    await expect.element(page.getByRole("button", { name: "Fit page", exact: true })).toBeVisible();
+    await page.screenshot({ path: `../test-results/autosave-footer-${width}.png` });
+  }
+});
+it("applies the global restriction to direct saves and fences queued writes when it changes", async () => {
   const doc = appendSource(
     emptyDocument(),
     await importPdf(await encryptedFixture(), "locked.pdf", "reader-fixture")
   );
-  await expect(saveDraft(doc)).rejects.toThrow("Enable decrypted local drafts");
-  doc.allowDecryptedDrafts = true;
-  let permitted = true;
-  const pending = saveDraft(doc, await draftSession(), () => permitted);
-  permitted = false;
+  Reflect.set(doc, "allowDecryptedDrafts", true);
+  setProtectedAutosaveDisabled(true);
+  await expect(saveDraft(doc)).rejects.toThrow("disabled in Settings");
+  setProtectedAutosaveDisabled(false);
+  const session = await draftSession();
+  const pending = saveDraft(doc, session);
+  setProtectedAutosaveDisabled(true);
   expect(await pending).toBe(false);
   expect(await loadDraft()).toBe(null);
+  expect(
+    await saveDraft(
+      appendSource(emptyDocument(), await importPdf(await formFixture(), "plain.pdf"))
+    )
+  ).toBe(true);
 });
 it("retries recipient credentials, edits and exports certificate protection without storing the identity", async () => {
   await uploadRecipient();
@@ -201,7 +246,10 @@ it("retries recipient credentials, edits and exports certificate protection with
     "Recipient Ada"
   );
   expect(reopened.source.encryption?.authenticatedAs).toBe("recipient");
-  expect(await loadDraft()).toBe(null);
+  await expect
+    .poll(async () => Object.values((await loadDraft())?.document.values ?? {}))
+    .toContain("Recipient Ada");
+  expect(JSON.stringify(await loadDraft())).not.toMatch(/identity-fixture|wrong-fixture/);
 });
 it("cancels recipient unlock without installing a partially opened document", async () => {
   await uploadRecipient();

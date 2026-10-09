@@ -1,7 +1,8 @@
 import { createStore, entries, get, promisifyRequest } from "idb-keyval";
-import { newId, type EditorDocument, canSaveDraft } from "../core/model";
+import { newId, type EditorDocument } from "../core/model";
 import { refreshSources } from "../core/refreshSources";
 import { normalizeUtilities } from "../core/utilityModel";
+import { canSaveDraft } from "./settings";
 
 export type Draft = {
   version: 1;
@@ -101,9 +102,10 @@ async function migrateDraft(draft: Draft) {
   });
 }
 function normalizeDraft(document: EditorDocument): EditorDocument {
+  const current = { ...document };
+  Reflect.deleteProperty(current, "allowDecryptedDrafts");
   return normalizeUtilities({
-    ...document,
-    allowDecryptedDrafts: document.allowDecryptedDrafts === true,
+    ...current,
     sources: document.sources.map((source) => ({
       ...source,
       decryptedBytes: source.decryptedBytes ?? null,
@@ -118,7 +120,7 @@ export async function saveDraft(
   permitted = () => true
 ) {
   if (!canSaveDraft(document))
-    throw new Error("Enable decrypted local drafts before saving this document.");
+    throw new Error("Autosave for protected documents is disabled in Settings.");
   const current = session ?? (await draftSession());
   return store("readwrite", (objects) => {
     let saved = false;
@@ -131,6 +133,7 @@ export async function saveDraft(
       if (
         (generation.result ?? 0) !== current.generation ||
         (entry.result ?? 0) !== current.entryGeneration ||
+        !canSaveDraft(document) ||
         !permitted()
       )
         return;

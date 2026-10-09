@@ -386,6 +386,7 @@ h1 span {
     gap: 6px;
   }
   .header-actions .document-action,
+  .header-actions .settings-action,
   .header-actions .help-action {
     display: none;
   }
