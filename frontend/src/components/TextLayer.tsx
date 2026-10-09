@@ -4,15 +4,18 @@ import { type Page, type Source } from "../core/model";
 import { sourcePage } from "../services/viewer";
 import { usePageBackground } from "../hooks/usePageBackground";
 import { toDisplay } from "../core/coordinates";
-import { recognizedPosition } from "../core/recognition";
+import { recognizedPosition, uncertainConfidence } from "../core/recognition";
 export function TextLayer({
   page,
   source,
   scale,
+  revealed,
 }: {
   page: Page;
   source: Source | null;
   scale: number;
+  /** Outline recognized words so OCR coverage and doubtful words can be reviewed. */
+  revealed: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const { background, assets } = usePageBackground(page);
@@ -52,29 +55,41 @@ export function TextLayer({
   return (
     <>
       <div ref={ref} className="textLayer" style={{ "--total-scale-factor": scale }} />
-      {!!page.recognition && (
-        <div className="recognized-layer">
-          {page.recognition.words.map((word, index) => {
-            const position = recognizedPosition(page, word);
-            const box = toDisplay(position, page);
-            return (
-              <span
-                key={index}
-                style={{
-                  "--word-left": `${box.x * scale}px`,
-                  "--word-top": `${box.y * scale}px`,
-                  "--word-width": `${word.width * scale}px`,
-                  "--word-height": `${word.height * scale}px`,
-                  "--word-size": `${word.height * scale}px`,
-                  "--word-angle": `${page.rotation - position.angle}deg`,
-                }}
-              >
-                {word.text}{" "}
-              </span>
-            );
-          })}
-        </div>
-      )}
+      {!!page.recognition && <RecognizedWords page={page} scale={scale} revealed={revealed} />}
     </>
+  );
+}
+function RecognizedWords({
+  page,
+  scale,
+  revealed,
+}: {
+  page: Page;
+  scale: number;
+  revealed: boolean;
+}) {
+  return (
+    <div className={`recognized-layer ${revealed ? "revealed" : ""}`}>
+      {page.recognition!.words.map((word, index) => {
+        const position = recognizedPosition(page, word);
+        const box = toDisplay(position, page);
+        return (
+          <span
+            key={index}
+            className={word.confidence < uncertainConfidence ? "uncertain" : undefined}
+            style={{
+              "--word-left": `${box.x * scale}px`,
+              "--word-top": `${box.y * scale}px`,
+              "--word-width": `${word.width * scale}px`,
+              "--word-height": `${word.height * scale}px`,
+              "--word-size": `${word.height * scale}px`,
+              "--word-angle": `${page.rotation - position.angle}deg`,
+            }}
+          >
+            {word.text}{" "}
+          </span>
+        );
+      })}
+    </div>
   );
 }

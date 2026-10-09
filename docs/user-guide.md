@@ -59,19 +59,43 @@ for confirmation; saved library entries remain available.
 
 ## Scan and repeated tools
 
-The Pages panel's More menu opens Recognize text, Clean up scans and Repeat across
-pages; Process multiple PDFs is in the menu beside Open. Each page tool shows the
-page-scope control. Recognition and cleanup start from the checked thumbnails, or
-the current page when none are checked; repeated rules start from all pages.
-Recognition starts with English and adds searchable/selectable text
-without changing the scanned image. Existing PDF text is skipped. Review recognition
-accuracy; Remove recognition and Undo leave the source image intact.
+Recognize text and Clean up scans sit in the Scan tools group at the right of the
+toolbar; on phones they are in the toolbar's Add menu. When the current page is a
+scanned image without text, a notice above the page offers both. Repeat across
+pages is in the Pages panel's More menu, and Process multiple PDFs is in the menu
+beside Open. Each tool shows the page-scope control. Recognition and cleanup start
+from the checked thumbnails, or all pages when none are checked; repeated rules
+start from all pages.
 
-Clean up scans offers crop, deskew, contrast and background cleanup, with a preview
-of the first selected page before applying one undoable edit. Reset settings and
-apply the preview to restore source geometry/appearance. Unsupported mixed layouts
-and annotations that cannot safely rotate produce an explicit error. Crop hides
-content; it does not remove sensitive data.
+Recognize text runs English recognition on this device and adds
+searchable/selectable text without changing the scanned image. Its Recognize view
+lists what will happen to the chosen pages: pages to recognize, pages already
+recognized (kept unless you choose to recognize them again) and pages that
+already have PDF text or are blank. After a run, Results shows the words found
+and average confidence per page, flags uncertain words, and previews the
+recognized text. Copy text copies it, Show on page outlines recognized words on
+the page (uncertain words in amber), and Remove text deletes recognition; Undo
+restores it. Reopening Recognize text on recognized pages opens Results. The page
+notice shows the word count and a Show words toggle; recognized thumbnails carry
+a small badge.
+
+Clean up scans analyzes a preview page, the first page in scope by default; use
+the arrows or page list to preview another page. It reports what it found and
+proposes four corrections, each with an on/off switch: Straighten (detected tilt),
+Whiten paper (grey or tinted paper), Darken text (faded ink) and Trim edges (dark
+scanner borders, measured after straightening). The preview shows the cleaned
+page live; switch to Original to compare, or turn on the alignment grid to judge
+straightness. Fine-tune rotation, whitening and contrast with the − and +
+buttons, and drag the page edges in the preview, or focus an edge and use the
+arrow keys, to adjust trimming.
+
+With several pages, Detect for each page analyzes and cleans every page with its
+own settings. Adjusting a value switches to Same settings on every page, starting
+from the previewed page. Pages that are not a single plain scan image can only be
+trimmed; the dialog names them. Apply is one undoable edit and reports how many
+pages were straightened, whitened, darkened and trimmed. Restore original pages
+removes earlier cleanup. Trimming hides content; it does not remove sensitive
+data.
 
 Repeat across pages adds numbering/Bates prefixes, watermarks or stamps. Numbering
 follows the current page order; selected scopes follow page identities, including
@@ -121,8 +145,8 @@ the thumbnail checkboxes. Rotate, Duplicate and Delete apply to that scope.
 
 Insert adds a Blank page or Pages from file (PDF, PNG or JPG) after the current
 page, or Merge PDFs at the end. Dropping files onto the thumbnail list also
-appends them. More holds Extract, Split, Repeat across pages, Clean up scans and
-Recognize text; Extract and Split open Export.
+appends them. More holds Extract, Split and Repeat across pages; Extract and
+Split open Export.
 
 Thumbnails select, navigate and reorder pages. Page numbers refer to the current
 physical page order, beginning at 1, rather than printed labels on the original

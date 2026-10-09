@@ -20,6 +20,13 @@ export function resolveScope(editor: ReturnType<typeof useEditor>, scope: PageSc
   }
 }
 
+/** Default for whole-document scan processing: the checked thumbnails, otherwise every page. */
+export function selectionOrAll(editor: ReturnType<typeof useEditor>): PageScopeKind {
+  return editor.document.pages.some((page) => editor.pageIds.includes(page.id))
+    ? "selected"
+    : "all";
+}
+
 /** Default for commands that historically acted on the selection or the current page. */
 export function selectionDefault(editor: ReturnType<typeof useEditor>): PageScopeKind {
   return editor.document.pages.some((page) => editor.pageIds.includes(page.id))

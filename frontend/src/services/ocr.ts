@@ -1,28 +1,40 @@
 import { recognitionEngine } from "./ocrClient";
-import { type EditorDocument, type Recognition } from "../core/model";
+import { type EditorDocument, type Page, type Recognition } from "../core/model";
 import { viewedPage } from "./viewer";
+import { pageContent, recognizable } from "./pageContent";
 import { type PDFPageProxy, type PageViewport } from "pdfjs-dist";
 import { type Block } from "tesseract.js";
 
+/**
+ * What happened to one page: recognized now, kept its earlier recognition,
+ * skipped because it already has PDF text, or skipped as blank/inserted.
+ */
+export type RecognitionOutcome = {
+  pageId: string;
+  status: "recognized" | "kept" | "has-text" | "empty";
+};
 export async function recognizePages(
   document: EditorDocument,
   ids: string[],
   signal: AbortSignal,
-  progress: (message: string) => void
+  progress: (message: string) => void,
+  { replace }: { replace: boolean } = { replace: false }
 ) {
   let worker: Awaited<ReturnType<typeof recognitionEngine>> | null = null;
   const check = () => {
     if (signal.aborted) throw new DOMException("Recognition canceled.", "AbortError");
   };
-  const results = new Map<string, Recognition>();
-  let skipped = 0;
+  const results = new Map<string, Recognition>(),
+    outcomes: RecognitionOutcome[] = [];
   try {
     check();
     for (const [index, id] of ids.entries()) {
       check();
       const page = document.pages.find((page) => page.id === id);
-      if (!page?.sourceId) {
-        skipped++;
+      if (!page) throw new Error("A selected page no longer exists.");
+      const skipped = await skipStatus(document, page, replace);
+      if (skipped) {
+        outcomes.push({ pageId: id, status: skipped });
         continue;
       }
       const view = await viewedPage(document, {
@@ -30,15 +42,10 @@ export async function recognizePages(
         scan: page.scan ? { ...page.scan, angle: 0 } : null,
       });
       try {
-        const original = view.page,
-          content = await original.getTextContent();
-        if (content.items.some((item) => "str" in item && item.str.trim())) {
-          skipped++;
-          continue;
-        }
         progress(`Recognizing page ${index + 1} of ${ids.length}`);
         worker ??= await recognitionEngine(signal, progress);
-        results.set(id, await recognizeImage(original, worker, signal));
+        results.set(id, await recognizeImage(view.page, worker, signal));
+        outcomes.push({ pageId: id, status: "recognized" });
       } finally {
         view.release();
       }
@@ -50,11 +57,21 @@ export async function recognizePages(
           results.has(page.id) ? { ...page, recognition: results.get(page.id)! } : page
         ),
       },
-      skipped,
+      outcomes,
     };
   } finally {
     worker?.terminate();
   }
+}
+async function skipStatus(
+  document: EditorDocument,
+  page: Page,
+  replace: boolean
+): Promise<RecognitionOutcome["status"] | null> {
+  if (page.recognition && !replace) return "kept";
+  const content = await pageContent(document, page);
+  if (recognizable(content)) return null;
+  return content === "text" ? "has-text" : "empty";
 }
 async function recognizeImage(
   original: PDFPageProxy,

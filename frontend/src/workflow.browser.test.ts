@@ -51,16 +51,26 @@ it("keeps page operations in the Pages panel and file sources beside Open", asyn
   await page.getByRole("button", { name: "Insert", exact: true }).click();
   await page.getByRole("button", { name: "Blank page", exact: true }).click();
   await expect.element(page.getByText("PAGE 1 OF 4")).toBeVisible();
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("button", { name: "Repeat across pages", exact: true }).click();
+  await expect
+    .element(page.getByRole("dialog", { name: "Repeat across pages", exact: true }))
+    .toBeVisible();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  // Scan processing sits in the toolbar rather than the page-set menu.
+  const scanTools = page.getByRole("group", { name: "Scan tools", exact: true });
   for (const [item, dialog] of [
-    ["Repeat across pages", "Repeat across pages"],
     ["Clean up scans", "Clean up scans"],
     ["Recognize text", "Recognize scanned text"],
   ]) {
-    await page.getByRole("button", { name: "More", exact: true }).click();
-    await page.getByRole("button", { name: item, exact: true }).click();
+    await scanTools.getByRole("button", { name: item, exact: true }).click();
     await expect.element(page.getByRole("dialog", { name: dialog, exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   }
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await expect.element(page.getByRole("button", { name: "Split", exact: true })).toBeVisible();
+  expect(document.querySelector(".action-popover")?.textContent).not.toMatch(/Clean up|Recognize/);
+  await userEvent.keyboard("{Escape}");
   await page.getByRole("button", { name: "Open options", exact: true }).click();
   await page.getByRole("button", { name: "Process multiple PDFs", exact: true }).click();
   await expect

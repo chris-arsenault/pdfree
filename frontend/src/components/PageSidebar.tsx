@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from "react";
-import { ChevronUp, ChevronDown, X } from "lucide-react";
+import { ChevronUp, ChevronDown, ScanText, X } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { displaySize } from "../core/coordinates";
 import { type Page } from "../core/model";
@@ -101,6 +101,12 @@ function useAppendDrop() {
     },
   };
 }
+const RecognizedBadge = () => (
+  <span className="thumbnail-badge" title="Text recognized">
+    <ScanText size={12} aria-hidden="true" />
+    <span className="sr-only">Text recognized</span>
+  </span>
+);
 function Thumbnail({ page, index }: { page: Page; index: number }) {
   const editor = useEditor(),
     source = editor.document.sources.find((item) => item.id === page.sourceId) ?? null;
@@ -147,6 +153,7 @@ function Thumbnail({ page, index }: { page: Page; index: number }) {
           />
           {index + 1}
         </label>
+        {page.recognition && <RecognizedBadge />}
         <div className="thumbnail-move">
           <IconButton
             label="Move page earlier"

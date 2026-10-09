@@ -195,13 +195,26 @@ the explicit backup path.
 
 ## Document utilities and sessions
 
-OCR renders bounded page images, skips pages with existing text and runs English
+A cached classifier labels each source page as PDF text, scan, vector graphics
+or empty from PDF.js text content and operator lists; OCR planning, the OCR
+dialog and the page scan notice share it. OCR renders bounded page images, skips
+pages with existing text, keeps earlier recognition unless asked to replace it,
+reports a per-page outcome and runs English
 recognition in a disposable outer worker owning a Tesseract.js 7 worker. Engine
 variants and language data ship as same-origin PWA assets. Stable-page word boxes
 are stored in PDF coordinates and exported as invisible Unicode text. Cancellation
 terminates the worker tree; recognition never replaces source content.
 
-Cleanup stores a processed image asset and crop/deskew parameters. Rendering and
+Cleanup analysis renders the original page with PDF.js at up to 1,400 pixels per
+edge and measures it in `core/scanAnalysis.ts`: projection-profile deskew within
+±10°, paper and ink levels from the darkest colour channel, photo and blank
+detection, and dark edge bands measured before and after straightening. The live
+preview applies the same pixel adjustment and rotation centre as export. The
+cleanup worker takes per-page settings and a support check reports which pages
+accept image corrections or straightening before anything is applied.
+
+Cleanup stores a processed image asset and crop/deskew parameters, replacing the
+page's previous processed asset when no other page uses it. Rendering and
 export prepare copies with private image resource dictionaries, keeping other
 pages sharing the original image unchanged. Mixed layouts and annotation geometry
 that cannot safely follow deskew are rejected. Compression traverses supported

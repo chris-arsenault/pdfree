@@ -9,7 +9,7 @@ import {
   type PDFDocument,
 } from "pdf-lib";
 import { type Fonts } from "./drawObjects";
-import { type Page, type TextWord } from "./model";
+import { type Page, type Recognition, type TextWord } from "./model";
 import { deskewMatrix } from "./scanCleanup";
 
 export function recognizedPosition(page: Page, word: TextWord) {
@@ -20,6 +20,44 @@ export function recognizedPosition(page: Page, word: TextWord) {
     angle: page.scan?.angle ?? 0,
   };
 }
+/** Words below this Tesseract confidence are flagged for review. */
+export const uncertainConfidence = 60;
+export function recognitionSummary(recognition: Recognition) {
+  const words = recognition.words;
+  const letters = words.reduce((sum, word) => sum + word.text.length, 0);
+  // Weight by length so one-letter noise does not dominate the average.
+  const confidence = letters
+    ? words.reduce((sum, word) => sum + word.confidence * word.text.length, 0) / letters
+    : 0;
+  return {
+    words: words.length,
+    confidence: Math.round(confidence),
+    uncertain: words.filter((word) => word.confidence < uncertainConfidence).length,
+  };
+}
+/**
+ * Groups recognized words into lines in their recognized reading order. A word
+ * starts a new line when its baseline moves by more than half its height.
+ */
+export function recognizedLines(recognition: Recognition) {
+  const lines: TextWord[][] = [];
+  for (const word of recognition.words) {
+    const line = lines.at(-1),
+      previous = line?.at(-1);
+    if (
+      line &&
+      previous &&
+      Math.abs(previous.y - word.y) <= Math.max(previous.height, word.height) / 2
+    )
+      line.push(word);
+    else lines.push([word]);
+  }
+  return lines;
+}
+export const recognizedText = (recognition: Recognition) =>
+  recognizedLines(recognition)
+    .map((line) => line.map((word) => word.text).join(" "))
+    .join("\n");
 export function writeRecognition(pdf: PDFDocument, pages: Page[], fonts: Fonts) {
   const supported = new Set(fonts.sans.getCharacterSet());
   pages.forEach((page, index) => {

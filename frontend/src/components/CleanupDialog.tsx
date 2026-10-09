@@ -1,199 +1,213 @@
 import { useState } from "react";
+import { ChevronLeft, ChevronRight, Grid3x3 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
-import { useProcessing } from "../hooks/useProcessing";
-import { type CleanupOptions } from "../core/scanCleanup";
-import { type EditorDocument } from "../core/model";
-import { runProcessingWorker } from "../services/workerClient";
-import { fontData } from "../services/resources";
+import { useCleanupState, type CleanupState } from "../hooks/useCleanupState";
 import { Modal } from "./Modal";
 import { ProcessingStatus } from "./ProcessingStatus";
-import { PdfPreview } from "./PdfPreview";
 import { PageScopeField } from "./PageScopeField";
-import { usePageScope, selectionDefault } from "../hooks/usePageScope";
-const defaults: CleanupOptions = {
-  angle: 0,
-  contrast: 1,
-  background: 0,
-  crop: { left: 0, right: 0, top: 0, bottom: 0 },
-};
-async function cleanupPreview(
-  document: EditorDocument,
-  ids: string[],
-  options: CleanupOptions,
-  signal: AbortSignal,
-  progress: (message: string) => void
-) {
-  const cleaned = await runProcessingWorker<EditorDocument>(
-    { kind: "cleanup", document, pageIds: ids, options },
-    signal,
-    progress
-  );
-  const fonts = await fontData();
-  const before = await runProcessingWorker<Uint8Array>(
-    { kind: "export", document, pageIds: [], flatten: true, fonts },
-    signal,
-    progress
-  );
-  const after = await runProcessingWorker<Uint8Array>(
-    { kind: "export", document: cleaned, pageIds: [], flatten: true, fonts },
-    signal,
-    progress
-  );
-  return { document: cleaned, before, after };
-}
+import { ScanPreview } from "./ScanPreview";
+import { CleanupCorrections } from "./CleanupCorrections";
+import { IconButton } from "./ui/IconButton";
+
+/**
+ * Scan cleanup around a sample page: analysis proposes corrections, the
+ * preview shows their result live, and Apply analyzes and cleans every page.
+ */
 export function CleanupDialog() {
   const editor = useEditor(),
-    task = useProcessing();
-  const [options, setOptions] = useState(defaults),
-    scope = usePageScope(selectionDefault(editor));
-  const [preview, setPreview] = useState<{
-    document: EditorDocument;
-    before: Uint8Array;
-    after: Uint8Array;
-  } | null>(null);
-  const ids = scope.pageIds;
-  const change = (options: CleanupOptions) => {
-    setPreview(null);
-    setOptions(options);
-  };
-  const generate = () =>
-    task.run(
-      (signal, progress) => cleanupPreview(editor.document, ids, options, signal, progress),
-      setPreview
-    );
+    state = useCleanupState();
+  const { task } = state;
   return (
     <Modal
       title="Clean up scans"
+      className="cleanup-dialog"
       onClose={() => {
         task.cancel();
         editor.setDialog("");
       }}
     >
-      <p className="field-note">
-        Crop hides content; it does not redact it. Image cleanup supports a single upright
-        RGB/grayscale scan with an optional OCR text layer. Mixed artwork and masked images are
-        rejected.
-      </p>
-      <fieldset className="utility-fields" disabled={task.busy}>
-        <CleanupFields options={options} change={change} />
-        <PageScopeField
-          scope={scope.scope}
-          onChange={(next) => {
-            scope.setScope(next);
-            setPreview(null);
-          }}
-          pageIds={ids}
-          error={scope.error}
-        />
-      </fieldset>
+      <div className="cleanup-layout">
+        <CleanupStage state={state} />
+        <div className="cleanup-side">
+          <PageScopeField
+            scope={state.scope.scope}
+            onChange={state.scope.setScope}
+            pageIds={state.scope.pageIds}
+            error={state.scope.error}
+            disabled={task.busy}
+          />
+          {state.analysis && (
+            <CleanupCorrections
+              analysis={state.analysis}
+              page={state.numbers.get(state.sampleId) ?? 0}
+              enabled={state.enabled}
+              setEnabled={state.setEnabled}
+              values={state.preview}
+              edit={state.edit}
+              support={state.support.get(state.sampleId)}
+            />
+          )}
+          <SettingsMode state={state} />
+          <SupportNote state={state} />
+        </div>
+      </div>
       <ProcessingStatus task={task} />
-      {preview && (
-        <CleanupPreview
-          {...preview}
-          pageIndex={editor.document.pages.findIndex((page) => page.id === ids[0])}
-        />
+      {state.done && (
+        <p className="cleanup-done" role="status">
+          {state.done}
+        </p>
       )}
       <div className="modal-actions">
-        <button className="button secondary" disabled={task.busy} onClick={() => change(defaults)}>
-          Reset settings
-        </button>
-        <button className="button secondary" disabled={task.busy || !ids.length} onClick={generate}>
-          Preview
-        </button>
+        {state.cleaned.length > 0 && (
+          <button className="button secondary" disabled={task.busy} onClick={state.restore}>
+            Restore {state.cleaned.length} original page(s)
+          </button>
+        )}
         <button
           className="button primary"
-          disabled={task.busy || !preview}
-          onClick={() => {
-            if (preview) editor.commit(preview.document);
-            editor.setDialog("");
-          }}
+          disabled={task.busy || !state.ids.length || !state.ready || !state.analysis}
+          onClick={state.applyAll}
         >
-          Apply to {ids.length} page(s)
+          Apply to {state.ids.length} page(s)
         </button>
       </div>
     </Modal>
   );
 }
-function CleanupFields({
-  options,
-  change,
-}: {
-  options: CleanupOptions;
-  change: (options: CleanupOptions) => void;
-}) {
+
+function CleanupStage({ state }: { state: CleanupState }) {
+  const [view, setView] = useState({ original: false, grid: false });
+  const result = state.sample.result;
+  let placeholder = "No scanned pages selected.";
+  if (state.sample.error) placeholder = state.sample.error;
+  else if (state.ids.length) placeholder = "Analyzing page…";
   return (
-    <div className="utility-grid">
-      <label>
-        Deskew angle (°)
-        <input
-          type="number"
-          min="-10"
-          max="10"
-          step="0.1"
-          value={options.angle}
-          onChange={(event) => change({ ...options, angle: Number(event.target.value) })}
+    <section className="cleanup-stage" aria-label="Preview">
+      <div className="stage-bar">
+        <SamplePicker state={state} />
+        <div className="panel-tabs" role="tablist" aria-label="Preview version">
+          {[false, true].map((original) => (
+            <button
+              key={String(original)}
+              role="tab"
+              aria-selected={view.original === original}
+              onClick={() => setView({ ...view, original })}
+            >
+              {original ? "Original" : "Cleaned"}
+            </button>
+          ))}
+        </div>
+        <IconButton
+          label="Alignment grid"
+          icon={Grid3x3}
+          aria-pressed={view.grid}
+          className={view.grid ? "active" : ""}
+          detail="Show straight guide lines over the preview."
+          onClick={() => setView({ ...view, grid: !view.grid })}
         />
-      </label>
-      <label>
-        Contrast
-        <input
-          type="number"
-          min="0.5"
-          max="3"
-          step="0.1"
-          value={options.contrast}
-          onChange={(event) => change({ ...options, contrast: Number(event.target.value) })}
+      </div>
+      {result ? (
+        <ScanPreview
+          sample={result.sample}
+          options={state.preview}
+          original={view.original}
+          grid={view.grid}
+          onCrop={
+            state.task.busy
+              ? undefined
+              : (crop) => {
+                  state.setEnabled({ ...state.enabled, trim: true });
+                  state.edit({ crop });
+                }
+          }
         />
-      </label>
+      ) : (
+        <div className="scan-preview placeholder" role="status">
+          {placeholder}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SamplePicker({ state }: { state: CleanupState }) {
+  const { ids, sampleId, numbers, choose } = state;
+  const index = ids.indexOf(sampleId);
+  return (
+    <div className="sample-picker">
+      <IconButton
+        label="Previous page"
+        icon={ChevronLeft}
+        disabled={index <= 0}
+        onClick={() => choose(ids[index - 1])}
+      />
       <label>
-        Background cleanup
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={options.background}
-          onChange={(event) => change({ ...options, background: Number(event.target.value) })}
-        />
+        <span className="sr-only">Preview page</span>
+        <select value={sampleId} onChange={(event) => choose(event.target.value)}>
+          {ids.map((id) => (
+            <option key={id} value={id}>
+              Page {numbers.get(id)}
+            </option>
+          ))}
+        </select>
       </label>
-      {(["left", "right", "top", "bottom"] as const).map((side) => (
-        <label key={side}>
-          Crop {side} (points)
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={options.crop[side]}
-            onChange={(event) =>
-              change({
-                ...options,
-                crop: { ...options.crop, [side]: Number(event.target.value) },
-              })
-            }
-          />
-        </label>
-      ))}
+      <IconButton
+        label="Next page"
+        icon={ChevronRight}
+        disabled={index < 0 || index >= ids.length - 1}
+        onClick={() => choose(ids[index + 1])}
+      />
     </div>
   );
 }
-function CleanupPreview({
-  before,
-  after,
-  pageIndex,
-}: {
-  before: Uint8Array;
-  after: Uint8Array;
-  pageIndex: number;
-}) {
+
+function SettingsMode({ state }: { state: CleanupState }) {
+  const { ids, shared, shareSettings } = state;
+  if (ids.length < 2)
+    return shared ? (
+      <button className="text-button" onClick={() => shareSettings(false)}>
+        Reset to detected settings
+      </button>
+    ) : null;
   return (
-    <div className="utility-grid">
-      <div>
-        <p className="field-note">Before · page {pageIndex + 1}</p>
-        <PdfPreview bytes={before} pageIndex={pageIndex} />
-      </div>
-      <div>
-        <p className="field-note">After · page {pageIndex + 1}</p>
-        <PdfPreview bytes={after} pageIndex={pageIndex} />
-      </div>
-    </div>
+    <fieldset className="export-formats settings-mode">
+      <legend>Settings for {ids.length} pages</legend>
+      <label className="export-format">
+        <input
+          type="radio"
+          name="cleanup-settings"
+          checked={!shared}
+          onChange={() => shareSettings(false)}
+        />
+        <span>
+          Detect for each page
+          <small>Each page is analyzed on its own; best for most scans.</small>
+        </span>
+      </label>
+      <label className="export-format">
+        <input
+          type="radio"
+          name="cleanup-settings"
+          checked={!!shared}
+          onChange={() => shareSettings(true)}
+        />
+        <span>
+          Same settings on every page
+          <small>Adjusting a value switches to this, starting from the previewed page.</small>
+        </span>
+      </label>
+    </fieldset>
+  );
+}
+
+function SupportNote({ state }: { state: CleanupState }) {
+  const limited = state.ids.filter((id) => state.support.get(id)?.image);
+  if (!limited.length) return null;
+  return (
+    <p className="field-note">
+      Page {limited.map((id) => state.numbers.get(id)).join(", ")}{" "}
+      {limited.length === 1 ? "is not" : "are not"} a single plain scan image, so only trimming
+      applies there.
+    </p>
   );
 }

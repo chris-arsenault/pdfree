@@ -94,8 +94,16 @@ it("recognizes real scan words locally and exports searchable Unicode text witho
     );
     expect(
       (await recognizePages(reread, [reread.pages[0].id], new AbortController().signal, () => {}))
-        .skipped
-    ).toBe(1);
+        .outcomes
+    ).toEqual([{ pageId: reread.pages[0].id, status: "has-text" }]);
+    const kept = await recognizePages(
+      result.document,
+      [result.document.pages[0].id],
+      new AbortController().signal,
+      () => {}
+    );
+    expect(kept.outcomes[0].status).toBe("kept");
+    expect(kept.document.pages[0].recognition).toBe(result.document.pages[0].recognition);
     expect(document.sources[0].bytes).toEqual(source);
   } finally {
     await pdf.destroy();
@@ -111,9 +119,16 @@ it("cleans only selected scan resources, persists geometry, and compresses suppo
     crop: { left: 10, right: 10, top: 20, bottom: 20 },
   };
   const cleaned = await runProcessingWorker<EditorDocument>(
-    { kind: "cleanup", document, pageIds: [document.pages[0].id], options },
+    { kind: "cleanup", document, pages: [{ pageId: document.pages[0].id, options }] },
     signal
   );
+  // Cleaning the page again replaces its processed image instead of accumulating assets.
+  const recleaned = await runProcessingWorker<EditorDocument>(
+    { kind: "cleanup", document: cleaned, pages: [{ pageId: cleaned.pages[0].id, options }] },
+    signal
+  );
+  expect(recleaned.assets).toHaveLength(1);
+  expect(recleaned.assets[0].id).toBe(recleaned.pages[0].scan!.assetId);
   const reopened = await readProject(writeProject(cleaned));
   expect(reopened.pages[0].scan).toEqual(cleaned.pages[0].scan);
   expect(reopened.pages[0].box).toEqual({ x: 10, y: 20, width: 580, height: 710 });

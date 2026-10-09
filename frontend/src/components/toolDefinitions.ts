@@ -10,6 +10,8 @@ import {
   MoveUpRight,
   Pencil,
   PenLine,
+  ScanLine,
+  ScanText,
   Square,
   Stamp,
   TextCursorInput,
@@ -117,5 +119,21 @@ export const tools = [
     icon: TextCursorInput,
     group: "field",
     hint: "Drag to create a fillable field, then choose its type in Properties.",
+  },
+] as const;
+
+/** Whole-page scan processing, shown beside the placement tools so scans are easy to fix. */
+export const scanTools = [
+  {
+    dialog: "ocr",
+    label: "Recognize text",
+    icon: ScanText,
+    hint: "Make scanned pages searchable and selectable with on-device OCR.",
+  },
+  {
+    dialog: "cleanup",
+    label: "Clean up scans",
+    icon: ScanLine,
+    hint: "Detect and fix tilt, grey paper, faded text and dark edges.",
   },
 ] as const;

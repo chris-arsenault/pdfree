@@ -5,6 +5,22 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Recognize text and Clean up scans now sit in a labelled Scan tools group in
+  the toolbar (the Add menu on phones) instead of the Pages panel More menu. A
+  notice above scanned pages without text offers both, and recognized pages show
+  their word count with a Show words toggle and a thumbnail badge.
+- Recognize text shows what a run will do to each page before it starts and
+  keeps earlier recognition unless you choose to replace it. Results list the
+  words found, confidence and uncertain words per page, preview the text, and
+  offer Copy text, Show on page and Remove text. Reopening it on recognized pages
+  shows those results instead of offering to run again.
+- Clean up scans now analyzes a preview page and proposes Straighten, Whiten
+  paper, Darken text and Trim edges with what it found. A live preview shows
+  the result, with Original comparison, an alignment grid and draggable trim
+  edges. By default each page is analyzed and cleaned with its own settings;
+  adjusting a value applies one setting to every page. Restore original pages
+  removes earlier cleanup, and re-cleaning no longer accumulates image copies.
+
 - Dropping files on the editor now opens them in new document tabs, matching
   Open. Drop onto the Pages thumbnail list to append pages to the current
   document.
@@ -15,8 +31,8 @@ identify the application version; they do not imply a published Git tag.
 - Added one page-scope control (All, Current, Selected or a range, with the page
   count) to the Pages panel, Export, Recognize text, Clean up scans and Repeat
   across pages. Export defaults to all pages; Extract starts from the selection.
-- Moved Recognize text, Clean up scans and Repeat across pages from the toolbar
-  Tools menu into the Pages panel's More menu, and grouped Blank page, Pages from
+- Moved Repeat across pages from the toolbar Tools menu into the Pages panel's
+  More menu, and grouped Blank page, Pages from
   file and Merge PDFs under a Pages panel Insert menu. Process multiple PDFs and
   Library now sit in a menu beside Open.
 - Settings is now Library's Storage section. The footer shows status only; draft

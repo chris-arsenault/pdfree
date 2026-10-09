@@ -3,8 +3,9 @@ import { Plus, Redo2, Undo2 } from "lucide-react";
 import { highlightTextSelection } from "../hooks/usePlacement";
 import { useEditor } from "../hooks/editorContext";
 import { type Tool } from "../core/model";
-import { tools } from "./toolDefinitions";
+import { scanTools, tools } from "./toolDefinitions";
 import { IconButton } from "./ui/IconButton";
+import { Tooltip } from "./ui/Tooltip";
 import { ActionPopover } from "./ui/ActionPopover";
 export function Toolbar() {
   const editor = useEditor();
@@ -44,6 +45,21 @@ export function Toolbar() {
         ))}
       </div>
       <MobileTools select={select} />
+      <div className="tool-group scan-tools" role="group" aria-label="Scan tools">
+        {scanTools.map((item) => (
+          <Tooltip key={item.dialog} label={item.label} detail={item.hint}>
+            <button
+              type="button"
+              className="scan-tool"
+              disabled={!!editor.task.busy}
+              onClick={() => editor.setDialog(item.dialog)}
+            >
+              <item.icon size={17} strokeWidth={1.75} aria-hidden="true" />
+              {item.label}
+            </button>
+          </Tooltip>
+        ))}
+      </div>
       <span className="active-tool">{tools.find((tool) => tool.id === editor.tool)?.label}</span>
     </div>
   );
@@ -70,6 +86,10 @@ function MobileTools({ select }: { select: (tool: Tool) => void }) {
           <ToolChoices
             select={(tool) => {
               select(tool);
+              close();
+            }}
+            open={(dialog) => {
+              editor.setDialog(dialog);
               close();
             }}
           />
@@ -108,7 +128,13 @@ function HistoryButtons() {
   );
 }
 
-function ToolChoices({ select }: { select: (tool: Tool) => void }) {
+function ToolChoices({
+  select,
+  open,
+}: {
+  select: (tool: Tool) => void;
+  open: (dialog: (typeof scanTools)[number]["dialog"]) => void;
+}) {
   const editor = useEditor();
   return (
     <div className="tool-choices">
@@ -125,6 +151,12 @@ function ToolChoices({ select }: { select: (tool: Tool) => void }) {
             <span>{tool.id === "highlight" ? "Area highlight" : tool.label}</span>
           </button>
         ))}
+      {scanTools.map((item) => (
+        <button type="button" key={item.dialog} onClick={() => open(item.dialog)}>
+          <item.icon size={18} strokeWidth={1.75} aria-hidden="true" />
+          <span>{item.label}</span>
+        </button>
+      ))}
     </div>
   );
 }

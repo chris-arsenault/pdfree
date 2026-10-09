@@ -11,8 +11,6 @@ import {
   ListOrdered,
   MoreHorizontal,
   FilePlus2,
-  ScanLine,
-  ScanText,
   type LucideIcon,
 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
@@ -126,8 +124,6 @@ function PageTools({ close }: { close: () => void }) {
     { label: "Extract", icon: Download, open: () => editor.openExport("extract") },
     { label: "Split", icon: Scissors, open: () => editor.openExport("split") },
     { label: "Repeat across pages", icon: ListOrdered, open: () => editor.setDialog("repeat") },
-    { label: "Clean up scans", icon: ScanLine, open: () => editor.setDialog("cleanup") },
-    { label: "Recognize text", icon: ScanText, open: () => editor.setDialog("ocr") },
   ];
   return items.map((item) => (
     <button

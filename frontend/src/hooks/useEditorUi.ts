@@ -31,6 +31,8 @@ export function useEditorUi(initialDraftId?: string) {
   const [pagesOpen, setPagesOpen] = useState(() => window.matchMedia("(min-width: 761px)").matches);
   const [leftTab, setLeftTab] = useState<LeftTab>("pages");
   const [zoom, setZoom] = useState(1);
+  // Outlines recognized words on the page, tinted by confidence, for reviewing OCR.
+  const [showRecognition, setShowRecognition] = useState(false);
   const [dialog, setDialog] = useState<DialogName>("");
   const [pendingObject, setPendingObject] = useState<Partial<PlacedObject>>({});
   const [savedRevision, setSavedRevision] = useState(-1);
@@ -63,6 +65,7 @@ export function useEditorUi(initialDraftId?: string) {
     setSavedRevision(-1);
     setExportStart("document");
     setPropertiesOpen(false);
+    setShowRecognition(false);
     resetComments();
     setPagesOpen(window.matchMedia("(min-width: 761px)").matches);
     setLeftTab("pages");
@@ -89,6 +92,8 @@ export function useEditorUi(initialDraftId?: string) {
     setTool,
     zoom,
     setZoom,
+    showRecognition,
+    setShowRecognition,
     dialog,
     setDialog,
     pendingObject,

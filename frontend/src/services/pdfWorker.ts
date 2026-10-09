@@ -7,7 +7,7 @@ import { imagePdf } from "../core/imagePdf";
 import { exportSplitArchive } from "../core/exportBatch";
 import { commentView } from "../core/commentView";
 import { PDFDocument } from "pdf-lib";
-import { applyScan, cleanupPages, type CleanupOptions } from "../core/scanCleanup";
+import { applyScan, cleanupPages, scanSupport, type PageCleanup } from "../core/scanCleanup";
 import { compressPdf, type CompressionOptions } from "../core/compressPdf";
 import { type Page, type Asset, emptyDocument } from "../core/model";
 import { nupPdf, type NupOptions } from "../core/nupPdf";
@@ -31,9 +31,9 @@ export type WorkerRequest =
       id: string;
       kind: "cleanup";
       document: EditorDocument;
-      pageIds: string[];
-      options: CleanupOptions;
+      pages: PageCleanup[];
     }
+  | { id: string; kind: "scan-support"; document: EditorDocument; pageIds: string[] }
   | { id: string; kind: "image-pdf"; bytes: Uint8Array; name: string; mime: string }
   | {
       id: string;
@@ -51,7 +51,7 @@ function processRequest(request: WorkerRequest) {
   if (request.kind === "project-save") return writeProject(request.document);
   if (request.kind === "project-open") return readProject(request.bytes);
   if (request.kind === "comment-view") return commentView(request.bytes);
-  if (["page-view", "compress", "nup", "cleanup"].includes(request.kind))
+  if (["page-view", "compress", "nup", "cleanup", "scan-support"].includes(request.kind))
     return processUtility(request, progress);
   if (request.kind === "image-pdf") return imagePdf(request.bytes, request.name, request.mime);
   if (request.kind === "split")
@@ -70,8 +70,8 @@ function processUtility(request: WorkerRequest, progress: (message: string) => v
   if (request.kind === "page-view") return pageView(request);
   if (request.kind === "compress") return compressPdf(request.bytes, request.options, progress);
   if (request.kind === "nup") return nupPdf(request.bytes, request.options);
-  if (request.kind === "cleanup")
-    return cleanupPages(request.document, request.pageIds, request.options, progress);
+  if (request.kind === "cleanup") return cleanupPages(request.document, request.pages, progress);
+  if (request.kind === "scan-support") return scanSupport(request.document, request.pageIds);
   throw new Error("Unknown utility request.");
 }
 

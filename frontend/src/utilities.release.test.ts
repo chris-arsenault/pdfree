@@ -168,13 +168,15 @@ it("runs English OCR from the production offline cache with no external requests
     await page.getByRole("region", { name: "PDF page", exact: true }).waitFor();
     if (engine === "webkit") server.disconnect();
     else await context.setOffline(true);
-    await tool(page, "Recognize text");
-    await page.getByRole("button", { name: "Recognize 1 page(s)", exact: true }).click();
-    await page.getByText(/^Recognition complete/).waitFor();
     await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Close dialog", exact: true })
+      .getByRole("group", { name: "Scan tools", exact: true })
+      .getByRole("button", { name: "Recognize text", exact: true })
       .click();
+    await page.getByRole("button", { name: "Recognize 1 page(s)", exact: true }).click();
+    await page.getByText(/word\(s\) found on 1 page\(s\)/).waitFor();
+    expect(await page.locator(".ocr-text").textContent()).toContain("SEARCHABLE");
+    await page.getByRole("button", { name: "Show on page", exact: true }).click();
+    await page.locator(".recognized-layer.revealed").waitFor();
     expect(await page.locator(".recognized-layer").textContent()).toContain("SEARCHABLE");
     await page.getByRole("button", { name: "Export", exact: true }).click();
     const pdf = await readPdf(await downloadPdf(page));

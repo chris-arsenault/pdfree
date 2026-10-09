@@ -10,3 +10,4 @@
 | [0006](0006-independent-verification.md)         | Saved-byte and independent-reader verification        | Accepted | 2026-10-08 |
 | [0007](0007-encrypted-document-lifecycle.md)     | Encrypted document lifecycle and recipient protection | Accepted | 2026-10-08 |
 | [0008](0008-workflow-regions.md)                 | Workflow regions and explicit output controls         | Accepted | 2026-10-09 |
+| [0009](0009-scan-tools-and-analyzed-cleanup.md)  | Scan tools in the toolbar and analyzed cleanup        | Accepted | 2026-10-09 |

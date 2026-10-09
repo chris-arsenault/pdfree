@@ -12,6 +12,7 @@ import { tools } from "./toolDefinitions";
 import { hasPlacementAsset } from "../core/editorOperations";
 import { CommentMarkers } from "./CommentMarkers";
 import { RulesLayer } from "./RulesLayer";
+import { ScanNotice } from "./ScanNotice";
 
 export function Workspace() {
   const editor = useEditor(),
@@ -26,6 +27,7 @@ export function Workspace() {
       {!!source?.warnings.length && (
         <div className="inline-warning">{source.warnings.join(" ")}</div>
       )}
+      <ScanNotice key={editor.documentEpoch} />
       <div className="page-scroll" ref={scrollRef}>
         <div
           className={`page-surface tool-${editor.tool}`}
@@ -41,7 +43,12 @@ export function Workspace() {
           }}
         >
           <PageCanvas page={page} source={source} scale={editor.zoom} thumbnail={false} />
-          <TextLayer page={page} source={source} scale={editor.zoom} />
+          <TextLayer
+            page={page}
+            source={source}
+            scale={editor.zoom}
+            revealed={editor.showRecognition}
+          />
           <NativeFields />
           <ObjectLayer />
           <RulesLayer />

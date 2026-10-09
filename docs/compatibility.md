@@ -53,7 +53,11 @@ skipped. OCR does not provide handwriting guarantees, paragraph editing or PDF/U
 Scan image processing supports a single upright direct image with optional OCR
 text, 8-bit DeviceRGB/DeviceGray, JPEG or plain/Flate samples without masks or
 predictors. Cleanup rejects mixed vector layouts, nested forms, rotated image
-placements and unsafe annotation geometry. Crop hides content and is not redaction.
+placements and unsafe annotation geometry; such pages can still be trimmed.
+Automatic analysis measures tilt from text lines, so pages that are mostly
+photographs, blank or without line structure keep their angle and are not
+whitened. Detected edge trimming covers dark bands that touch the page edge and
+span at most 20% of it. Crop hides content and is not redaction.
 Deskew supports whole-page destinations, numeric XYZ positions and numeric FitR
 regions; other positioned destinations must first become whole-page bookmarks.
 Compression retains unsupported image resources and reports targets it cannot
