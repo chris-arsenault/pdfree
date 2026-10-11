@@ -36,7 +36,9 @@ are excluded from application assets.
 `make ci` runs unit and Chromium browser tests locally. With `CI` set and no
 `PDFREE_BROWSER`, Vitest config selects unit tests only, matching Ahara's shared
 coverage job. The supplemental GitHub matrix sets `PDFREE_BROWSER` and runs
-Chromium, Firefox and WebKit checks. Firefox and WebKit run browser test files
+Chromium, Firefox and WebKit checks through `make test-browser-docker` and
+`make test-release-docker`, so browsers and their system libraries come from
+the Playwright image rather than runner package installs. Firefox and WebKit run browser test files
 one at a time: parallel test frames share one page's focus, which makes Firefox
 drop keyboard button activation and pushes WebKit tests past their timeouts.
 Set `PDFREE_BROWSER=firefox` or `webkit`
@@ -56,7 +58,7 @@ make test-release-docker BROWSER=webkit TEST_ARGS=src/security.release.test.ts
 ```
 
 `frontend/tooling/browser-tests.Dockerfile` preserves the official Playwright
-environment used for WebKit. `make browser-test-image` selects its image version
+environment used by CI for all three engines. `make browser-test-image` selects its image version
 from the installed, locked Playwright package. `make security-test-image` builds
 the separate native-verifier image. Both test images mount `frontend/`, run as
 the current user and remove their temporary containers afterward.

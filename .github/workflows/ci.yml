@@ -36,17 +36,19 @@ jobs:
         run: corepack enable && corepack prepare pnpm@10.29.3 --activate
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Install test browser
-        run: pnpm exec playwright install --with-deps "$PDFREE_BROWSER"
+      # Browsers and their system libraries come preinstalled in the Playwright
+      # image matching the locked version, so CI never installs apt packages.
+      - name: Pull test browser image
+        run: make -C .. browser-test-image
       - name: Browser interactions and writer fidelity
-        run: make -C .. test-browser BROWSER="$PDFREE_BROWSER"
+        run: make -C .. test-browser-docker BROWSER="$PDFREE_BROWSER"
       - name: Verify signatures, certification and encryption independently
         if: matrix.engine == 'chromium'
         run: make -C .. security-check
       - name: Build production bundle
         run: pnpm build
       - name: Offline, CSP, accessibility and download checks
-        run: make -C .. test-release BROWSER="$PDFREE_BROWSER"
+        run: make -C .. test-release-docker BROWSER="$PDFREE_BROWSER"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
