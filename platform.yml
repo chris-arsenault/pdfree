@@ -4,3 +4,5 @@ stack:
   - typescript
   - terraform
 typescript_dir: frontend
+browser_tests:
+  engines: [chromium, firefox, webkit]

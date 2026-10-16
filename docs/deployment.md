@@ -60,10 +60,14 @@ The [CI caller](../.github/workflows/ci.yml) invokes
 `chris-arsenault/ahara/.github/workflows/ci.yml@main` with inherited secrets and
 deployment enabled. The standard workflow assumes the registered role through
 GitHub OIDC and applies Terraform on `main`; pull requests run validation. Its
-unit coverage/report jobs coexist with the supplemental Chromium/Firefox/WebKit
-matrix. The browser matrix validates the release; it is not an additional deploy
-implementation. A green deployment job alone does not establish all browser
-jobs succeeded: inspect the complete run.
+browser discovery detects `test:browser` in the frontend package. The engines in
+`platform.yml` run in parallel using the matching shared Playwright image.
+Native encryption/signature verification runs once through
+`test:browser:verify`; every engine runs interaction tests, builds the production
+bundle and runs `test:release`, including the pinned-page journey. The combined
+CI/deployment job requires all browser jobs to succeed, so failed or cancelled
+browser checks prevent deployment. Unit coverage and engineering reporting remain
+in the shared workflow.
 
 ## State and hosting contracts
 

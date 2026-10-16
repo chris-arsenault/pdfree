@@ -10,8 +10,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:browser": "vitest run --project browser",
-    "test:release": "PDFREE_RELEASE_TESTS=1 vitest run --project release",
+    "test:browser": "PDFREE_BROWSER=${PDFREE_BROWSER:-${BROWSER:-chromium}} vitest run --project browser",
+    "test:browser:verify": "make -C .. security-check",
+    "test:release": "PDFREE_BROWSER=${PDFREE_BROWSER:-${BROWSER:-chromium}} PDFREE_RELEASE_TESTS=1 vitest run --project release",
     "test:security": "PDFREE_SECURITY_TESTS=1 vitest run --project security",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

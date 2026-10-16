@@ -35,10 +35,14 @@ are excluded from application assets.
 
 `make ci` runs unit and Chromium browser tests locally. With `CI` set and no
 `PDFREE_BROWSER`, Vitest config selects unit tests only, matching Ahara's shared
-coverage job. The supplemental GitHub matrix sets `PDFREE_BROWSER` and runs
-Chromium, Firefox and WebKit checks through `make test-browser-docker` and
-`make test-release-docker`, so browsers and their system libraries come from
-the Playwright image rather than runner package installs. Firefox and WebKit run browser test files
+coverage job. Ahara's shared workflow detects the `test:browser` package script
+and runs Chromium, Firefox and WebKit in parallel. It provides `BROWSER`; the
+browser and release scripts map that to `PDFREE_BROWSER`. The shared image
+matches installed Playwright, with browsers and their system libraries already
+present. The optional `test:browser:verify` script runs native PDF verification
+once, and `test:release` runs after a production build in every engine. All of
+these checks must pass before the shared CI/deployment job starts.
+Firefox and WebKit run browser test files
 one at a time: parallel test frames share one page's focus, which makes Firefox
 drop keyboard button activation and pushes WebKit tests past their timeouts.
 Set `PDFREE_BROWSER=firefox` or `webkit`
@@ -57,8 +61,8 @@ for unit, browser, native-security and production targets. For example, after
 make test-release-docker BROWSER=webkit TEST_ARGS=src/security.release.test.ts
 ```
 
-`frontend/tooling/browser-tests.Dockerfile` preserves the official Playwright
-environment used by CI for all three engines. `make browser-test-image` selects its image version
+Local Docker targets use `frontend/tooling/browser-tests.Dockerfile`, with the
+same official Playwright base environment as shared CI. `make browser-test-image` selects its image version
 from the installed, locked Playwright package. `make security-test-image` builds
 the separate native-verifier image. Both test images mount `frontend/`, run as
 the current user and remove their temporary containers afterward.
