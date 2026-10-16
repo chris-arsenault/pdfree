@@ -17,7 +17,9 @@ S3. Runtime PDFs, drafts and signing credentials remain on the device.
 
 The shared module is pinned in
 [`website.tf`](../infrastructure/terraform/website.tf) to published revision
-`fff59f90fcf84b58d9328fa58b87e51414bec008`. That revision includes `.mjs`
+`7922d0245fca2c31db057e11abab26b074986b5f`. The module's optional `price_class`
+input defaults to `PriceClass_100` for existing consumers; PDFree explicitly uses
+`PriceClass_All` for worldwide edge coverage. This revision also includes `.mjs`
 JavaScript workers, `.bcmap` character maps, `.pfb` binary fonts, `.icc`
 profiles and `.gz` OCR language data in the MIME map. Gzip files use
 `application/gzip` without HTTP content encoding; the OCR worker decompresses

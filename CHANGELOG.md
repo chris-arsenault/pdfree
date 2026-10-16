@@ -5,6 +5,8 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Configure CloudFront to serve application assets from worldwide edge locations.
+
 - Pin one page beside another page in the same document, with an adjustable
   divider and independent zoom, pan and scrolling. Pop the reference into a
   movable, resizable viewer within the workspace, or use the modal on phones and

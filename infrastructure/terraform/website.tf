@@ -33,10 +33,11 @@ resource "aws_cloudfront_response_headers_policy" "editor" {
 }
 
 module "website" {
-  source = "git::https://github.com/chris-arsenault/ahara-tf-patterns.git//modules/website?ref=fff59f90fcf84b58d9328fa58b87e51414bec008"
+  source = "git::https://github.com/chris-arsenault/ahara-tf-patterns.git//modules/website?ref=7922d0245fca2c31db057e11abab26b074986b5f"
 
   prefix                     = "pdfree"
   hostname                   = "pdf.ahara.io"
+  price_class                = "PriceClass_All"
   site_directory             = "${path.module}/../../frontend/dist"
   response_headers_policy_id = aws_cloudfront_response_headers_policy.editor.id
   encrypt                    = false

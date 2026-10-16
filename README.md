@@ -54,7 +54,9 @@ See [architecture](docs/architecture.md).
 
 Ahara's standard reusable CI deploys `main` through the registered PDFree OIDC
 role. The shared website module delivers private S3 assets through CloudFront,
-ACM and Route 53 at `pdf.ahara.io`. See [deployment](docs/deployment.md) for
+ACM and Route 53 at `pdf.ahara.io`. PDFree selects `PriceClass_All` for worldwide
+edge coverage; the shared module keeps `PriceClass_100` as its default for other
+consumers. See [deployment](docs/deployment.md) for
 registration, state, headers and the authorized manual deployment path.
 
 ## Documentation
