@@ -6,6 +6,16 @@ export function EditorNotifications() {
   const editor = useEditor();
   return (
     <div className="editor-notifications">
+      {editor.pinned.view.removed && (
+        <div className="busy-banner" role="status">
+          <span>The pinned page was deleted.</span>
+          <IconButton
+            label="Dismiss pinned page notification"
+            icon={X}
+            onClick={() => editor.pinned.setView((previous) => ({ ...previous, removed: false }))}
+          />
+        </div>
+      )}
       {editor.task.busy && (
         <div className="busy-banner" role="status">
           <span className="spinner" />

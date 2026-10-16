@@ -57,6 +57,42 @@ which appends them at the end. Each document
 keeps its own edits, undo, selection and clipboard. Closing an edited document asks
 for confirmation; saved library entries remain available.
 
+## Keep a page visible for reference
+
+Choose **Pin page** beside the page navigation controls, or the pin icon below a
+thumbnail, to keep that page visible while working on another page in the same
+document. Thumbnail pinning leaves the main page in place. One page can be pinned
+per document; pinning another replaces it. The reference shows current field
+values, annotations and page edits, but editing stays in the main viewer.
+
+Drag the divider to adjust the reference width. With the divider focused, use
+Left/Right arrows to resize, Shift for larger steps, Home/End for the narrowest or
+widest split, and Enter to reset it. Double-clicking the divider also resets it.
+The surrounding menus, page thumbnails, Properties/Comments panels and footer
+keep their layout.
+
+The reference has its own zoom, Fit page, Fit width and Pan controls. Scroll each
+viewer independently. Turn Pan on to drag the reference, or hold Space while its
+viewport has focus to pan temporarily. Turn Pan off to select and copy text.
+Fit modes adapt to the pane size; a chosen zoom percentage remains fixed.
+
+**Pop out pinned page** opens a floating viewer inside the document workspace,
+leaving the main editor usable. Drag its move or resize handles, or focus a handle
+and use arrow keys (Shift for larger steps). **Dock pinned page**, or Escape within
+the floating viewer, returns it to the split. Zoom and reading position carry
+across the move. **Go to pinned page** brings the reference into the main editor;
+**Unpin page** closes the reference.
+
+On phones, or when side panels leave too little workspace for two viewers, the
+reference opens in a modal. Close it or press Escape to return to the editor, then
+use **Show pinned page** to reopen it. A wider workspace restores the desktop
+presentation. Reordering keeps the same page pinned and updates its number;
+deleting it clears the pin. Undo restores the deleted page without repinning it.
+
+Each open document keeps its own reference and viewing state while switching
+tabs. Pinning does not change document content or undo history. References are
+not included in PDFs, editing projects or drafts and reset after reload.
+
 ## Scan and repeated tools
 
 Recognize text and Clean up scans sit in the Scan tools group at the right of the

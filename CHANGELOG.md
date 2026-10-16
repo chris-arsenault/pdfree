@@ -5,6 +5,12 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Pin one page beside another page in the same document, with an adjustable
+  divider and independent zoom, pan and scrolling. Pop the reference into a
+  movable, resizable viewer within the workspace, or use the modal on phones and
+  narrow workspaces. References show live edits and retain their view while
+  switching document tabs without changing saved content.
+
 - PDFree no longer installs itself for offline use on every visit. Choose Use
   offline in the bottom strip to save it to the device (about 29 MB, including
   text recognition) with visible progress, install it as an app where the

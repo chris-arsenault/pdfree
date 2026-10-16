@@ -241,6 +241,23 @@ identity. Inactive sessions keep autosave mounted; only the active session mount
 viewers. Session storage remembers saved document IDs and the active ID for reload.
 Encrypted sessions follow the shared browser-wide autosave preference.
 
+Each session also owns a single pinned-page reference through `usePinnedPage.ts`.
+It follows a stable page ID and retains split width, floating geometry, zoom/fit,
+pan and reading position across document-tab switches. Deletion clears the pin;
+undo does not restore view state. This state is separate from the document model,
+history, drafts, projects and session-recovery records.
+
+`DocumentWorkspace.tsx` contains both viewers so split resizing and floating
+geometry do not resize the surrounding editor chrome. Phones and workspaces
+below the usable split width use a native modal dialog. `ReferencePageView.tsx`
+reuses the existing canvas/text layers and explicit page/scale inputs to the
+field, object, rule and comment layers. Read-only fields use separate radio
+group names, and reference keyboard events cannot act on the main selection.
+Both viewers use the existing PDF.js source cache, bounded raster allocation
+and render cancellation; no exported PDF or page screenshot is needed to build
+the reference. Reading positions use page-relative coordinates across zoom,
+resizing and presentation changes.
+
 ## Source ownership
 
 | Area              | Authoritative sources                                                                                                                        |

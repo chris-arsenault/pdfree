@@ -1,0 +1,186 @@
+.reference-layout {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.main-page-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.main-page-view .page-scroll {
+  overscroll-behavior: contain;
+}
+.pinned-page {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: #eceee7;
+  overflow: hidden;
+}
+.pinned-page.docked {
+  flex: 0 0 var(--reference-width);
+}
+.reference-header {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.reference-header strong {
+  font-size: 12px;
+  font-weight: 600;
+  flex: 1;
+  white-space: nowrap;
+}
+.reference-zoom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 4px;
+  background: #f9faf5;
+  border-bottom: 1px solid var(--border);
+}
+.reference-zoom select {
+  width: 68px;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--paper);
+  font-size: 12px;
+}
+.reference-zoom .icon-button {
+  min-width: 30px;
+  min-height: 32px;
+  padding: 5px;
+}
+.reference-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+}
+.reference-scroll:focus-visible,
+.pinned-page:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.reference-surface .reference-object {
+  cursor: text;
+  touch-action: auto;
+}
+.reference-surface .native-widget :disabled {
+  opacity: 1;
+  -webkit-text-fill-color: #152d44;
+}
+.reference-scroll.panning {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.reference-scroll.panning:active {
+  cursor: grabbing;
+}
+.reference-scroll.panning .reference-surface * {
+  pointer-events: none;
+}
+.reference-divider {
+  width: 8px;
+  flex: 0 0 8px;
+  cursor: col-resize;
+  touch-action: none;
+  background: var(--border);
+  position: relative;
+}
+.reference-divider::after {
+  content: "";
+  position: absolute;
+  top: 45%;
+  bottom: 45%;
+  left: 3px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--muted);
+}
+.reference-divider:hover,
+.reference-divider:focus-visible {
+  background: #b4d4c5;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.pinned-page.floating {
+  position: absolute;
+  z-index: 5;
+  left: var(--reference-x);
+  top: var(--reference-y);
+  width: var(--floating-width);
+  height: var(--floating-height);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 28px #26392c30;
+}
+.reference-move,
+.reference-resize {
+  touch-action: none;
+}
+.reference-move {
+  cursor: move;
+}
+.reference-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
+  background: var(--paper);
+  border-radius: 4px 0 0 0;
+}
+.reference-reopen {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.reference-modal {
+  padding: 0;
+  width: calc(100vw - 24px);
+  height: calc(100dvh - 24px);
+  max-width: 100vw;
+  max-height: 100dvh;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.reference-modal::backdrop {
+  background: #20363270;
+}
+.reference-modal .pinned-page {
+  width: 100%;
+  height: 100%;
+}
+.thumbnail-pin.active {
+  color: var(--accent);
+  background: #dceade;
+}
+@media (max-width: 760px) {
+  .reference-zoom .icon-button,
+  .reference-header .icon-button {
+    min-width: 40px;
+    min-height: 44px;
+  }
+}

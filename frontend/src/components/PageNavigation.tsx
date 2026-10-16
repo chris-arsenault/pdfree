@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pin } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { IconButton } from "./ui/IconButton";
 
@@ -46,6 +46,14 @@ export function PageNavigation() {
             : "Go to the next physical page."
         }
         onClick={() => goToPage(index + 1)}
+      />
+      <IconButton
+        label="Pin page"
+        icon={Pin}
+        data-pin-current
+        aria-pressed={editor.pinned.page?.id === editor.page?.id}
+        detail="Keep this page visible while working on another page. A new pin replaces the reference."
+        onClick={() => editor.page && editor.pinned.pin(editor.page.id)}
       />
     </div>
   );

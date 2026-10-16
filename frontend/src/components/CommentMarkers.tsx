@@ -2,10 +2,20 @@ import { MessageSquare } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { displayBox, displaySize } from "../core/coordinates";
 import { IconButton } from "./ui/IconButton";
+import { type Page } from "../core/model";
 
-export function CommentMarkers() {
+export function CommentMarkers({
+  page: requestedPage,
+  scale,
+  readOnly = false,
+}: {
+  page?: Page;
+  scale?: number;
+  readOnly?: boolean;
+}) {
   const editor = useEditor(),
-    page = editor.page;
+    page = requestedPage ?? editor.page;
+  const zoom = scale ?? editor.zoom;
   if (!page) return null;
   const size = displaySize(page);
   return (
@@ -14,6 +24,20 @@ export function CommentMarkers() {
         .filter((comment) => !comment.parentId)
         .map((comment) => {
           const point = displayBox({ ...comment, rotation: 0 }, page);
+          const x = `${Math.max(0, Math.min(point.x * zoom, size.width * zoom - 36))}px`;
+          const y = `${Math.max(0, Math.min(point.y * zoom, size.height * zoom - 36))}px`;
+          if (readOnly)
+            return (
+              <span
+                key={comment.id}
+                className="comment-marker"
+                title={comment.text}
+                style={{ "--x": x, "--y": y }}
+              >
+                <MessageSquare size={18} aria-hidden="true" />
+                <span className="sr-only">Comment: {comment.text}</span>
+              </span>
+            );
           return (
             <IconButton
               key={comment.id}
@@ -22,10 +46,7 @@ export function CommentMarkers() {
               detail={comment.author || "Open this comment thread."}
               className={`comment-marker ${editor.commentId === comment.id && editor.commentsOpen ? "active" : ""}`}
               aria-pressed={editor.commentId === comment.id && editor.commentsOpen}
-              style={{
-                "--x": `${Math.max(0, Math.min(point.x * editor.zoom, size.width * editor.zoom - 36))}px`,
-                "--y": `${Math.max(0, Math.min(point.y * editor.zoom, size.height * editor.zoom - 36))}px`,
-              }}
+              style={{ "--x": x, "--y": y }}
               onPointerDown={(event) => event.stopPropagation()}
               onClick={() => {
                 editor.setObjectIds([]);

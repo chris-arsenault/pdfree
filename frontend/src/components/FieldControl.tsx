@@ -4,27 +4,31 @@ export function FieldControl({
   field,
   value,
   onChange,
+  readOnly = false,
 }: {
   field: NativeField;
   value: FieldValue;
   onChange: (value: FieldValue) => void;
+  readOnly?: boolean;
 }) {
   const attributes = {
     "aria-label": field.name,
     required: field.required,
     disabled: field.readOnly,
+    readOnly,
   };
   if (field.kind === "checkbox")
     return (
       <input
         {...attributes}
         type="checkbox"
+        disabled={field.readOnly || readOnly}
         checked={value === true}
         onChange={(e) => onChange(e.target.checked)}
       />
     );
   if (field.kind === "dropdown" || field.kind === "list")
-    return <ChoiceControl field={field} value={value} onChange={onChange} />;
+    return <ChoiceControl field={field} value={value} onChange={onChange} readOnly={readOnly} />;
   if (field.multiline)
     return (
       <textarea
@@ -48,10 +52,12 @@ function ChoiceControl({
   field,
   value,
   onChange,
+  readOnly,
 }: {
   field: NativeField;
   value: FieldValue;
   onChange: (value: FieldValue) => void;
+  readOnly: boolean;
 }) {
   const selected = Array.isArray(value) ? value : [String(value)];
   const selectValue = field.multiSelect ? selected : (selected[0] ?? "");
@@ -65,7 +71,7 @@ function ChoiceControl({
     <select
       aria-label={field.name}
       required={field.required}
-      disabled={field.readOnly}
+      disabled={field.readOnly || readOnly}
       multiple={field.multiSelect}
       value={selectValue}
       onChange={(e) =>

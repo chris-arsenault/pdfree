@@ -1,21 +1,32 @@
 import { useEditor } from "../hooks/editorContext";
 import { useCallback } from "react";
 import { widgetDisplayGeometry } from "../core/widgetGeometry";
-import { type NativeField, type Widget } from "../core/model";
+import { type NativeField, type Widget, type Page } from "../core/model";
 import { FieldControl } from "./FieldControl";
 
-function NativeWidget({ field, widget }: { field: NativeField; widget: Widget }) {
-  const editor = useEditor(),
-    page = editor.page;
+function NativeWidget({
+  field,
+  widget,
+  page,
+  scale,
+  readOnly,
+}: {
+  field: NativeField;
+  widget: Widget;
+  page: Page;
+  scale: number;
+  readOnly: boolean;
+}) {
+  const editor = useEditor();
   const update = useCallback(
     (value: typeof field.value) =>
+      !readOnly &&
       editor.commit({
         ...editor.document,
         values: { ...editor.document.values, [field.id]: value },
       }),
-    [editor, field]
+    [editor, field, readOnly]
   );
-  if (!page) return null;
   const geometry = widgetDisplayGeometry(widget, page);
   const value = editor.document.values[field.id] ?? field.value;
   return (
@@ -23,32 +34,42 @@ function NativeWidget({ field, widget }: { field: NativeField; widget: Widget })
       className={`native-widget ${field.required ? "required" : ""}`}
       title={`${field.name}${field.required ? " (required)" : ""}`}
       style={{
-        "--x": `${geometry.x * editor.zoom}px`,
-        "--y": `${geometry.y * editor.zoom}px`,
-        "--w": `${geometry.width * editor.zoom}px`,
-        "--h": `${geometry.height * editor.zoom}px`,
+        "--x": `${geometry.x * scale}px`,
+        "--y": `${geometry.y * scale}px`,
+        "--w": `${geometry.width * scale}px`,
+        "--h": `${geometry.height * scale}px`,
         "--angle": `${geometry.rotation}deg`,
-        "--font-size": `${Math.min(14, geometry.height * 0.65) * editor.zoom}px`,
+        "--font-size": `${Math.min(14, geometry.height * 0.65) * scale}px`,
       }}
     >
       {field.kind === "radio" ? (
         <input
           aria-label={`${field.name}: ${widget.option}`}
           type="radio"
-          name={field.id}
+          name={`${readOnly ? "reference:" : ""}${field.id}`}
           value={widget.option}
           checked={value === widget.option}
-          disabled={field.readOnly}
+          disabled={field.readOnly || readOnly}
           onChange={() => update(widget.option)}
         />
       ) : (
-        <FieldControl field={field} value={value} onChange={update} />
+        <FieldControl field={field} value={value} onChange={update} readOnly={readOnly} />
       )}
     </div>
   );
 }
-export function NativeFields() {
-  const { page, document } = useEditor();
+export function NativeFields({
+  page: requestedPage,
+  scale,
+  readOnly = false,
+}: {
+  page?: Page;
+  scale?: number;
+  readOnly?: boolean;
+}) {
+  const editor = useEditor(),
+    { document } = editor;
+  const page = requestedPage ?? editor.page;
   if (!page) return null;
   const source = document.sources.find((item) => item.id === page.sourceId);
   return (
@@ -57,7 +78,14 @@ export function NativeFields() {
         field.widgets
           .filter((widget) => widget.pageIndex === page.sourceIndex)
           .map((widget, index) => (
-            <NativeWidget key={`${field.id}-${index}`} field={field} widget={widget} />
+            <NativeWidget
+              key={`${field.id}-${index}`}
+              field={field}
+              widget={widget}
+              page={page}
+              scale={scale ?? editor.zoom}
+              readOnly={readOnly}
+            />
           ))
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from "react";
-import { ChevronUp, ChevronDown, ScanText, X } from "lucide-react";
+import { ChevronUp, ChevronDown, ScanText, X, Pin } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { displaySize } from "../core/coordinates";
 import { type Page } from "../core/model";
@@ -155,6 +155,7 @@ function Thumbnail({ page, index }: { page: Page; index: number }) {
         </label>
         {page.recognition && <RecognizedBadge />}
         <div className="thumbnail-move">
+          <ThumbnailPin pageId={page.id} number={index + 1} />
           <IconButton
             label="Move page earlier"
             icon={ChevronUp}
@@ -178,5 +179,21 @@ function Thumbnail({ page, index }: { page: Page; index: number }) {
         </div>
       </div>
     </div>
+  );
+}
+function ThumbnailPin({ pageId, number }: { pageId: string; number: number }) {
+  const { pinned, setPagesOpen } = useEditor();
+  const active = pinned.page?.id === pageId;
+  return (
+    <IconButton
+      label={`Pin page ${number}`}
+      icon={Pin}
+      aria-pressed={active}
+      className={active ? "thumbnail-pin active" : "thumbnail-pin"}
+      onClick={() => {
+        pinned.pin(pageId);
+        if (window.matchMedia("(max-width: 760px)").matches) setPagesOpen(false);
+      }}
+    />
   );
 }

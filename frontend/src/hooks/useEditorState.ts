@@ -8,6 +8,7 @@ import { usePdfPassword } from "./usePdfPassword";
 import { useConfirmation } from "./useConfirmation";
 import { selectedPageIds as selection, updatePlacedObject } from "../core/editorOperations";
 import { SessionContext } from "./sessionContext";
+import { usePinnedPage } from "./usePinnedPage";
 
 // This hook owns the single document/history/task boundary used by each session.
 // eslint-disable-next-line max-lines-per-function
@@ -24,6 +25,7 @@ export function useEditorState(initialDocument = emptyDocument(), initialDraftId
     task = useTask(),
     confirmation = useConfirmation(!!task.busy),
     document = history.present;
+  const pinned = usePinnedPage(document.pages);
   const page = document.pages.find((item) => item.id === ui.activeId) ?? document.pages[0] ?? null;
   const activePageId = page ? page.id : "";
   const selectedPageIds = selection(document, ui.pageIds, activePageId);
@@ -32,12 +34,14 @@ export function useEditorState(initialDocument = emptyDocument(), initialDraftId
     []
   );
   const resetUi = ui.reset;
+  const resetPinned = pinned.reset;
   const replace = useCallback(
     (next: EditorDocument) => {
       resetUi();
+      resetPinned();
       dispatch({ type: "reset", document: next });
     },
-    [resetUi]
+    [resetUi, resetPinned]
   );
   const importFiles = (files: File[], replaceCurrent = false, insertAfter = false) =>
     task.run("Opening files", async () => {
@@ -76,6 +80,7 @@ export function useEditorState(initialDocument = emptyDocument(), initialDraftId
     commit(updatePlacedObject(document, id, change));
   return {
     ...ui,
+    pinned,
     document,
     history,
     dispatch,

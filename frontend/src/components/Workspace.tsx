@@ -13,25 +13,31 @@ import { hasPlacementAsset } from "../core/editorOperations";
 import { CommentMarkers } from "./CommentMarkers";
 import { RulesLayer } from "./RulesLayer";
 import { ScanNotice } from "./ScanNotice";
+import { DocumentWorkspace } from "./DocumentWorkspace";
+import { useReadingPosition } from "../hooks/useReadingPosition";
+import { useRef } from "react";
 
 export function Workspace() {
   const editor = useEditor(),
     page = editor.page;
   const placement = usePlacement();
   const scrollRef = useInitialZoom();
+  const position = useRef({ x: 0.5, y: 0 });
+  const { remember } = useReadingPosition(scrollRef, position, editor.zoom, editor.activeId);
   if (!page) return null;
   const source = editor.document.sources.find((item) => item.id === page.sourceId) ?? null;
   const dimensions = displaySize(page);
   return (
-    <main className="workspace" aria-label="Document editor">
+    <DocumentWorkspace>
       {!!source?.warnings.length && (
         <div className="inline-warning">{source.warnings.join(" ")}</div>
       )}
       <ScanNotice key={editor.documentEpoch} />
-      <div className="page-scroll" ref={scrollRef}>
+      <div className="page-scroll" ref={scrollRef} onScroll={remember}>
         <div
           className={`page-surface tool-${editor.tool}`}
           role="region"
+          tabIndex={-1}
           aria-label="PDF page"
           onPointerDown={placement.start}
           onPointerMove={placement.move}
@@ -80,6 +86,6 @@ export function Workspace() {
             : tools.find((tool) => tool.id === editor.tool)?.hint}
         </div>
       )}
-    </main>
+    </DocumentWorkspace>
   );
 }

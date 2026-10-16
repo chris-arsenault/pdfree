@@ -84,7 +84,7 @@ export function useKeyboard() {
       // An open popover's trigger keeps focus until the popover takes it, so it counts too.
       if (
         target.closest(
-          'input,textarea,select,[contenteditable=true],dialog,[role=dialog],[aria-haspopup][aria-expanded="true"]'
+          'input,textarea,select,[contenteditable=true],dialog,[role=dialog],.pinned-page,.reference-divider,[aria-haspopup][aria-expanded="true"]'
         ) ||
         editor.dialog ||
         editor.task.busy
