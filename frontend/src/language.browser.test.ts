@@ -26,6 +26,7 @@ import { appendSource, importPdf } from "./core/importPdf";
 import { formFixture } from "./core/fixtures";
 import { deleteDraft, loadDrafts } from "./services/drafts";
 import { openEditor } from "../tooling/editorHarness";
+import usFlag from "./assets/flags/us.svg?url";
 import "./styles.css";
 
 let root: Root | null = null;
@@ -63,10 +64,17 @@ function mount(component: typeof App | typeof Probe) {
 const trigger = () => document.querySelector<HTMLButtonElement>(".language-trigger")!;
 async function choose(locale: Locale) {
   await userEvent.click(trigger());
+  const optionFlag = document.querySelector<HTMLImageElement>(
+    `.language-option:has(input[value="${locale}"]) img`
+  )!.src;
   await page
     .getByRole("radio", { name: locales.find((item) => item.code === locale)!.name, exact: true })
     .click();
   await expect.poll(currentLocale).toBe(locale);
+  await expect.poll(() => trigger().querySelector<HTMLImageElement>("img")?.src).toBe(optionFlag);
+  await expect
+    .poll(() => trigger().querySelector<HTMLImageElement>("img")?.naturalWidth)
+    .toBeGreaterThan(0);
 }
 
 it("switches every language from the footer without replacing document content or canvas", async () => {
@@ -108,6 +116,10 @@ it("opens above the footer, selects by keyboard and dismisses without clearing e
     document.querySelector(".action-popover")!.getBoundingClientRect().bottom
   ).toBeLessThanOrEqual(trigger().getBoundingClientRect().top);
   expect(document.querySelectorAll(".language-panel input")).toHaveLength(17);
+  expect(document.querySelectorAll(".language-option img")).toHaveLength(17);
+  expect(trigger().querySelector<HTMLImageElement>("img")?.src).toBe(
+    new URL(usFlag, location.href).href
+  );
   await userEvent.keyboard("{ArrowDown}");
   await expect.poll(currentLocale).toBe("es");
   await expect.poll(() => document.activeElement === trigger()).toBe(true);

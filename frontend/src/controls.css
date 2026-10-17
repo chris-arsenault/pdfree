@@ -104,6 +104,14 @@ button[aria-disabled="true"] {
 .language-panel {
   width: min(250px, calc(100vw - 34px));
 }
+.language-flag {
+  width: 20px;
+  height: 15px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #162e2420;
+}
 .language-panel h2 {
   margin: 6px 10px 12px;
   font-size: 13px;

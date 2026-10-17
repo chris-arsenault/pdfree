@@ -31,6 +31,13 @@ async function choose(page: Page, code: Locale) {
     .click();
   await expect.poll(() => page.locator("html").getAttribute("lang")).toBe(code);
   await page.locator(".language-panel").waitFor({ state: "hidden" });
+  await expect
+    .poll(() =>
+      page
+        .locator(".language-trigger img")
+        .evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)
+    )
+    .toBe(true);
 }
 async function bytes(download: Download) {
   const path = await download.path();

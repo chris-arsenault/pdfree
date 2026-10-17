@@ -1,5 +1,5 @@
 import { useId, useState, useSyncExternalStore } from "react";
-import { Flag, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { ActionPopover } from "./ui/ActionPopover";
 import { locales, type Locale } from "../i18n/locales";
 import { useMessages } from "../i18n/react";
@@ -9,17 +9,28 @@ export function LanguagePicker() {
   const { text } = useMessages();
   const locale = useSyncExternalStore(subscribeLocale, currentLocale);
   const issue = useSyncExternalStore(subscribeLocale, languageIssue);
-  const name = locales.find((item) => item.code === locale)!.name;
+  const selected = locales.find((item) => item.code === locale)!;
   return (
     <ActionPopover
-      label={text("language.choose", { language: name })}
-      icon={Flag}
+      label={text("language.choose", { language: selected.name })}
+      icon={<CountryFlag country={selected.country} />}
       iconOnly
       placement="top-end"
       className={issue ? "language-trigger status-warning" : "language-trigger"}
     >
       {(close) => <LanguageOptions close={close} />}
     </ActionPopover>
+  );
+}
+
+function CountryFlag({ country }: { country: string }) {
+  return (
+    <img
+      className="language-flag"
+      src={new URL(`../assets/flags/${country}.svg`, import.meta.url).href}
+      alt=""
+      aria-hidden="true"
+    />
   );
 }
 
@@ -51,6 +62,7 @@ function LanguageOptions({ close }: { close: () => void }) {
               }}
               onChange={() => void choose(item.code)}
             />
+            <CountryFlag country={item.country} />
             <span>{item.name}</span>
             {item.code === locale && <Check size={15} aria-hidden="true" />}
           </label>

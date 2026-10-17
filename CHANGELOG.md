@@ -5,6 +5,9 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Show the selected language's country flag in the status bar and a country flag
+  beside every language in the picker. Bundle SVG flags for offline use.
+
 - Defer editor views, dialogs and PDF engines until needed. Separate ordinary
   import from signing/recipient handling while retaining warm render/export code.
   Use React.lazy/Suspense and a normal reload action for failed view loads.

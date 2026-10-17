@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { isValidElement, useState, type ReactElement, type ReactNode } from "react";
 import { ChevronDown, type LucideIcon } from "lucide-react";
 import {
   autoUpdate,
@@ -24,7 +24,7 @@ export function ActionPopover({
   placement = "bottom-start",
 }: {
   label: string;
-  icon: LucideIcon;
+  icon: LucideIcon | ReactElement;
   children: (close: () => void) => ReactNode;
   className?: string;
   /** Shows only the chevron, for a menu attached to an adjacent button. */
@@ -89,13 +89,14 @@ function TriggerContent({
   iconOnly,
 }: {
   label: string;
-  icon: LucideIcon;
+  icon: LucideIcon | ReactElement;
   compact: boolean;
   iconOnly: boolean;
 }) {
   return (
     <>
-      {(!compact || iconOnly) && <Icon size={17} strokeWidth={1.75} aria-hidden="true" />}
+      {(!compact || iconOnly) &&
+        (isValidElement(Icon) ? Icon : <Icon size={17} strokeWidth={1.75} aria-hidden="true" />)}
       <span className={compact || iconOnly ? "sr-only" : undefined}>{label}</span>
       {!iconOnly && <ChevronDown size={compact ? 16 : 13} aria-hidden="true" />}
     </>
