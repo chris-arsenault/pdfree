@@ -58,61 +58,69 @@ it("uses the production CSP, remains offline, downloads editable projects and fi
     page = await context.newPage(),
     requests: { url: string; method: string }[] = [],
     errors: string[] = [];
-  page.on("request", (request) => requests.push({ url: request.url(), method: request.method() }));
-  page.on("pageerror", (error) => errors.push(error.message));
-  await openFixture(page);
-  expect((await workerState(page)).registrations).toBe(0);
-  await enableOfflineCopy(page);
-  await page.getByRole("textbox", { name: "name", exact: true }).fill("Offline Ada");
-  const accessibility = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-    .analyze();
-  await writeFile(
-    `test-results/${engineName}-accessibility.json`,
-    JSON.stringify(accessibility.violations, null, 2)
-  );
-  expect(
-    accessibility.violations.map((violation) => ({
-      id: violation.id,
-      targets: violation.nodes.map((node) => node.target),
-    }))
-  ).toEqual([]);
-  await page.screenshot({ path: `test-results/${engineName}-editor.png` });
-  // Playwright 1.63 WebKit kills service-worker responses in setOffline (issue 42775).
-  if (engineName === "webkit") server.disconnect();
-  else await context.setOffline(true);
-  expect(
-    await page.evaluate(() =>
-      fetch("/offline-negative-control").then(
-        () => false,
-        () => true
+  page.setDefaultTimeout(10_000);
+  await context.tracing.start({ screenshots: true, snapshots: true });
+  try {
+    page.on("request", (request) =>
+      requests.push({ url: request.url(), method: request.method() })
+    );
+    page.on("pageerror", (error) => errors.push(error.message));
+    await openFixture(page);
+    expect((await workerState(page)).registrations).toBe(0);
+    await enableOfflineCopy(page);
+    await page.getByRole("textbox", { name: "name", exact: true }).fill("Offline Ada");
+    const accessibility = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+    await writeFile(
+      `test-results/${engineName}-accessibility.json`,
+      JSON.stringify(accessibility.violations, null, 2)
+    );
+    expect(
+      accessibility.violations.map((violation) => ({
+        id: violation.id,
+        targets: violation.nodes.map((node) => node.target),
+      }))
+    ).toEqual([]);
+    await page.screenshot({ path: `test-results/${engineName}-editor.png` });
+    // Playwright 1.63 WebKit kills service-worker responses in setOffline (issue 42775).
+    if (engineName === "webkit") server.disconnect();
+    else await context.setOffline(true);
+    expect(
+      await page.evaluate(() =>
+        fetch("/offline-negative-control").then(
+          () => false,
+          () => true
+        )
       )
-    )
-  ).toBe(true);
-  const pdf = await PDFDocument.load(await downloadPdf(page));
-  expect(pdf.getForm().getTextField("name").getText()).toBe("Offline Ada");
-  await page.getByRole("button", { name: "Export", exact: true }).click();
-  const projectDownload = page.waitForEvent("download");
-  await page.getByRole("radio", { name: "Editing project", exact: true }).click();
-  await page.getByRole("button", { name: "Download editing project" }).click();
-  const archive = await downloadBytes(await projectDownload);
-  expect((await readProject(archive)).pages).toHaveLength(3);
-  await page.reload();
-  await page.getByRole("textbox", { name: "name", exact: true }).waitFor();
-  expect(await page.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(
-    "Offline Ada"
-  );
-  expect((await PDFDocument.load(await downloadPdf(page))).getPageCount()).toBe(3);
-  expect(errors).toEqual([]);
-  expect(
-    requests.filter(
-      (request) =>
-        request.method !== "GET" ||
-        (!request.url.startsWith(server.url) && !request.url.startsWith("blob:"))
-    )
-  ).toEqual([]);
-  await context.close();
-  server.reconnect();
+    ).toBe(true);
+    const pdf = await PDFDocument.load(await downloadPdf(page));
+    expect(pdf.getForm().getTextField("name").getText()).toBe("Offline Ada");
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    const projectDownload = page.waitForEvent("download");
+    await page.getByRole("radio", { name: "Editing project", exact: true }).click();
+    await page.getByRole("button", { name: "Download editing project" }).click();
+    const archive = await downloadBytes(await projectDownload);
+    expect((await readProject(archive)).pages).toHaveLength(3);
+    await page.reload();
+    await page.getByRole("textbox", { name: "name", exact: true }).waitFor();
+    expect(await page.getByRole("textbox", { name: "name", exact: true }).inputValue()).toBe(
+      "Offline Ada"
+    );
+    expect((await PDFDocument.load(await downloadPdf(page))).getPageCount()).toBe(3);
+    expect(errors).toEqual([]);
+    expect(
+      requests.filter(
+        (request) =>
+          request.method !== "GET" ||
+          (!request.url.startsWith(server.url) && !request.url.startsWith("blob:"))
+      )
+    ).toEqual([]);
+  } finally {
+    await context.tracing.stop({ path: `test-results/${engineName}-offline.zip` });
+    await context.close();
+    server.reconnect();
+  }
 });
 it("registers no service worker until the user opts in, and removes the offline copy", async () => {
   const context = await browser.newContext(),
