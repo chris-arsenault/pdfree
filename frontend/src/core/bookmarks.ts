@@ -1,3 +1,4 @@
+import { failure, english, message } from "../i18n/messages";
 import {
   PDFArray,
   PDFDict,
@@ -11,6 +12,7 @@ import {
 } from "pdf-lib";
 import { newId, type Bookmark, type Destination, type EditorDocument, type Page } from "./model";
 import { adjustedDestination } from "./utilityNavigation";
+export { pruneNavigation } from "./navigationModel";
 
 const modes = new Map<string, number>([
   ["XYZ", 3],
@@ -39,16 +41,16 @@ function destinationCoordinates(value: PDFArray) {
     if (coordinate === PDFNull) coordinates.push(null);
     else if (coordinate instanceof PDFNumber && Number.isFinite(coordinate.asNumber()))
       coordinates.push(coordinate.asNumber());
-    else throw new Error("Unsupported destination coordinates.");
+    else throw failure("errors.destinationCoordinates");
   }
   return coordinates;
 }
 function bookmarkTarget(node: PDFDict) {
   if (["C", "F", "SE"].some((key) => node.has(PDFName.of(key))))
-    throw new Error("Styled or structure-linked bookmarks require original-catalog preservation.");
+    throw failure("errors.bookmarkStyle");
   const action = node.lookupMaybe(PDFName.of("A"), PDFDict);
   if (action && action.get(PDFName.of("S"))?.toString() !== "/GoTo")
-    throw new Error("Unsupported bookmark action.");
+    throw failure("errors.bookmarkAction");
   return node.lookup(PDFName.of("Dest")) ?? action?.lookup(PDFName.of("D"));
 }
 function namedDestinations(pdf: PDFDocument) {
@@ -61,7 +63,7 @@ function namedDestinations(pdf: PDFDocument) {
     ?.lookupMaybe(PDFName.of("Dests"), PDFDict);
   const seen = new Set<PDFDict>();
   const visit = (node: PDFDict, depth: number) => {
-    if (seen.has(node) || depth > 50) throw new Error("Unsupported destination tree.");
+    if (seen.has(node) || depth > 50) throw failure("errors.destinationTree");
     seen.add(node);
     const names = node.lookupMaybe(PDFName.of("Names"), PDFArray);
     for (let i = 0; i < (names?.size() ?? 0); i += 2) {
@@ -76,37 +78,36 @@ function namedDestinations(pdf: PDFDocument) {
 }
 export function readNavigation(pdf: PDFDocument, pages: Page[]) {
   const outlineRoot = pdf.catalog.lookupMaybe(PDFName.of("Outlines"), PDFDict);
-  if (outlineRoot && !outlineRoot.has(PDFName.of("First")))
-    throw new Error("Unsupported empty outline catalog.");
+  if (outlineRoot && !outlineRoot.has(PDFName.of("First"))) throw failure("errors.emptyOutline");
   const names = namedDestinations(pdf);
   const destination = (input: unknown): Destination => {
     let value = input;
     const name = decoded(value);
     if (name !== null) value = names.get(name);
     if (value instanceof PDFDict) value = value.lookup(PDFName.of("D"));
-    if (!(value instanceof PDFArray)) throw new Error("Unsupported bookmark or link destination.");
+    if (!(value instanceof PDFArray)) throw failure("errors.bookmarkDestination");
     const reference = value.get(0);
     const index = destinationIndex(pdf, reference);
     const mode = decoded(value.lookup(1));
     if (!pages[index] || !mode || modes.get(mode) !== value.size() - 2)
-      throw new Error("Unsupported bookmark or link destination.");
+      throw failure("errors.bookmarkDestination");
     const coordinates = destinationCoordinates(value);
     return { pageId: pages[index].id, mode: mode as Destination["mode"], coordinates };
   };
   const bookmarks: Bookmark[] = [];
   const seen = new Set<PDFDict>();
   const walk = (first: PDFDict | undefined, parentId: string | null, depth: number) => {
-    if (depth > 50) throw new Error("Bookmark hierarchy is too deep.");
+    if (depth > 50) throw failure("errors.bookmarkDepth");
     let node = first;
     while (node) {
-      if (seen.has(node) || seen.size > 10_000) throw new Error("Invalid bookmark hierarchy.");
+      if (seen.has(node) || seen.size > 10_000) throw failure("errors.bookmarkHierarchy");
       seen.add(node);
       const target = bookmarkTarget(node);
       const id = newId();
       bookmarks.push({
         id,
         parentId,
-        title: decoded(node.lookup(PDFName.of("Title"))) || "Untitled bookmark",
+        title: decoded(node.lookup(PDFName.of("Title"))) || english(message("defaults.bookmark")),
         destination: destination(target),
       });
       walk(node.lookupMaybe(PDFName.of("First"), PDFDict), id, depth + 1);
@@ -141,9 +142,7 @@ function unsupportedNavigation(document: EditorDocument, pages: Page[]) {
   return document.sources
     .filter((source) => pages.some((page) => page.sourceId === source.id))
     .some((source) =>
-      source.structuralWarnings.some((warning) =>
-        ["document bookmarks", "internal page links"].includes(warning)
-      )
+      source.structuralWarnings.some((warning) => ["bookmarks", "links"].includes(warning))
     );
 }
 export function writeNavigation(pdf: PDFDocument, document: EditorDocument, pages: Page[]) {
@@ -162,7 +161,7 @@ export function writeNavigation(pdf: PDFDocument, document: EditorDocument, page
     const annotations = pdf.getPage(index).node.Annots();
     for (const link of page.links ?? []) {
       if (!annotations || link.annotationIndex >= annotations.size())
-        throw new Error("Missing source link annotation.");
+        throw failure("errors.sourceLinkMissing");
       const annotation = annotations.lookup(link.annotationIndex, PDFDict);
       annotation.delete(PDFName.of("A"));
       annotation.delete(PDFName.of("Dest"));
@@ -214,23 +213,4 @@ export function writeNavigation(pdf: PDFDocument, document: EditorDocument, page
   };
   writeLevel(null, root, rootRef);
   pdf.catalog.set(PDFName.of("Outlines"), rootRef);
-}
-export function pruneNavigation(document: EditorDocument): EditorDocument {
-  const ids = new Set(document.pages.map((page) => page.id));
-  const bookmarks = (document.bookmarks ?? []).filter((bookmark) =>
-    ids.has(bookmark.destination.pageId)
-  );
-  const retained = new Set(bookmarks.map((bookmark) => bookmark.id));
-  return {
-    ...document,
-    bookmarks: bookmarks.map((bookmark) => ({
-      ...bookmark,
-      parentId: retained.has(bookmark.parentId ?? "") ? bookmark.parentId : null,
-    })),
-    rules: (document.rules ?? []).flatMap((rule) => {
-      const pageIds = rule.pageIds.filter((id) => ids.has(id));
-      return rule.pageIds.length && !pageIds.length ? [] : [{ ...rule, pageIds }];
-    }),
-    pages: document.pages,
-  };
 }

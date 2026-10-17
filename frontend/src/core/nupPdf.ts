@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import {
   PDFArray,
   PDFDict,
@@ -14,6 +15,8 @@ import {
 import { visiblePageBox } from "./visiblePage";
 import { transformedBounds, type Matrix } from "./affine";
 import { z } from "zod";
+import { type NupOptions } from "./nupOptions";
+export { defaultNup, type NupOptions } from "./nupOptions";
 const nupSchema = z.object({
   count: z.union([z.literal(1), z.literal(2), z.literal(4), z.literal(6)]),
   paper: z.enum(["letter", "a4", "legal"]),
@@ -21,20 +24,6 @@ const nupSchema = z.object({
   order: z.enum(["rows", "columns"]),
   margin: z.number().finite().min(0).max(100),
 });
-export type NupOptions = {
-  count: 1 | 2 | 4 | 6;
-  paper: "letter" | "a4" | "legal";
-  landscape: boolean;
-  order: "rows" | "columns";
-  margin: number;
-};
-export const defaultNup: NupOptions = {
-  count: 1,
-  paper: "letter",
-  landscape: false,
-  order: "rows",
-  margin: 18,
-};
 function numbers(array: PDFArray | undefined, fallback: number[]) {
   return array
     ? Array.from({ length: array.size() }, (_, index) => array.lookup(index, PDFNumber).asNumber())
@@ -66,9 +55,7 @@ function bakeAnnotation(
   const appearance = appearanceFor(annotation);
   if (!(appearance instanceof PDFStream)) {
     if (subtype === "/Link") return;
-    throw new Error(
-      `The ${subtype ?? "unknown"} annotation has no supported appearance. N-up cannot safely bake it.`
-    );
+    throw failure("errors.annotationAppearance", { type: subtype ?? "?" });
   }
   const { sx, sy, x, y, rect } = appearancePlacement(appearance, annotation);
   const ref = pdf.context.getObjectRef(appearance) ?? pdf.context.register(appearance);
@@ -83,7 +70,7 @@ function bakeAnnotation(
 function printableAnnotation(annotation: PDFDict, subtype: string | undefined) {
   const flags = annotation.lookupMaybe(PDFName.of("F"), PDFNumber)?.asNumber() ?? 0;
   if (flags & 35 || subtype === "/Popup") return false;
-  if (flags & 24) throw new Error("N-up cannot preserve annotations with fixed zoom or rotation.");
+  if (flags & 24) throw failure("errors.annotationTransform");
   return true;
 }
 function appearancePlacement(appearance: PDFStream, annotation: PDFDict) {
@@ -94,12 +81,12 @@ function appearancePlacement(appearance: PDFStream, annotation: PDFDict) {
     [1, 0, 0, 1, 0, 0]
   );
   if (bbox.length !== 4 || rect.length !== 4 || matrix.length !== 6)
-    throw new Error("Invalid annotation appearance geometry.");
+    throw failure("errors.appearanceGeometry");
   const { x, y, width, height } = transformedBounds(
     { x: bbox[0], y: bbox[1], width: bbox[2] - bbox[0], height: bbox[3] - bbox[1] },
     matrix as unknown as Matrix
   );
-  if (!width || !height) throw new Error("Empty annotation appearance.");
+  if (!width || !height) throw failure("errors.appearanceEmpty");
   const sx = (rect[2] - rect[0]) / width,
     sy = (rect[3] - rect[1]) / height;
   return { sx, sy, x, y, rect };
@@ -108,8 +95,7 @@ export async function nupPdf(bytes: Uint8Array, options: NupOptions) {
   if (options.count === 1) return bytes;
   nupSchema.parse(options);
   const source = await PDFDocument.load(bytes);
-  if (source.getForm().getFields().length)
-    throw new Error("Flatten fields before preparing a print layout.");
+  if (source.getForm().getFields().length) throw failure("errors.printFlatten");
   bakeAnnotations(source);
   const output = await PDFDocument.create();
   const paper = { letter: [612, 792], a4: [595.28, 841.89], legal: [612, 1008] }[options.paper];
@@ -119,7 +105,7 @@ export async function nupPdf(bytes: Uint8Array, options: NupOptions) {
     gap = options.margin;
   const cellWidth = (width - gap * (columns + 1)) / columns,
     cellHeight = (height - gap * (rows + 1)) / rows;
-  if (cellWidth <= 0 || cellHeight <= 0) throw new Error("Margins leave no printable area.");
+  if (cellWidth <= 0 || cellHeight <= 0) throw failure("errors.printMargins");
   let sheet = output.addPage([width, height]);
   for (const [index, page] of source.getPages().entries()) {
     if (index && index % options.count === 0) sheet = output.addPage([width, height]);

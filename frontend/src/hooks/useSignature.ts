@@ -1,3 +1,5 @@
+import { text as tr } from "../i18n/runtime";
+import { message } from "../i18n/messages";
 import { useRef, useState } from "react";
 import { useEditor } from "./editorContext";
 import { newId, type Asset } from "../core/model";
@@ -12,11 +14,12 @@ export function useSignature() {
   const canvasRef = useRef<HTMLCanvasElement>(null),
     collection = useSavedSignatures();
   const create = () =>
-    editor.task.run("Preparing signature", async () => {
+    editor.task.run(message("task.preparingSignature"), async () => {
       const { object, asset } = await makeSignature(mode, text, canvasRef.current, image);
       const signature = {
         id: newId(),
-        label: text || (editor.dialog === "initials" ? "Initials" : "Signature"),
+        label:
+          text || (editor.dialog === "initials" ? tr("common.initials") : tr("common.signature")),
         object,
         asset,
       };
@@ -24,7 +27,7 @@ export function useSignature() {
       collection.use(signature);
     });
   const readImage = (file: File) =>
-    editor.task.run("Reading signature image", async () =>
+    editor.task.run(message("task.readingSignature"), async () =>
       setImage({
         id: newId(),
         name: file.name,

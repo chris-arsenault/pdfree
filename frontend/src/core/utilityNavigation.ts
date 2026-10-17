@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { type Destination, type Page } from "./model";
 import { transformPoint, transformedBounds } from "./affine";
 
@@ -29,7 +30,5 @@ export function adjustedDestination(destination: Destination, page: Page): Desti
     );
     return { ...destination, coordinates: [box.x, box.y, box.x + box.width, box.y + box.height] };
   }
-  throw new Error(
-    "Deskew cannot preserve this positioned bookmark or link destination. Use a whole-page destination first."
-  );
+  throw failure("errors.deskewDestination");
 }

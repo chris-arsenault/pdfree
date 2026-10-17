@@ -60,7 +60,7 @@ it("offers scan tools from the toolbar and a notice on scanned pages", async () 
   const dialog = page.getByRole("dialog", { name: "Recognize scanned text", exact: true });
   await expect.element(dialog.getByText("will be recognized")).toBeVisible();
   await expect
-    .element(dialog.getByRole("button", { name: "Recognize 1 page(s)", exact: true }))
+    .element(dialog.getByRole("button", { name: "Recognize 1 page", exact: true }))
     .toBeEnabled();
 });
 
@@ -71,19 +71,21 @@ it("analyzes each scanned page, previews the result and applies detected correct
   await expect.element(dialog.getByText(/^Tilted 3\.\d+° counter-clockwise\.$/)).toBeVisible();
   await expect.element(dialog.getByText(/^Paper is \d+% bright/)).toBeVisible();
   await expect.element(dialog.getByText(/^Text is faded/)).toBeVisible();
-  await expect.element(dialog.getByText("Dark scanner edge along the left side.")).toBeVisible();
+  await expect
+    .element(dialog.getByText("Dark scanner edge along these sides: left."))
+    .toBeVisible();
   // The trim is measured after straightening, which widens the edge band into a wedge.
   await expect.element(dialog.getByText(/^Trims left \d+ pt/)).toBeVisible();
   const preview = document.querySelector<HTMLCanvasElement>(".scan-preview canvas")!;
   expect(preview.width).toBeGreaterThan(0);
   await dialog.getByRole("button", { name: "Next page", exact: true }).click();
   await expect.element(dialog.getByText(/^Tilted 2\.\d+° clockwise\.$/)).toBeVisible();
-  await dialog.getByRole("button", { name: "Apply to 2 page(s)", exact: true }).click();
+  await dialog.getByRole("button", { name: "Apply to 2 pages", exact: true }).click();
   await expect
-    .element(dialog.getByText(/^Cleaned 2 page\(s\): 2 straightened, .*2 darkened, 2 trimmed/))
+    .element(dialog.getByText(/^Cleaned 2 pages: 2 straightened, .*2 darkened, and 2 trimmed/))
     .toBeVisible();
   await expect
-    .element(dialog.getByRole("button", { name: "Restore 2 original page(s)", exact: true }))
+    .element(dialog.getByRole("button", { name: "Restore 2 original pages", exact: true }))
     .toBeVisible();
 }, 60_000);
 

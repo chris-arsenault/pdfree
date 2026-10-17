@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { type PageRule } from "../core/model";
 export function RuleFields({
   rule,
@@ -9,7 +10,7 @@ export function RuleFields({
   return (
     <div className="utility-grid">
       <label>
-        Operation
+        {tr("common.operation")}
         <select
           value={rule.kind}
           onChange={(event) =>
@@ -21,13 +22,13 @@ export function RuleFields({
             })
           }
         >
-          <option value="number">Page numbering / Bates</option>
-          <option value="watermark">Watermark</option>
-          <option value="stamp">Stamp</option>
+          <option value="number">{tr("repeat.numbering")}</option>
+          <option value="watermark">{tr("repeat.watermark")}</option>
+          <option value="stamp">{tr("common.stamp")}</option>
         </select>
       </label>
       <label>
-        {rule.kind === "number" ? "Number prefix" : "Text"}
+        {rule.kind === "number" ? tr("repeat.prefix") : tr("common.text")}
         <input
           value={rule.text}
           onChange={(event) => onChange({ ...rule, text: event.target.value })}
@@ -42,7 +43,7 @@ function NumberFields({ rule, onChange }: { rule: PageRule; onChange: (rule: Pag
   return rule.kind === "number" ? (
     <>
       <label>
-        Start at
+        {tr("repeat.start")}
         <input
           type="number"
           min="0"
@@ -52,7 +53,7 @@ function NumberFields({ rule, onChange }: { rule: PageRule; onChange: (rule: Pag
         />
       </label>
       <label>
-        Minimum digits
+        {tr("repeat.digits")}
         <input
           type="number"
           min="0"
@@ -74,20 +75,20 @@ function AppearanceFields({
   return (
     <>
       <label>
-        Position
+        {tr("common.position")}
         <select
           value={rule.position}
           onChange={(event) =>
             onChange({ ...rule, position: event.target.value as PageRule["position"] })
           }
         >
-          <option value="top">Top</option>
-          <option value="center">Center</option>
-          <option value="bottom">Bottom</option>
+          <option value="top">{tr("common.top")}</option>
+          <option value="center">{tr("common.center")}</option>
+          <option value="bottom">{tr("common.bottom")}</option>
         </select>
       </label>
       <label>
-        Text size
+        {tr("repeat.size")}
         <input
           type="number"
           min="6"
@@ -97,7 +98,7 @@ function AppearanceFields({
         />
       </label>
       <label>
-        Color
+        {tr("common.color")}
         <input
           type="color"
           value={rule.color}
@@ -105,7 +106,7 @@ function AppearanceFields({
         />
       </label>
       <label>
-        Opacity
+        {tr("common.opacity")}
         <input
           type="range"
           min="0.05"

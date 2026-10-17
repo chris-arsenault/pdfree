@@ -58,7 +58,7 @@ it("distinguishes current-page actions from selected-page actions and rejects in
   await userEvent.keyboard("{Escape}");
   await page.getByRole("button", { name: "Export", exact: true }).click();
   await expect.element(page.getByRole("radio", { name: "All pages", exact: true })).toBeChecked();
-  await expect.element(page.getByText("3 of 3 page(s)")).toBeVisible();
+  await expect.element(page.getByText("3 of 3 pages")).toBeVisible();
 });
 
 it("starts Extract with the page selection and Export with the whole document", async () => {
@@ -69,7 +69,7 @@ it("starts Extract with the page selection and Export with the whole document", 
   await expect
     .element(page.getByRole("radio", { name: "Selected pages", exact: true }))
     .toBeChecked();
-  await expect.element(page.getByText("1 of 3 page(s)")).toBeVisible();
+  await expect.element(page.getByText("1 of 3 pages")).toBeVisible();
   await page.getByRole("radio", { name: "Printable sheets", exact: true }).click();
   await page.getByRole("combobox", { name: "Pages per sheet", exact: true }).selectOptions("4");
   await expect
@@ -95,7 +95,7 @@ it("closes properties without losing selection and exposes only group actions fo
   await page.getByRole("textbox", { name: "Object text", exact: true }).fill("Added text");
   await page.getByRole("button", { name: "Hide properties", exact: true }).click();
   await expect
-    .element(page.getByRole("button", { name: "text: Added text", exact: true }))
+    .element(page.getByRole("button", { name: "Text: Added text", exact: true }))
     .toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   await expect

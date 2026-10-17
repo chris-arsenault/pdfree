@@ -1,3 +1,5 @@
+import { formatNumber } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
 import { useState } from "react";
 import { MessageSquarePlus, Reply, X } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
@@ -23,28 +25,28 @@ export function CommentsPanel() {
   return (
     <SidePanel
       id="comments-panel"
-      label="Comments"
+      label={tr("common.comments")}
       className="comments-panel"
       open={editor.commentsOpen}
       onClose={close}
       drawer
     >
       <div className="panel-heading">
-        <strong>Comments</strong>
-        <span className="panel-count">{roots.length}</span>
-        <IconButton label="Hide comments" icon={X} onClick={close} />
+        <strong>{tr("common.comments")}</strong>
+        <span className="panel-count">{formatNumber(roots.length)}</span>
+        <IconButton label={tr("comments.hide")} icon={X} onClick={close} />
       </div>
       <AddCommentButton />
       {editor.pendingComment && <NewComment key={editor.pendingComment.id} />}
       {!roots.length && !editor.pendingComment && (
-        <p className="comments-empty">Add a comment to the current page.</p>
+        <p className="comments-empty">{tr("comments.addCurrentPage")}</p>
       )}
       <div className="comment-list">
         {roots.map(({ page, comment, index }) => (
           <article
             key={comment.id}
             className={`comment-thread ${editor.commentId === comment.id ? "selected" : ""}`}
-            aria-label={`Comment on page ${index + 1}`}
+            aria-label={tr("comments.page", { number: index + 1 })}
           >
             <button
               className="comment-jump"
@@ -56,8 +58,8 @@ export function CommentsPanel() {
                 editor.setPendingComment(null);
               }}
             >
-              <span>Page {index + 1}</span>
-              <span>{comment.text.slice(0, 100) || "Untitled note"}</span>
+              <span>{tr("common.pageNumber", { number: index + 1 })}</span>
+              <span>{comment.text.slice(0, 100) || tr("comments.untitled")}</span>
             </button>
             {editor.commentId === comment.id && (
               <Thread key={`${comment.id}-${editor.documentEpoch}`} page={page} root={comment} />
@@ -88,7 +90,7 @@ function AddCommentButton() {
       onClick={add}
     >
       <MessageSquarePlus size={16} aria-hidden="true" />
-      Add comment
+      {tr("comments.add")}
     </button>
   );
 }
@@ -118,7 +120,7 @@ function NewComment() {
     pending = editor.pendingComment!;
   return (
     <CommentForm
-      label="New comment"
+      mode="new"
       author
       onCancel={() => editor.setPendingComment(null)}
       onSave={(text) => {
@@ -148,7 +150,7 @@ function Thread({ page, root }: { page: Page; root: PdfComment }) {
       ))}
       {replying ? (
         <CommentForm
-          label="Reply"
+          mode="reply"
           author
           onCancel={() => setReplying(false)}
           onSave={(text) => {
@@ -165,7 +167,7 @@ function Thread({ page, root }: { page: Page; root: PdfComment }) {
       ) : (
         <button className="button secondary" onClick={() => setReplying(true)}>
           <Reply size={16} aria-hidden="true" />
-          Reply
+          {tr("common.reply")}
         </button>
       )}
     </div>

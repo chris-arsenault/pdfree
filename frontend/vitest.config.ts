@@ -35,11 +35,12 @@ export default defineConfig({
       {
         test: {
           name: "unit",
-          include: ["src/**/*.test.ts"],
+          include: ["src/**/*.test.ts", "tooling/**/*.test.ts"],
           exclude: [
             "src/**/*.browser.test.ts",
             "src/**/*.release.test.ts",
             "src/**/*.security.test.ts",
+            "src/**/*.performance.test.ts",
           ],
         },
       },
@@ -83,6 +84,19 @@ export default defineConfig({
                 name: "security",
                 include: ["src/**/*.security.test.ts"],
                 testTimeout: 30_000,
+              },
+            },
+          ]
+        : []),
+      ...(process.env.PDFREE_PERFORMANCE_TESTS
+        ? [
+            {
+              test: {
+                name: "performance",
+                include: ["src/**/*.performance.test.ts"],
+                fileParallelism: false,
+                testTimeout: 1_800_000,
+                hookTimeout: 120_000,
               },
             },
           ]

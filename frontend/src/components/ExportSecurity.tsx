@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { type SecuritySettings, type SigningMode, hasSecurity } from "../core/securitySettings";
 import { type PdfPermissions } from "../core/pdfSecurity";
 import "../security.css";
@@ -11,18 +12,18 @@ export function ExportSecurity(props: Props) {
   const { value, onChange } = props;
   return (
     <fieldset className="export-security" disabled={props.disabled}>
-      <legend>Signing and protection</legend>
+      <legend>{tr("security.title")}</legend>
       <label>
-        Certificate signing
+        {tr("security.signing")}
         <select
           value={value.mode}
           onChange={(event) => onChange({ ...value, mode: event.target.value as SigningMode })}
         >
-          <option value="none">None</option>
-          <option value="approval">Digitally sign</option>
-          <option value="1">Certify: no changes allowed (sign and lock)</option>
-          <option value="2">Certify: allow form filling and signatures</option>
-          <option value="3">Certify: allow form filling, signatures and comments</option>
+          <option value="none">{tr("common.none")}</option>
+          <option value="approval">{tr("security.sign")}</option>
+          <option value="1">{tr("security.certifyLock")}</option>
+          <option value="2">{tr("security.certifyForms")}</option>
+          <option value="3">{tr("security.certifyComments")}</option>
         </select>
       </label>
       {value.mode !== "none" && <CertificateSettings {...props} />}
@@ -32,12 +33,12 @@ export function ExportSecurity(props: Props) {
           checked={value.protect}
           onChange={(event) => onChange({ ...value, protect: event.target.checked })}
         />
-        Protect PDF with passwords and permissions
+        {tr("security.protect")}
       </label>
       {value.protect && (
         <>
           <label>
-            Encryption credentials
+            {tr("security.credentials")}
             <select
               value={value.protectionMode}
               onChange={(event) =>
@@ -47,8 +48,8 @@ export function ExportSecurity(props: Props) {
                 })
               }
             >
-              <option value="password">Opening and owner passwords</option>
-              <option value="recipients">Recipient certificates</option>
+              <option value="password">{tr("security.passwords")}</option>
+              <option value="recipients">{tr("security.recipients")}</option>
             </select>
           </label>
           {value.protectionMode === "password" ? (
@@ -58,13 +59,7 @@ export function ExportSecurity(props: Props) {
           )}
         </>
       )}
-      {hasSecurity(value) && (
-        <p className="field-note">
-          Protection applies to this PDF download and direct PDF save. Editing projects, images,
-          printed copies and Split downloads are unprotected. Passwords and certificate files are
-          used for this export and are not saved in drafts or projects.
-        </p>
-      )}
+      {hasSecurity(value) && <p className="field-note">{tr("security.scope")}</p>}
     </fieldset>
   );
 }
@@ -73,7 +68,7 @@ function RecipientSettings(props: Props) {
   return (
     <div className="security-fields">
       <label>
-        Recipient certificates (.cer, .crt or .pem)
+        {tr("security.recipientFiles")}
         <input
           type="file"
           multiple
@@ -83,11 +78,7 @@ function RecipientSettings(props: Props) {
           }
         />
       </label>
-      <p className="field-note">
-        AES-256 certificate encryption. Choose 1–32 public X.509 certificates. Every recipient must
-        keep their matching private identity to open the download. Keep a recipient certificate for
-        yourself if you need access. Reader permissions can be ignored.
-      </p>
+      <p className="field-note">{tr("security.recipientHint")}</p>
       <Permissions {...props} />
     </div>
   );
@@ -97,7 +88,7 @@ function CertificateSettings({ value, onChange }: Props) {
   return (
     <div className="security-fields">
       <label>
-        Certificate file (.p12/.pfx)
+        {tr("security.certificateFileLabel")}
         <input
           type="file"
           accept=".p12,.pfx,application/x-pkcs12"
@@ -108,11 +99,11 @@ function CertificateSettings({ value, onChange }: Props) {
         value={value}
         onChange={onChange}
         field="certificatePassword"
-        label="Certificate password"
+        label={tr("security.certificatePassword")}
       />
       <div className="security-pair">
         <label>
-          Signing reason
+          {tr("security.reason")}
           <input
             maxLength={1024}
             value={value.reason}
@@ -120,7 +111,7 @@ function CertificateSettings({ value, onChange }: Props) {
           />
         </label>
         <label>
-          Signing location
+          {tr("security.location")}
           <input
             maxLength={1024}
             value={value.location}
@@ -128,12 +119,7 @@ function CertificateSettings({ value, onChange }: Props) {
           />
         </label>
       </div>
-      <p className="field-note">
-        Choose a certificate containing your RSA or ECDSA private key (up to 2 MiB). Readers verify
-        your identity using the certificate&apos;s trust chain; self-signed certificates show an
-        untrusted identity. Signing uses this device&apos;s clock without an online timestamp. Add a
-        drawn or typed signature in the editor if you also want a visible mark.
-      </p>
+      <p className="field-note">{tr("security.signingHint")}</p>
     </div>
   );
 }
@@ -173,51 +159,47 @@ function ProtectionSettings(props: Props) {
           value={value}
           onChange={onChange}
           field="userPassword"
-          label="Opening password (optional)"
+          label={tr("security.openPassword")}
         />
         <SecurityPassword
           value={value}
           onChange={onChange}
           field="userConfirmation"
-          label="Confirm opening password"
+          label={tr("security.confirmOpen")}
         />
         <SecurityPassword
           value={value}
           onChange={onChange}
           field="ownerPassword"
-          label="Owner password"
+          label={tr("security.ownerPassword")}
         />
         <SecurityPassword
           value={value}
           onChange={onChange}
           field="ownerConfirmation"
-          label="Confirm owner password"
+          label={tr("security.confirmOwner")}
         />
       </div>
-      <p className="field-note">
-        AES-256 encryption. An opening password is required to view the file when set. The owner
-        password grants full access; use a different password. With an empty opening password,
-        anyone can view the PDF. Permission restrictions depend on the reader and can be ignored.
-      </p>
+      <p className="field-note">{tr("security.passwordHint")}</p>
       <Permissions {...props} />
     </div>
   );
 }
 
-const permissionLabels: [keyof PdfPermissions, string][] = [
-  ["print", "Allow printing"],
-  ["printHighQuality", "Allow high-quality printing"],
-  ["copy", "Allow copying and extraction"],
-  ["modify", "Allow content editing"],
-  ["annotate", "Allow comments and annotations"],
-  ["fillForms", "Allow form filling"],
-  ["assemble", "Allow page assembly"],
+const permissionLabels = (): [keyof PdfPermissions, string][] => [
+  ["print", tr("security.allowPrint")],
+  ["printHighQuality", tr("security.allowPrintQuality")],
+  ["copy", tr("security.allowCopy")],
+  ["modify", tr("security.allowEdit")],
+  ["annotate", tr("security.allowComments")],
+  ["fillForms", tr("security.allowForms")],
+  ["assemble", tr("security.allowAssembly")],
 ];
 function Permissions({ value, onChange }: Props) {
   return (
     <fieldset className="security-permissions">
-      <legend>Reader permissions</legend>
-      {permissionLabels.map(([key, label]) => (
+      <legend>{tr("security.permissions")}</legend>
+      {permissionLabels().map(([key, label]) => (
         <label className="checkbox-label" key={key}>
           <input
             type="checkbox"

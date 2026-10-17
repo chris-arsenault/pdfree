@@ -2,6 +2,7 @@
 
 - Status: Accepted; the retained-PWA clause is superseded by [0010](0010-opt-in-offline-copy.md).
 - Encrypted project/draft lifecycle extended by [0007](0007-encrypted-document-lifecycle.md).
+- Derived diagnostics and draft revision extended by [0011](0011-browser-local-internationalization.md).
 - Date: 2026-10-08
 
 ## Context

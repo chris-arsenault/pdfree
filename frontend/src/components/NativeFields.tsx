@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useEditor } from "../hooks/editorContext";
 import { useCallback } from "react";
 import { widgetDisplayGeometry } from "../core/widgetGeometry";
@@ -32,7 +33,7 @@ function NativeWidget({
   return (
     <div
       className={`native-widget ${field.required ? "required" : ""}`}
-      title={`${field.name}${field.required ? " (required)" : ""}`}
+      title={field.required ? tr("fields.requiredName", { name: field.name }) : field.name}
       style={{
         "--x": `${geometry.x * scale}px`,
         "--y": `${geometry.y * scale}px`,
@@ -44,7 +45,7 @@ function NativeWidget({
     >
       {field.kind === "radio" ? (
         <input
-          aria-label={`${field.name}: ${widget.option}`}
+          aria-label={tr("fields.optionName", { name: field.name, option: widget.option })}
           type="radio"
           name={`${readOnly ? "reference:" : ""}${field.id}`}
           value={widget.option}

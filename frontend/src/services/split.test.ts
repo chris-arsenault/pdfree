@@ -4,7 +4,10 @@ import { runPdfWorker } from "./workerClient";
 import { fontData } from "./resources";
 import { emptyDocument } from "../core/model";
 vi.mock("./workerClient", () => ({ runPdfWorker: vi.fn() }));
-vi.mock("./resources", () => ({ fontData: vi.fn() }));
+vi.mock("./resources", async (original) => ({
+  ...(await original<typeof import("./resources")>()),
+  fontData: vi.fn(),
+}));
 beforeEach(() => vi.resetAllMocks());
 
 it("sends one complete split request instead of cloning sources per output", async () => {

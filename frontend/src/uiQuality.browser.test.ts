@@ -175,7 +175,7 @@ it("keeps invalid name and numeric drafts out of downloadable editing projects",
   });
   await page.getByRole("spinbutton", { name: "Font size", exact: true }).fill("1001");
   await expect
-    .element(page.getByText("Font size must be between 1 and 1000.", { exact: false }))
+    .element(page.getByText("Font size must be between 1 and 1,000.", { exact: false }))
     .toBeVisible();
   const restored = await readProject(
     await download("Download editing project", "application/octet-stream")

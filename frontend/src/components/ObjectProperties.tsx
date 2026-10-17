@@ -1,3 +1,6 @@
+import { MessageError, message } from "../i18n/messages";
+import { formatNumber } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
 import { useEditor } from "../hooks/editorContext";
 import { type PlacedObject } from "../core/model";
 import { useCallback } from "react";
@@ -17,16 +20,16 @@ export function TextProperties({ object }: { object: PlacedObject }) {
   return (
     <>
       <label>
-        Text
+        {tr("common.text")}
         <textarea
-          aria-label="Object text"
+          aria-label={tr("objects.textLabel")}
           maxLength={editorLimits.text}
           value={object.text}
           onChange={(event) => update({ text: event.target.value })}
         />
       </label>
       <NumberProperty
-        label="Font size"
+        label={message("common.fontSize")}
         field="fontSize"
         value={object.fontSize}
         minimum={1}
@@ -36,22 +39,22 @@ export function TextProperties({ object }: { object: PlacedObject }) {
       />
       <FontProperty object={object} />
       <div className="alignment-property">
-        <span>Alignment</span>
-        <div className="alignment-buttons" role="group" aria-label="Text alignment">
+        <span>{tr("common.alignment")}</span>
+        <div className="alignment-buttons" role="group" aria-label={tr("objects.textAlignment")}>
           <IconButton
-            label="Align text left"
+            label={tr("objects.textLeft")}
             icon={AlignLeft}
             aria-pressed={object.align === "left"}
             onClick={() => update({ align: "left" })}
           />
           <IconButton
-            label="Center text"
+            label={tr("objects.textCenter")}
             icon={AlignCenter}
             aria-pressed={object.align === "center"}
             onClick={() => update({ align: "center" })}
           />
           <IconButton
-            label="Align text right"
+            label={tr("objects.textRight")}
             icon={AlignRight}
             aria-pressed={object.align === "right"}
             onClick={() => update({ align: "right" })}
@@ -68,7 +71,7 @@ export function AppearanceProperties({ object }: { object: PlacedObject }) {
       {object.kind !== "image" && <ColorProperty object={object} />}
       {["ink", "rectangle", "line", "arrow", "check", "cross"].includes(object.kind) && (
         <NumberProperty
-          label="Stroke width"
+          label={message("common.strokeWidth")}
           field="strokeWidth"
           value={object.strokeWidth}
           minimum={0.1}
@@ -79,7 +82,10 @@ export function AppearanceProperties({ object }: { object: PlacedObject }) {
       )}
       <label>
         <span>
-          Opacity <span aria-hidden="true">{Math.round(object.opacity * 100)}%</span>
+          {tr("common.opacity")}
+          <span aria-hidden="true">
+            {formatNumber(object.opacity, { style: "percent", maximumFractionDigits: 0 })}
+          </span>
         </span>
         <input
           type="range"
@@ -87,7 +93,10 @@ export function AppearanceProperties({ object }: { object: PlacedObject }) {
           max="1"
           step=".05"
           value={object.opacity}
-          aria-valuetext={`${Math.round(object.opacity * 100)}%`}
+          aria-valuetext={formatNumber(object.opacity, {
+            style: "percent",
+            maximumFractionDigits: 0,
+          })}
           onChange={(event) => update({ opacity: Number(event.target.value) })}
         />
       </label>
@@ -98,7 +107,7 @@ function ColorProperty({ object }: { object: PlacedObject }) {
   const update = useUpdateObject(object);
   return (
     <label>
-      Color
+      {tr("common.color")}
       <input
         type="color"
         value={object.color}
@@ -114,7 +123,7 @@ export function FieldAppearanceProperties({ object }: { object: PlacedObject }) 
       {object.fieldKind !== "checkbox" && <ColorProperty object={object} />}
       {["text", "radio"].includes(object.fieldKind) && (
         <NumberProperty
-          label="Font size"
+          label={message("common.fontSize")}
           field="fontSize"
           value={object.fontSize}
           minimum={1}
@@ -130,13 +139,13 @@ function FontProperty({ object }: { object: PlacedObject }) {
   const update = useUpdateObject(object);
   return (
     <label>
-      Font
+      {tr("common.font")}
       <select
         value={object.font}
         onChange={(event) => update({ font: event.target.value as PlacedObject["font"] })}
       >
         <option value="sans">Noto Sans</option>
-        <option value="signature">Caveat signature</option>
+        <option value="signature">{tr("objects.signatureFont")}</option>
       </select>
     </label>
   );
@@ -146,7 +155,7 @@ export function GeometryProperties({ object }: { object: PlacedObject }) {
   const rotate = useCallback(
     (change: Partial<PlacedObject>) => {
       const error = objectRotationError({ ...object, ...change });
-      if (error) throw new Error(error);
+      if (error) throw new MessageError(error);
       update(change);
     },
     [object, update]
@@ -155,7 +164,7 @@ export function GeometryProperties({ object }: { object: PlacedObject }) {
     <>
       <div className="property-pair">
         <NumberProperty
-          label="Width"
+          label={message("common.width")}
           field="width"
           value={object.width}
           minimum={0.01}
@@ -164,7 +173,7 @@ export function GeometryProperties({ object }: { object: PlacedObject }) {
           onChange={update}
         />
         <NumberProperty
-          label="Height"
+          label={message("common.height")}
           field="height"
           value={object.height}
           minimum={0.01}
@@ -174,7 +183,7 @@ export function GeometryProperties({ object }: { object: PlacedObject }) {
         />
       </div>
       <NumberProperty
-        label="Rotation"
+        label={message("common.rotation")}
         field="rotation"
         value={object.rotation}
         minimum={-360}

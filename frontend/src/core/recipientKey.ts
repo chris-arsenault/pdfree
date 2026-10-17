@@ -1,3 +1,4 @@
+import { failure, message } from "../i18n/messages";
 import { PdfDict, PdfString } from "@libpdf/core";
 import { PdfRecipientError } from "./pdfCredentials";
 import { type RecipientIdentity, bufferOf } from "./recipientIdentity";
@@ -5,10 +6,9 @@ import { recipientSeed } from "./recipientEnvelope";
 
 function recipients(dictionary: PdfDict) {
   const values = dictionary.getArray("Recipients");
-  if (!values?.length) throw new Error("The PDF's recipient list is missing or empty.");
+  if (!values?.length) throw failure("errors.recipientList");
   return Array.from(values, (value) => {
-    if (!(value instanceof PdfString))
-      throw new Error("The PDF contains an invalid recipient entry.");
+    if (!(value instanceof PdfString)) throw failure("errors.recipientEntry");
     return value.bytes;
   });
 }
@@ -22,10 +22,7 @@ async function seedFor(entries: Uint8Array[], identities: RecipientIdentity[]) {
       if (error.cause) cause = error.cause;
     }
   }
-  throw new PdfRecipientError(
-    "This identity is not an authorized recipient. Select its matching .p12 or .pfx file.",
-    { cause }
-  );
+  throw new PdfRecipientError(message("errors.recipientUnauthorized"), { cause });
 }
 export async function recipientKey(
   dictionary: PdfDict,

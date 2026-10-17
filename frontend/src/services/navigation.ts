@@ -1,6 +1,6 @@
 import { type EditorDocument } from "../core/model";
 import { sourcePdf } from "./viewer";
-import { pageRules, ruleText } from "../core/pageRules";
+import { pageRules, ruleText } from "../core/ruleModel";
 type OutlineNode = { title: string; dest: unknown; items: OutlineNode[] };
 export type NavigationItem = { title: string; pageId: string };
 export async function searchDocument(document: EditorDocument, query: string) {
@@ -43,7 +43,7 @@ function flattenOutline(nodes: OutlineNode[], depth = 0): { title: string; dest:
 export async function documentOutline(document: EditorDocument) {
   const unsupported = document.sources.some(
     (source) =>
-      source.structuralWarnings.includes("document bookmarks") &&
+      source.structuralWarnings.includes("bookmarks") &&
       document.pages.some((page) => page.sourceId === source.id)
   );
   if (document.bookmarks !== undefined && !unsupported) {

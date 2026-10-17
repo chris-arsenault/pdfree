@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { type EditorDocument, type PdfComment, type Point, type Page, newId } from "./model";
 import { toDisplay, toPdf } from "./coordinates";
 
@@ -7,8 +8,8 @@ export function createComment(
   author: string,
   parentId: string | null = null
 ): PdfComment {
-  if (!text.trim()) throw new Error("Write a comment first.");
-  if (text.length > 100_000 || author.length > 200) throw new Error("This comment is too long.");
+  if (!text.trim()) throw failure("errors.commentRequired");
+  if (text.length > 100_000 || author.length > 200) throw failure("errors.commentLength");
   const now = new Date().toISOString();
   return {
     ...point,
@@ -42,11 +43,10 @@ export function commentPointAt(point: Point, page: Page): Point {
 
 export function addComment(document: EditorDocument, pageId: string, comment: PdfComment) {
   const page = document.pages.find((item) => item.id === pageId);
-  if (!page) throw new Error("This comment's page no longer exists.");
-  if ((page.comments?.length ?? 0) >= 10_000)
-    throw new Error("Use at most 10,000 comments per page.");
+  if (!page) throw failure("errors.commentPageMissing");
+  if ((page.comments?.length ?? 0) >= 10_000) throw failure("errors.commentLimit");
   if (comment.parentId && !page.comments?.some((item) => item.id === comment.parentId))
-    throw new Error("This comment's thread no longer exists.");
+    throw failure("errors.commentThreadMissing");
   return {
     ...document,
     pages: document.pages.map((item) =>
@@ -56,8 +56,7 @@ export function addComment(document: EditorDocument, pageId: string, comment: Pd
 }
 
 export function editComment(document: EditorDocument, pageId: string, id: string, text: string) {
-  if (!text.trim() || text.length > 100_000)
-    throw new Error("Write a comment of at most 100,000 characters.");
+  if (!text.trim() || text.length > 100_000) throw failure("errors.commentTextLimit");
   return {
     ...document,
     pages: document.pages.map((page) =>
@@ -83,7 +82,7 @@ export function removeComment(document: EditorDocument, pageId: string, id: stri
         return page;
       const removed = commentThread(page.comments, id);
       if (page.comments?.some((item) => item.readOnly && removed.has(item.id)))
-        throw new Error("This thread contains a read-only comment.");
+        throw failure("errors.commentReadOnlyThread");
       return { ...page, comments: page.comments?.filter((item) => !removed.has(item.id)) };
     }),
   };
@@ -123,9 +122,9 @@ export function validateCommentThreads(comments: PdfComment[]) {
     const seen = new Set<string>();
     let next: string | null = comment.id;
     while (next && !checked.has(next)) {
-      if (seen.has(next)) throw new Error("This document has a circular comment thread.");
+      if (seen.has(next)) throw failure("errors.commentCircular");
       const item = byId.get(next);
-      if (!item) throw new Error("This document refers to a missing comment thread.");
+      if (!item) throw failure("errors.commentMissingThread");
       seen.add(next);
       next = item.parentId;
     }

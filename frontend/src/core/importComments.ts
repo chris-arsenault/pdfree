@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import {
   PDFArray,
   PDFDict,
@@ -9,6 +10,7 @@ import {
 } from "pdf-lib";
 import { type PdfComment, newId } from "./model";
 import { validateCommentThreads } from "./comments";
+import { type StructuralWarning } from "../i18n/diagnostics";
 
 const markupTypes = new Set([
   "Text",
@@ -41,7 +43,7 @@ export function annotationText(dict: PDFDict, key: string) {
 }
 
 export function readComments(pdf: PDFDocument) {
-  const warnings: string[] = [];
+  const warnings: StructuralWarning[] = [];
   const records = new Map<PDFDict, PdfComment>();
   const pages = pdf
     .getPages()
@@ -96,12 +98,12 @@ function describeComment(dict: PDFDict, annotationIndex: number): PdfComment {
       (value) => !Number.isFinite(value) || Math.abs(value) > 100_000
     )
   )
-    throw new Error("This PDF comment exceeds the supported text or coordinate limits.");
+    throw failure("errors.commentGeometry");
   return comment;
 }
 function readPageComments(
   annotations: PDFArray | undefined,
-  warnings: string[],
+  warnings: StructuralWarning[],
   allRecords: Map<PDFDict, PdfComment>
 ) {
   const records: { dict: PDFDict; comment: PdfComment }[] = [];
@@ -110,8 +112,7 @@ function readPageComments(
     if (!markupTypes.has(annotationType(dict))) continue;
     records.push({ dict, comment: describeComment(dict, index) });
     allRecords.set(dict, records[records.length - 1].comment);
-    if (records.length > 10_000)
-      throw new Error("This PDF contains more than 10,000 comments on a page.");
+    if (records.length > 10_000) throw failure("errors.commentPageLimit");
   }
   const ids = new Map(records.map((item) => [item.dict, item.comment.id]));
   for (const { dict, comment } of records) {
@@ -120,7 +121,7 @@ function readPageComments(
     comment.parentId = ids.get(parent) ?? null;
     if (!comment.parentId) {
       comment.readOnly = true;
-      warnings.push("comment relationships across pages");
+      warnings.push("comments");
     }
   }
   const comments = records.map((item) => item.comment);

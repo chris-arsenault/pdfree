@@ -1,4 +1,6 @@
+import { failure, message } from "../i18n/messages";
 import { PdfPasswordError, type PdfCredential } from "./pdfCredentials";
+import { PublicKeyDictionary } from "./publicKeyDictionary";
 export { PdfPasswordError, PdfRecipientError } from "./pdfCredentials";
 export type SourceEncryption = {
   algorithm: string;
@@ -8,7 +10,6 @@ export type SourceEncryption = {
 
 export async function unlockPdf(bytes: Uint8Array, credential?: PdfCredential) {
   const { PDF } = await import("@libpdf/core");
-  const { PublicKeyDictionary, publicKeyPdf } = await import("./publicKeyPdf");
   const password = typeof credential === "string" ? credential : undefined;
   let recipient = false;
   const pdf = await PDF.load(bytes, {
@@ -20,6 +21,7 @@ export async function unlockPdf(bytes: Uint8Array, credential?: PdfCredential) {
   })
     .catch(async (error: unknown) => {
       if (error instanceof PublicKeyDictionary) {
+        const { publicKeyPdf } = await import("./publicKeyPdf");
         const result = await publicKeyPdf(
           error.dictionary,
           typeof credential === "object" ? credential : undefined
@@ -33,19 +35,17 @@ export async function unlockPdf(bytes: Uint8Array, credential?: PdfCredential) {
       if (error instanceof Error && "code" in error && error.code === "PDF_PASSWORD")
         throw new PdfPasswordError(
           password === undefined
-            ? "Enter this PDF's opening or owner password."
-            : "That password did not unlock this PDF. Try its opening or owner password."
+            ? message("password.openRequired")
+            : message("password.openIncorrect")
         );
       throw error;
     });
   if (!pdf.isEncrypted) return { bytes, encryption: undefined };
   const handler = pdf.context.info.securityHandler;
-  if (!handler) throw new Error("This PDF uses an unsupported or invalid encryption handler.");
+  if (!handler) throw failure("errors.encryptionHandler");
   if (!pdf.isAuthenticated)
     throw new PdfPasswordError(
-      password === undefined
-        ? "Enter this PDF's opening or owner password."
-        : "That password did not unlock this PDF. Try its opening or owner password."
+      password === undefined ? message("password.openRequired") : message("password.openIncorrect")
     );
   const info = pdf.getSecurity();
   let authenticatedAs: SourceEncryption["authenticatedAs"] =

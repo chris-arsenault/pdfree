@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import {
   PDFArray,
   PDFDict,
@@ -22,7 +23,7 @@ export function imageResources(pdf: PDFDocument) {
     seen = new Set<PDFDict>();
   const visit = (resources: PDFDict | undefined, depth: number) => {
     if (!resources || seen.has(resources)) return;
-    if (depth > 50) throw new Error("Image resource nesting is too deep.");
+    if (depth > 50) throw failure("errors.imageDepth");
     seen.add(resources);
     for (const { reference, stream } of directImages(pdf, resources)) {
       const subtype = stream.dict.get(PDFName.of("Subtype"))?.toString();
@@ -67,13 +68,12 @@ export function supportedImage(stream: PDFRawStream) {
   ].every(Boolean);
 }
 export async function imageCanvas(stream: PDFRawStream) {
-  if (!supportedImage(stream))
-    throw new Error("This image encoding, color space or mask cannot be processed safely.");
+  if (!supportedImage(stream)) throw failure("errors.imageEncoding");
   const width = numeric(stream.dict, "Width"),
     height = numeric(stream.dict, "Height");
   const canvas = new OffscreenCanvas(width, height),
     context = canvas.getContext("2d");
-  if (!context) throw new Error("Image processing is unavailable in this browser.");
+  if (!context) throw failure("errors.imageUnavailable");
   if (stream.dict.get(PDFName.of("Filter"))?.toString() === "/DCTDecode") {
     const bitmap = await createImageBitmap(
       new Blob([new Uint8Array(stream.contents)], { type: "image/jpeg" })
@@ -96,8 +96,7 @@ function decodedPixels(
 ) {
   const bytes = decodePDFRawStream(stream).decode();
   const channels = stream.dict.get(PDFName.of("ColorSpace"))?.toString() === "/DeviceGray" ? 1 : 3;
-  if (bytes.length !== width * height * channels)
-    throw new Error("Unexpected scan image data length.");
+  if (bytes.length !== width * height * channels) throw failure("errors.scanDataLength");
   const image = context.createImageData(width, height);
   for (let pixel = 0; pixel < width * height; pixel++) {
     const offset = pixel * channels;
@@ -127,10 +126,7 @@ export function scanImage(pdf: PDFDocument, index: number) {
   const page = pdf.getPage(index),
     objects = page.node.Resources()?.lookupMaybe(PDFName.of("XObject"), PDFDict);
   const entries = objects?.entries() ?? [];
-  if (entries.length !== 1)
-    throw new Error(
-      "Scan cleanup requires one direct scan image per page; mixed layouts are unsupported."
-    );
+  if (entries.length !== 1) throw failure("errors.scanSingleImage");
   const [name, ref] = entries[0],
     stream = pdf.context.lookup(ref);
   if (
@@ -139,7 +135,7 @@ export function scanImage(pdf: PDFDocument, index: number) {
     stream.dict.get(PDFName.of("Subtype"))?.toString() !== "/Image" ||
     !supportedImage(stream)
   )
-    throw new Error("This page does not contain a supported RGB or grayscale scan image.");
+    throw failure("errors.scanColor");
   validateScanContent(scanContent(page), name.toString());
   return { stream, ref, name };
 }
@@ -151,13 +147,13 @@ function scanContent(page: ReturnType<PDFDocument["getPage"]>) {
       : [contents];
   return streams
     .map((item) => {
-      if (!(item instanceof PDFRawStream)) throw new Error("Unsupported scan content stream.");
+      if (!(item instanceof PDFRawStream)) throw failure("errors.scanStream");
       return new TextDecoder().decode(decodePDFRawStream(item).decode());
     })
     .join("\n");
 }
 function validateScanContent(content: string, imageName: string) {
-  if (content.length > 1_000_000) throw new Error("Scan content exceeds the processing budget.");
+  if (content.length > 1_000_000) throw failure("errors.scanBudget");
   // The image may coexist with an existing OCR text layer. Paths, shading, inline
   // images and nested forms are rejected rather than flattened.
   const stripped = content.replace(/\([^()]*\)|<[^<>]*>|%[^\r\n]*|\/[^\s[\]()<>]+/g, " ");
@@ -192,15 +188,14 @@ function validateScanContent(content: string, imageName: string) {
     operators.some((operator) => !allowed.has(operator)) ||
     operators.filter((operator) => operator === "Do").length !== 1
   )
-    throw new Error("Scan cleanup cannot preserve this mixed page layout.");
+    throw failure("errors.scanMixedLayout");
   const tokens = content.trim().split(/\s+/);
   const imageIndex = tokens.indexOf(imageName);
   const matrix = tokens.slice(imageIndex - 7, imageIndex - 1).map(Number);
-  if (!uprightMatrix(tokens[imageIndex - 1], matrix))
-    throw new Error("Scan cleanup requires an upright image placement.");
+  if (!uprightMatrix(tokens[imageIndex - 1], matrix)) throw failure("errors.scanImageUpright");
   for (const [index, token] of tokens.entries())
     if (token === "cm" && !uprightMatrix(token, tokens.slice(index - 6, index).map(Number)))
-      throw new Error("Scan cleanup requires upright image and page transforms.");
+      throw failure("errors.scanTransformUpright");
 }
 function uprightMatrix(operator: string, matrix: number[]) {
   return [

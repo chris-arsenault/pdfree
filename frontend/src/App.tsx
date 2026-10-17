@@ -4,19 +4,19 @@ import { DocumentSessions } from "./components/DocumentSessions";
 import { DocumentTabs } from "./components/DocumentTabs";
 import { Header } from "./components/Header";
 import { EmptyWorkspace } from "./components/EmptyWorkspace";
-import { PageSidebar } from "./components/PageSidebar";
-import { Workspace } from "./components/Workspace";
 import { Footer } from "./components/Footer";
-import { Toolbar } from "./components/Toolbar";
-import { Inspector } from "./components/Inspector";
 import { Dialogs } from "./components/Dialogs";
 import { ConfirmationDialog } from "./components/ConfirmationDialog";
 import { useKeyboard } from "./hooks/useKeyboard";
-import { CommentsPanel } from "./components/CommentsPanel";
-import { Navigator } from "./components/Navigator";
-import { EditorNotifications } from "./components/EditorNotifications";
+import { useMessages } from "./i18n/react";
+import { lazy, useEffect } from "react";
+import { DeferredView } from "./components/DeferredView";
+const loadEditor = () =>
+  import("./components/EditorContent").then((module) => ({ default: module.EditorContent }));
+const EditorContent = lazy(loadEditor);
 
 export default function App() {
+  useMessages();
   return (
     <DocumentSessions>
       <EditorSurface />
@@ -25,6 +25,10 @@ export default function App() {
 }
 function EditorSurface() {
   const editor = useEditor();
+  useEffect(() => {
+    // Overlap view loading with file reading and the import worker.
+    if (editor.task.kind === "task.openingFiles") loadEditor().catch(() => {});
+  }, [editor.task.kind]);
   return (
     <div
       className="app-shell"
@@ -41,21 +45,9 @@ function EditorSurface() {
       <DocumentTabs />
       <Keyboard />
       {editor.document.pages.length ? (
-        <div className="editor-content">
-          <div className="editor-tools" inert={!!editor.task.busy}>
-            <Toolbar />
-            <Navigator />
-          </div>
-          <div className="editor-body">
-            <EditorNotifications />
-            <div className="editor-layout" inert={!!editor.task.busy}>
-              {editor.pagesOpen && <PageSidebar />}
-              <Workspace />
-              <Inspector />
-              <CommentsPanel />
-            </div>
-          </div>
-        </div>
+        <DeferredView>
+          <EditorContent />
+        </DeferredView>
       ) : (
         <EmptyWorkspace />
       )}

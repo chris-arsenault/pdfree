@@ -1,3 +1,5 @@
+import { text as tr } from "../i18n/runtime";
+import { message } from "../i18n/messages";
 import { useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { emptyDocument, newId, type EditorDocument } from "../core/model";
 import { useEditorState } from "../hooks/useEditorState";
@@ -11,7 +13,10 @@ import { DraftContext } from "../hooks/draftContext";
 import { useDraftState } from "../hooks/useDraft";
 import { loadDrafts } from "../services/drafts";
 type Session = { id: string; document: EditorDocument; draftId?: string; files?: File[] };
-const blank = (): Session => ({ id: newId(), document: emptyDocument() });
+const blank = (name = tr("defaults.untitled")): Session => ({
+  id: newId(),
+  document: emptyDocument(name),
+});
 type Editor = ReturnType<typeof useEditorState>;
 export function DocumentSessions({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<Session[]>(() => [blank()]);
@@ -53,7 +58,7 @@ export function DocumentSessions({ children }: { children: ReactNode }) {
     setActiveId(session.id);
   };
   const openFiles = (files: File[]) => {
-    const next = files.map((file) => ({ ...blank(), files: [file] }));
+    const next = files.map((file) => ({ ...blank(file.name), files: [file] }));
     if (!next.length) return;
     setSessions((previous) => [...previous, ...next]);
     setActiveId(next.at(-1)!.id);
@@ -109,7 +114,7 @@ function sessionInfo(session: Session, metadata?: SessionInfo): SessionInfo {
   };
   return {
     ...info,
-    name: session.files?.[0]?.name && info.name === "Untitled" ? session.files[0].name : info.name,
+    name: info.name,
   };
 }
 function useSessionRecovery(
@@ -158,10 +163,9 @@ function mayClose(closing: Editor, active: Editor) {
   if (!closing.document.pages.length || closing.savedRevision === closing.history.revision)
     return Promise.resolve(true);
   return active.confirmation.ask({
-    title: `Close ${closing.document.name}?`,
-    message:
-      "Download an editing project to keep a portable copy. Saved library documents stay in this browser.",
-    confirmLabel: "Close document",
+    title: message("common.closeQuestion", { name: closing.document.name }),
+    message: message("document.closeDescription"),
+    confirmLabel: message("common.closeDocument"),
     tone: "primary",
   });
 }
@@ -214,9 +218,9 @@ function SessionEditor({
     if (session.files) editor.importFiles(session.files, true);
   }, [session, editor, active]);
   useEffect(() => {
-    if (session.files && !editor.document.pages.length && editor.task.error.includes("canceled"))
+    if (session.files && !editor.document.pages.length && editor.task.canceled)
       manager?.close(session.id);
-  }, [session, editor.document.pages.length, editor.task.error, manager]);
+  }, [session, editor.document.pages.length, editor.task.canceled, manager]);
   return (
     <EditorContext.Provider value={editor}>
       <SessionDraft active={active}>{active ? children : null}</SessionDraft>

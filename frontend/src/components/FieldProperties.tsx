@@ -1,3 +1,5 @@
+import { useMessageState } from "../i18n/react";
+import { text as tr } from "../i18n/runtime";
 import { type PlacedObject, type FieldKind } from "../core/model";
 import { useEditor } from "../hooks/editorContext";
 import { useId, useState } from "react";
@@ -5,12 +7,12 @@ import { editorLimits, fieldOptionsError, objectRotationError } from "../core/ed
 export function FieldProperties({ object }: { object: PlacedObject }) {
   const editor = useEditor(),
     update = (change: Partial<PlacedObject>) => editor.updateObject(object.id, change);
-  const [typeError, setTypeError] = useState("");
+  const [typeError, setTypeError] = useMessageState();
   const errorId = useId();
   return (
     <>
       <label>
-        Field name
+        {tr("field.name")}
         <input
           value={object.fieldName}
           maxLength={editorLimits.text}
@@ -18,9 +20,9 @@ export function FieldProperties({ object }: { object: PlacedObject }) {
         />
       </label>
       <label>
-        Field type
+        {tr("field.type")}
         <select
-          aria-label="Field type"
+          aria-label={tr("field.type")}
           value={object.fieldKind}
           aria-invalid={!!typeError}
           aria-describedby={typeError ? errorId : undefined}
@@ -31,13 +33,17 @@ export function FieldProperties({ object }: { object: PlacedObject }) {
             if (!error) update({ fieldKind });
           }}
         >
-          <option value="text">Text</option>
-          <option value="checkbox">Checkbox</option>
-          <option value="radio">Radio group</option>
-          <option value="dropdown">Dropdown</option>
-          <option value="list">List</option>
+          <option value="text">{tr("common.text")}</option>
+          <option value="checkbox">{tr("common.checkbox")}</option>
+          <option value="radio">{tr("common.radioGroup")}</option>
+          <option value="dropdown">{tr("common.dropdown")}</option>
+          <option value="list">{tr("common.list")}</option>
         </select>
-        {typeError && <span id={errorId}>{typeError} The previous field type is retained.</span>}
+        {typeError && (
+          <span id={errorId}>
+            {typeError} {tr("field.typeRetained")}
+          </span>
+        )}
       </label>
       {object.fieldKind === "checkbox" ? (
         <label className="checkbox-label">
@@ -46,11 +52,11 @@ export function FieldProperties({ object }: { object: PlacedObject }) {
             checked={object.text === "true"}
             onChange={(event) => update({ text: String(event.target.checked) })}
           />{" "}
-          Checked
+          {tr("common.checked")}
         </label>
       ) : (
         <label>
-          Initial value
+          {tr("field.initial")}
           <input
             value={object.text}
             maxLength={editorLimits.text}
@@ -67,12 +73,9 @@ export function FieldProperties({ object }: { object: PlacedObject }) {
           checked={object.required}
           onChange={(event) => update({ required: event.target.checked })}
         />{" "}
-        Required
+        {tr("common.required")}
       </label>
-      <p className="field-note">
-        Fields follow object order on each page for tab navigation. Export without flattening to
-        keep them fillable.
-      </p>
+      <p className="field-note">{tr("field.tabHint")}</p>
     </>
   );
 }
@@ -81,11 +84,11 @@ function OptionsProperty({ object }: { object: PlacedObject }) {
   const editor = useEditor();
   const [raw, setRaw] = useState(object.options.join("\n"));
   const [editing, setEditing] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useMessageState();
   const id = useId();
   return (
     <label>
-      Options (one per line)
+      {tr("field.options")}
       <textarea
         value={editing ? raw : object.options.join("\n")}
         maxLength={editorLimits.text}
@@ -105,7 +108,11 @@ function OptionsProperty({ object }: { object: PlacedObject }) {
           if (!error) editor.updateObject(object.id, { options });
         }}
       />
-      {error && <span id={id}>{error} The previous options are retained.</span>}
+      {error && (
+        <span id={id}>
+          {error} {tr("field.optionsRetained")}
+        </span>
+      )}
     </label>
   );
 }

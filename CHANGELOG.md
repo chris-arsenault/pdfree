@@ -5,6 +5,23 @@ identify the application version; they do not imply a published Git tag.
 
 ## Unreleased
 
+- Defer editor views, dialogs and PDF engines until needed. Separate ordinary
+  import from signing/recipient handling while retaining warm render/export code.
+  Use React.lazy/Suspense and a normal reload action for failed view loads.
+- Deliver the existing UI font as WOFF2, retain the original PDF embedding font,
+  and fetch the signature font only when the exported objects require it.
+  Add opt-in large-document measurements and a redistributable 3,993-page
+  reference manual fixture.
+
+- Add 17 interface languages with a flag picker in the bottom status bar, local
+  preferences, cross-tab updates and offline catalog switching. Open documents,
+  history, selections, notifications and running work retain their state.
+- Extract application copy into typed catalogs and reject hard-coded UI strings,
+  missing translations, mismatched interpolation and missing native plurals in CI.
+  Source diagnostics use stable IDs; revision-6 drafts migrate older warning
+  prose while preserving source bytes and edits. Project versions remain 1–4.
+  Layout/RTL, PDF-content translation, PDF fonts and OCR languages are unchanged.
+
 - Configure CloudFront to serve application assets from worldwide edge locations.
 
 - Pin one page beside another page in the same document, with an adjustable

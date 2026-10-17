@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import {
   PDFDocument,
   PDFHexString,
@@ -31,9 +32,7 @@ function signingField(pdf: PDFDocument, marker: string) {
       existing.acroField.dict.has(PDFName.of("SV")) ||
       existing.acroField.dict.has(PDFName.of("Lock"))
     )
-      throw new Error(
-        "This signature field requires seed values or field locks that PDFree cannot safely honor. Use a copy without those requirements."
-      );
+      throw failure("errors.signatureRequirements");
     addInvisibleWidget(pdf, existing.acroField.dict, existing.ref);
     return existing.acroField.dict;
   }
@@ -55,8 +54,7 @@ export async function signaturePlaceholder(
 ) {
   const pdf = await PDFDocument.load(bytes, { updateMetadata: false });
   const form = pdf.getForm();
-  if (hasCertificateSignature(pdf))
-    throw new Error("Use an unsigned PDF when adding a PDFree signature or certification.");
+  if (hasCertificateSignature(pdf)) throw failure("errors.signatureUnsigned");
   const marker = `PDFree${crypto.randomUUID().replaceAll("-", "")}`;
   const dictionary = pdf.context.obj({
     Type: "Sig",
@@ -76,7 +74,7 @@ export async function signaturePlaceholder(
   field.set(PDFName.of("Ff"), PDFNumber.of(flags | 1));
   if (options.certification) {
     const catalogRef = pdf.context.getObjectRef(pdf.catalog);
-    if (!catalogRef) throw new Error("The PDF catalog reference is missing.");
+    if (!catalogRef) throw failure("errors.pdfCatalogMissing");
     dictionary.set(
       PDFName.of("Reference"),
       pdf.context.obj([

@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { type PointerEvent, type KeyboardEvent } from "react";
 import { useEditor } from "../hooks/editorContext";
 import { referenceWidth } from "./referenceGeometry";
@@ -33,7 +34,7 @@ export function ReferenceDivider({ width }: { width: number }) {
     <div
       className="reference-divider"
       role="separator"
-      aria-label="Pinned page width"
+      aria-label={tr("reference.width")}
       aria-orientation="vertical"
       aria-valuemin={280}
       aria-valuemax={Math.round(width - 328)}

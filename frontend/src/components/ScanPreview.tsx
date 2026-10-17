@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useEffect, useMemo, useRef, type KeyboardEvent, type PointerEvent } from "react";
 import { adjustPixels, type CleanupOptions, type Margins } from "../core/scanAnalysis";
 import { type ScanSample } from "../services/scanSample";
@@ -46,7 +47,10 @@ export function ScanPreview({
   }, [pixels, sample, crop, angle, original]);
   return (
     <div className={`scan-preview ${grid && !original ? "with-grid" : ""}`}>
-      <canvas ref={canvasRef} aria-label={original ? "Original page" : "Cleaned page preview"} />
+      <canvas
+        ref={canvasRef}
+        aria-label={original ? tr("scan.original") : tr("scan.cleanedPreview")}
+      />
       {!original && (
         <div
           className="crop-window"
@@ -144,12 +148,12 @@ function CropHandle({
       className={`crop-handle ${side}`}
       role="slider"
       tabIndex={0}
-      aria-label={`Trim ${side} edge`}
+      aria-label={tr("cleanup.trimEdge", { side: tr(`sides.${side}`) })}
       aria-orientation={horizontal ? "horizontal" : "vertical"}
       aria-valuemin={0}
       aria-valuemax={maximum}
       aria-valuenow={crop[side]}
-      aria-valuetext={`${crop[side]} points`}
+      aria-valuetext={tr("cleanup.points", { points: crop[side] })}
       onPointerDown={(event) => event.currentTarget.setPointerCapture(event.pointerId)}
       onPointerMove={drag}
       onKeyDown={keys}

@@ -1,9 +1,12 @@
+import { formatNumber } from "../i18n/format";
+import { message } from "../i18n/messages";
+import { text as tr } from "../i18n/runtime";
 import { useState } from "react";
 import { type CompressionOptions, type CompressionResult } from "../core/compressPdf";
 import { useEditor } from "../hooks/editorContext";
 import { useProcessing } from "../hooks/useProcessing";
 import { runProcessingWorker } from "../services/workerClient";
-import { fontData } from "../services/resources";
+import { fontData, documentFontOptions } from "../services/resources";
 import { ProcessingStatus } from "./ProcessingStatus";
 import { PdfPreview } from "./PdfPreview";
 
@@ -39,7 +42,7 @@ export function CompressionControls({
             document: editor.document,
             flatten,
             pageIds,
-            fonts: await fontData(),
+            fonts: await fontData(documentFontOptions(editor.document, pageIds)),
           },
           signal,
           progress
@@ -58,16 +61,13 @@ export function CompressionControls({
     );
   return (
     <details className="utility-details">
-      <summary>PDF size and quality</summary>
+      <summary>{tr("compression.title")}</summary>
       <fieldset className="utility-fields" disabled={task.busy}>
         <CompressionFields options={options} change={change} />
       </fieldset>
-      <p className="field-note">
-        Only supported image resources are changed. Text, vectors and interactive fields stay
-        intact. Unsupported encodings and masks retain their original quality.
-      </p>
+      <p className="field-note">{tr("compression.description")}</p>
       <button className="button secondary" disabled={task.busy} onClick={generate}>
-        Preview size and quality
+        {tr("compression.preview")}
       </button>
       <ProcessingStatus task={task} />
       {preview && previewKey === key && <CompressionPreview {...preview} />}
@@ -80,11 +80,11 @@ function CompressionPreview({ result, before }: { result: CompressionResult; bef
       <CompressionSummary result={result} />
       <div className="utility-grid">
         <div>
-          <p className="field-note">Before · first page</p>
+          <p className="field-note">{tr("compression.before")}</p>
           <PdfPreview bytes={before} />
         </div>
         <div>
-          <p className="field-note">After · first page</p>
+          <p className="field-note">{tr("compression.after")}</p>
           <PdfPreview bytes={result.bytes} />
         </div>
       </div>
@@ -94,10 +94,13 @@ function CompressionPreview({ result, before }: { result: CompressionResult; bef
 function CompressionSummary({ result }: { result: CompressionResult }) {
   return (
     <p role="status">
-      {(result.originalSize / 1_000_000).toFixed(2)} →{" "}
-      {(result.bytes.length / 1_000_000).toFixed(2)} MB · {result.processed} image(s) reduced ·{" "}
-      {result.skipped} unsupported image(s) retained
-      {!result.targetReached && " · Target size could not be reached safely"}
+      {tr("compression.summary", {
+        before: formatNumber(result.originalSize / 1_000_000, { maximumFractionDigits: 2 }),
+        after: formatNumber(result.bytes.length / 1_000_000, { maximumFractionDigits: 2 }),
+        reduced: [message("compression.reducedCount", { count: result.processed })],
+        retained: [message("compression.retainedCount", { count: result.skipped })],
+      })}
+      {!result.targetReached && tr("compression.targetUnsafe")}
     </p>
   );
 }
@@ -111,21 +114,21 @@ function CompressionFields({
   return (
     <div className="utility-grid">
       <label>
-        Image quality
+        {tr("common.imageQuality")}
         <select
           value={options.preset}
           onChange={(event) =>
             change({ ...options, preset: event.target.value as CompressionOptions["preset"] })
           }
         >
-          <option value="original">Original</option>
-          <option value="screen">Screen · smallest</option>
-          <option value="balanced">Balanced</option>
-          <option value="print">Print · higher quality</option>
+          <option value="original">{tr("common.original")}</option>
+          <option value="screen">{tr("compression.screen")}</option>
+          <option value="balanced">{tr("common.balanced")}</option>
+          <option value="print">{tr("compression.print")}</option>
         </select>
       </label>
       <label>
-        Target size (MB, optional)
+        {tr("compression.target")}
         <input
           type="number"
           min="0"

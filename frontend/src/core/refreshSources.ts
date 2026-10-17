@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { importPdf } from "./importPdf";
 import {
   fieldKey,
@@ -82,16 +83,16 @@ function validateOriginalPage(
       (link) => !original.links?.some((item) => item.annotationIndex === link.annotationIndex)
     )
   )
-    throw new Error("This project refers to an unsupported source link.");
+    throw failure("errors.projectSourceLink");
 }
 function validateOriginalComments(comments: PdfComment[], originals: PdfComment[]) {
   const byIndex = new Map(originals.map((comment) => [comment.annotationIndex, comment]));
   for (const comment of comments) {
     if (comment.annotationIndex === null) continue;
     const original = byIndex.get(comment.annotationIndex);
-    if (!original) throw new Error("This project refers to a missing PDF comment.");
+    if (!original) throw failure("errors.projectCommentMissing");
     if (original.readOnly && (!comment.readOnly || comment.text !== original.text))
-      throw new Error("This project changes a read-only PDF comment.");
+      throw failure("errors.projectReadOnlyComment");
     if (
       [comment.x, comment.y, comment.width, comment.height, comment.author, comment.createdAt].some(
         (value, index) =>
@@ -106,6 +107,6 @@ function validateOriginalComments(comments: PdfComment[], originals: PdfComment[
           ][index]
       )
     )
-      throw new Error("This project changes unsupported source comment properties.");
+      throw failure("errors.projectCommentProperties");
   }
 }

@@ -11,7 +11,7 @@ handling uses fflate, and project validation uses Zod.
 ```mermaid
 flowchart LR
   CDN[Ahara static assets] --> UI[React editor]
-  Files[Local PDFs] --> Import[One security worker per import]
+  Files[Local PDFs] --> Import[One import worker per file]
   Import --> Model[EditorDocument v1]
   Projects[Local editing projects] --> Worker[PDF worker]
   Worker --> Model[EditorDocument v1]
@@ -32,6 +32,56 @@ The service worker is registered only after the user opts in from the footer
 see [ADR 0010](adr/0010-opt-in-offline-copy.md). The build writes
 `offline-manifest.json` with the precache file count and size for the opt-in
 panel's size and progress.
+
+The welcome shell keeps session, history, task and draft owners mounted. Editor
+views and individual expensive dialogs use module-level React.lazy components
+and Suspense. Current drafts do not load PDF
+engines, while legacy draft migration loads its source-refresh code on demand.
+An error boundary offers a normal browser reload after a view fails to load.
+Existing draft saving and browser unsaved-change warnings still apply; there is
+no custom loader, retry protocol or required project download.
+
+UI typography uses a WOFF2 representation of the original Noto Sans font with
+the same character coverage and metrics. PDF writers retain the original TTF
+and existing subsetting. `fontData()` still loads both document fonts by default;
+internal export consumers request Caveat only when selected objects require it.
+Successful font assets are cached across requests. Fonts for other scripts use
+the established browser fallback; no external font service is involved.
+
+## Interface messages and languages
+
+`frontend/src/i18n/` owns the canonical English messages, complete catalogs for
+16 additional languages, the locale registry and Intl formatting. Pinned
+i18next/React bindings update the existing session tree. Non-English catalogs
+load as same-origin JavaScript chunks on demand; the opt-in offline package
+precaches every chunk. Static HTML and PWA fallback copy come from the English
+catalog. The active language updates document language and page metadata at
+runtime without changing layout or reading direction.
+
+The preference `pdfree-language-v1` lives in local storage, outside documents,
+history, drafts and projects. A valid saved choice precedes ordered browser
+preferences and English fallback. Explicit script/region mapping resolves
+Chinese and the available Portuguese variant. Loading completes before a
+language becomes active, superseded requests cannot replace newer choices,
+storage events update other tabs, and storage failures retain the page's choice.
+
+UI state and worker replies carry structured-clone-safe `{ key, values }`
+messages. Typed factories require known keys and named interpolation values;
+worker boundaries validate exact shapes. Rendering resolves nested messages,
+native plurals and locale-formatted numbers/lists. Task kinds, cancellation,
+credential retry codes and source diagnostic IDs remain semantic values.
+Unknown third-party failures use operation-specific localized messages rather
+than displaying arbitrary exception prose. Source warnings and composition
+categories store stable IDs; their prose is resolved when shown.
+
+Application defaults become content when created. Existing filenames, PDF text,
+fields, comments and bookmarks never change with the UI locale. New dates use
+locale order with Gregorian dates and Latin digits, keeping them exportable by
+existing PDF fonts. Stamp templates are translated only where those fonts have
+the required glyphs; unsupported scripts use explicit `APPROVED` content.
+Browser UI font fallback is independent of PDF font embedding. RTL layout,
+vertical text, PDF-content translation and additional OCR languages are deferred.
+See [ADR 0011](adr/0011-browser-local-internationalization.md).
 
 ## Editing model and coordinates
 
@@ -60,12 +110,15 @@ See [ADR 0002](adr/0002-one-model-immutable-sources.md).
 
 ## Import and rendering
 
-`securityClient.ts` runs each PDF import in a dedicated worker with cancellation
+`securityClient.ts` runs each PDF import in a dedicated `importWorker.ts` with cancellation
 and typed password/recipient retry errors. `unlockPdf.ts` authenticates Standard
 password handlers or resolves Adobe.PubSec CMS recipient envelopes before object
 streams are read. It creates unprotected working bytes while preserving the
 original ciphertext. `sourceBytes()` selects the working copy for viewers/writers.
 Passwords and identity files do not become document state.
+Recipient cryptography loads only after the strict parser identifies its handler.
+Import and secured export share response/credential-erasure handling, while
+their entry points remain separate; both terminate after success or failure.
 
 `importPdf.ts` parses working sources and rejects unsupported handlers, XFA, existing
 certificate signatures, nonstandard page units and unsupported controls before
@@ -75,7 +128,7 @@ labels, export values, flags and repeated widgets.
 
 PDF.js renders original or locally prepared scan backgrounds with native fields and added objects
 overlaid by the editor. A separate rendering copy omits Text annotation icons;
-the existing PDF worker prepares that copy and the comment marker layer supplies
+the shared PDF worker prepares that copy and the comment marker layer supplies
 its interactive replacements. Other native
 markup appearances remain rendered by PDF.js. Source bytes stay immutable.
 Text selection/search use the original text layer, recognized words and
@@ -87,7 +140,12 @@ documents change. [Compatibility](compatibility.md) defines the limits.
 
 `pdfWorker.ts` accepts typed requests for PDF export, project save/open,
 image-page conversion and split export. `workerClient.ts` matches request IDs and
-reports startup, transfer or worker failures to the UI.
+reports startup, transfer or worker failures to the UI. Rendering and writing
+retain a shared persistent worker: separating them made first selected export
+about 40% slower in the paired 2,000-page comparison by losing warm writer
+initialization. Long cancelable operations use disposable workers. A crash
+rejects only requests owned by that worker; a later request creates its
+replacement without a stale crash clearing it.
 
 `exportPdf.ts` selects one of two paths:
 
@@ -175,13 +233,17 @@ geometry, unique identities, references and archive budgets on save/open.
 Unknown project versions fail explicitly. See [ADR 0004](adr/0004-projects-drafts-and-retained-pwa.md).
 
 IndexedDB stores local library documents under `pdfree-draft-v2:` with write revisions,
-model revision 5 and generation tokens. Opening another document creates a separate
+model revision 6 and generation tokens. Opening another document creates a separate
 entry; reopening a saved document updates its existing entry. Each tab remembers
 its active entry for reload recovery. Concurrent saves of the same entry retain
 both working copies by assigning a new ID to the conflicting writer.
 Legacy drafts refresh derived
 source descriptors while retaining edits; revision-2/3 drafts derive missing
 comments and normalize nullable source properties without changing saved geometry.
+Revision-5 and earlier drafts regenerate source diagnostics from existing
+working/original bytes into stable IDs. Migration preserves original ciphertext,
+encryption metadata, page identities, saved geometry and user edits. Portable
+project formats 1–4 remain readable and unchanged by interface localization.
 Current drafts retain explicit comment arrays so deletion survives recovery.
 Encrypted-source drafts autosave by default. `services/settings.ts` stores the
 browser-wide `pdfree-settings-v1:disable-protected-autosave` preference in local
@@ -269,6 +331,7 @@ resizing and presentation changes.
 | Persistence       | `frontend/src/core/projects.ts`, `projectSchema.ts`; `frontend/src/services/drafts.ts`, `signatures.ts`                                      |
 | UI/orchestration  | `frontend/src/components/`, `frontend/src/hooks/`                                                                                            |
 | Worker protocols  | `frontend/src/services/pdfWorker.ts`, `workerClient.ts`, `securityWorker.ts`, `securityClient.ts`                                            |
+| Localization      | `frontend/src/i18n/`; `frontend/tooling/uiCopyGuard.ts`, `catalogIntegrity.ts`, `catalogHtml.ts`                                             |
 | Hosting contract  | `frontend/security-headers.json`, `infrastructure/terraform/`, `platform.yml`, `.github/workflows/ci.yml`                                    |
 
 Deployment ownership and configuration are in [deployment](deployment.md).

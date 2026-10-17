@@ -1,3 +1,4 @@
+import { text as tr, renderMessage } from "../i18n/runtime";
 import { useEffect, useId, useRef } from "react";
 import { useEditor } from "../hooks/editorContext";
 import { type Confirmation } from "../hooks/useConfirmation";
@@ -46,9 +47,9 @@ function Decision({
         answer(false);
       }}
     >
-      <h2 id={`${id}-title`}>{request.title}</h2>
+      <h2 id={`${id}-title`}>{renderMessage(request.title)}</h2>
       <p id={`${id}-message`} className="confirmation-message">
-        {request.message}
+        {renderMessage(request.message)}
       </p>
       <div className="modal-actions">
         <button
@@ -57,7 +58,7 @@ function Decision({
           className="button secondary"
           onClick={() => answer(false)}
         >
-          Cancel
+          {tr("common.cancel")}
         </button>
         <button
           ref={confirm}
@@ -65,7 +66,7 @@ function Decision({
           className={`button ${request.tone}`}
           onClick={() => answer(true)}
         >
-          {request.confirmLabel}
+          {renderMessage(request.confirmLabel)}
         </button>
       </div>
     </dialog>

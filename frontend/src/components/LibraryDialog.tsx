@@ -1,3 +1,7 @@
+import { formatDate } from "../i18n/format";
+import { useMessageState } from "../i18n/react";
+import { message, errorMessage } from "../i18n/messages";
+import { text as tr } from "../i18n/runtime";
 import { useEffect, useState, useCallback, useId, type ChangeEvent } from "react";
 import { FileText, Trash2 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
@@ -19,16 +23,16 @@ export function LibraryDialog() {
     library = useLibraryDocuments(draft.status),
     signatures = useSavedSignatures();
   return (
-    <Modal title="Library" onClose={close}>
-      <p className="modal-description">Documents and signatures saved in this browser.</p>
+    <Modal title={tr("common.library")} onClose={close}>
+      <p className="modal-description">{tr("library.description")}</p>
       {editor.task.error && <p role="alert">{editor.task.error}</p>}
-      <section className="library-section" aria-label="Saved documents">
-        <h3>Documents</h3>
+      <section className="library-section" aria-label={tr("welcome.savedDocuments")}>
+        <h3>{tr("common.documents")}</h3>
         {library.error && <p role="alert">{library.error}</p>}
         {library.loading ? (
-          <p>Loading…</p>
+          <p>{tr("common.loading")}</p>
         ) : (
-          !library.documents.length && <p>No saved documents.</p>
+          !library.documents.length && <p>{tr("library.emptyDocuments")}</p>
         )}
         <ul className="library-list">
           {library.documents.map((saved) => (
@@ -41,11 +45,11 @@ export function LibraryDialog() {
           ))}
         </ul>
       </section>
-      <section className="library-section" aria-label="Saved signatures">
-        <h3>Signatures</h3>
+      <section className="library-section" aria-label={tr("library.savedSignatures")}>
+        <h3>{tr("common.signatures")}</h3>
         {signatures.error && <p role="alert">{signatures.error}</p>}
-        {!signatures.saved.length && !signatures.error && <p>No saved signatures.</p>}
-        {!!signatures.saved.length && !editor.page && <p>Open a document to use a signature.</p>}
+        {!signatures.saved.length && !signatures.error && <p>{tr("library.emptySignatures")}</p>}
+        {!!signatures.saved.length && !editor.page && <p>{tr("library.openForSignature")}</p>}
         <ul className="library-list">
           {signatures.saved.map((saved) => (
             <SignatureRow
@@ -65,25 +69,24 @@ export function LibraryDialog() {
 function StorageSettings() {
   const disabled = useProtectedAutosaveDisabled();
   const noteId = useId();
-  const [error, setError] = useState("");
+  const [error, setError] = useMessageState();
   const change = (event: ChangeEvent<HTMLInputElement>) => {
     try {
       setProtectedAutosaveDisabled(event.target.checked);
-      setError("");
+      setError(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "This browser could not save the setting.");
+      setError(errorMessage(cause));
     }
   };
   return (
-    <section className="library-section" aria-label="Storage settings">
-      <h3>Storage</h3>
+    <section className="library-section" aria-label={tr("library.storageSettings")}>
+      <h3>{tr("common.storage")}</h3>
       <label className="checkbox-label">
         <input type="checkbox" checked={disabled} onChange={change} aria-describedby={noteId} />
-        Don&apos;t autosave protected documents
+        {tr("library.disableProtectedAutosave")}
       </label>
       <p className="field-note" id={noteId}>
-        Applies to all documents in this browser. Saved drafts contain unlocked document content.
-        Turning this on stops new saves from protected PDFs; existing saved documents stay above.
+        {tr("library.autosaveDescription")}
       </p>
       {error && <p role="alert">{error}</p>}
     </section>
@@ -94,7 +97,7 @@ function useLibraryDocuments(status: string) {
   const editor = useEditor();
   const [documents, setDocuments] = useState<Draft[]>([]),
     [loading, setLoading] = useState(true),
-    [error, setError] = useState("");
+    [error, setError] = useMessageState();
   useEffect(() => {
     let cancelled = false;
     const refresh = () =>
@@ -102,11 +105,11 @@ function useLibraryDocuments(status: string) {
         .then((items) => {
           if (!cancelled) {
             setDocuments(items);
-            setError("");
+            setError(null);
           }
         })
         .catch(() => {
-          if (!cancelled) setError("Saved documents are unavailable in this browser.");
+          if (!cancelled) setError(message("library.unavailable"));
         })
         .finally(() => {
           if (!cancelled) setLoading(false);
@@ -119,13 +122,12 @@ function useLibraryDocuments(status: string) {
     };
   }, [status]);
   const remove = (saved: Draft) =>
-    editor.task.run("Deleting saved document", async () => {
+    editor.task.run(message("task.deletingSaved"), async () => {
       if (
         !(await editor.confirmation.ask({
-          title: `Delete ${saved.document.name}?`,
-          message:
-            "Remove this saved document from the library? Open documents and downloaded files are kept.",
-          confirmLabel: "Delete document",
+          title: message("common.deleteQuestion", { name: saved.document.name }),
+          message: message("library.removeDescription"),
+          confirmLabel: message("library.deleteDocument"),
           tone: "danger",
         }))
       )
@@ -153,20 +155,20 @@ function DocumentRow({
       <div className="library-item-info">
         <span>{saved.document.name}</span>
         <small>
-          {saved.document.pages.length} {saved.document.pages.length === 1 ? "page" : "pages"} ·{" "}
-          {new Date(saved.savedAt).toLocaleString()}
+          {tr("common.pages", { count: saved.document.pages.length })} ·{" "}
+          {formatDate(new Date(saved.savedAt), { dateStyle: "medium", timeStyle: "short" })}
         </small>
       </div>
       <button
         className="button secondary"
         disabled={!!editor.task.busy}
-        aria-label={`Open ${saved.document.name}`}
+        aria-label={tr("common.openNamed", { name: saved.document.name })}
         onClick={() => onOpen(saved)}
       >
-        Open
+        {tr("common.open")}
       </button>
       <IconButton
-        label={`Delete ${saved.document.name}`}
+        label={tr("common.deleteNamed", { name: saved.document.name })}
         icon={Trash2}
         disabled={!!editor.task.busy}
         onClick={remove}
@@ -201,13 +203,13 @@ function SignatureRow({
       <button
         className="button secondary"
         disabled={!!editor.task.busy || !editor.page}
-        aria-label={`Use ${saved.label}`}
+        aria-label={tr("common.useNamed", { name: saved.label })}
         onClick={() => onUse(saved)}
       >
-        Use
+        {tr("common.use")}
       </button>
       <IconButton
-        label={`Delete signature ${saved.label}`}
+        label={tr("library.deleteSignature", { name: saved.label })}
         icon={Trash2}
         disabled={!!editor.task.busy}
         onClick={remove}

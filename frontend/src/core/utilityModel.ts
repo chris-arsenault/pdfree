@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { z } from "zod";
 import { type EditorDocument, type Bookmark, type Page } from "./model";
 
@@ -22,7 +23,7 @@ export const destinationSchema = z
         FitBH: 1,
         FitBV: 1,
       }[destination.mode],
-    "Invalid destination coordinates."
+    "validation.destinationCoordinates"
   );
 export const bookmarkSchema = z.object({
   id: identity,
@@ -89,27 +90,26 @@ export function validateUtilities(document: EditorDocument) {
   const assets = new Set(document.assets.map((asset) => asset.id));
   const bookmarks = document.bookmarks ?? [];
   const byId = new Map(bookmarks.map((item) => [item.id, item]));
-  if (byId.size !== bookmarks.length) throw new Error("Duplicate bookmark identities.");
+  if (byId.size !== bookmarks.length) throw failure("errors.bookmarkIdentities");
   for (const bookmark of bookmarks) validateBookmark(bookmark, ids, byId);
   for (const page of document.pages) validatePageUtility(page, assets);
   const rules = document.rules ?? [];
   if (new Set(rules.map((rule) => rule.id)).size !== rules.length)
-    throw new Error("Duplicate page rules.");
+    throw failure("errors.pageRulesDuplicate");
   for (const rule of rules) {
     ruleSchema.parse(rule);
-    if (rule.pageIds.some((id) => !ids.has(id)))
-      throw new Error("A page rule targets a missing page.");
+    if (rule.pageIds.some((id) => !ids.has(id))) throw failure("errors.pageRuleTarget");
   }
 }
 function validateBookmark(bookmark: Bookmark, ids: Set<string>, byId: Map<string, Bookmark>) {
   bookmarkSchema.parse(bookmark);
-  if (!ids.has(bookmark.destination.pageId)) throw new Error("A bookmark targets a missing page.");
+  if (!ids.has(bookmark.destination.pageId)) throw failure("errors.bookmarkTarget");
   const visited = new Set([bookmark.id]);
   let parent = bookmark.parentId;
   while (parent) {
-    if (visited.has(parent) || !byId.has(parent)) throw new Error("Invalid bookmark hierarchy.");
+    if (visited.has(parent) || !byId.has(parent)) throw failure("errors.bookmarkHierarchy");
     visited.add(parent);
-    if (visited.size > 50) throw new Error("Bookmark hierarchy is too deep.");
+    if (visited.size > 50) throw failure("errors.bookmarkDepth");
     parent = byId.get(parent)!.parentId;
   }
 }
@@ -117,7 +117,7 @@ function validatePageUtility(page: Page, assets: Set<string>) {
   if (page.recognition) recognitionSchema.parse(page.recognition);
   if (page.scan) {
     scanSchema.parse(page.scan);
-    if (!assets.has(page.scan.assetId)) throw new Error("Missing processed scan image.");
+    if (!assets.has(page.scan.assetId)) throw failure("errors.scanAssetMissing");
   }
   for (const link of page.links ?? []) {
     linkSchema.parse(link);

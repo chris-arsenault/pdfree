@@ -1,6 +1,7 @@
+import { failure } from "../i18n/messages";
 import { newId, type EditorDocument, type Page } from "./model";
 import { duplicateComments } from "./comments";
-import { pruneNavigation } from "./bookmarks";
+import { pruneNavigation } from "./navigationModel";
 
 export function rotatePages(document: EditorDocument, ids: string[], angle = 90) {
   return {
@@ -12,7 +13,7 @@ export function rotatePages(document: EditorDocument, ids: string[], angle = 90)
 }
 export function removePages(document: EditorDocument, ids: string[]) {
   const pages = document.pages.filter((page) => !ids.includes(page.id));
-  if (!pages.length) throw new Error("Keep at least one page, or open a new document.");
+  if (!pages.length) throw failure("errors.keepPage");
   return pruneNavigation({ ...document, pages });
 }
 export function duplicatePages(document: EditorDocument, ids: string[]) {

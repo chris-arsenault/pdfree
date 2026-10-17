@@ -1,6 +1,7 @@
+import { failure, message, type UiMessage } from "../i18n/messages";
 import { type EditorDocument, type Page, type PlacedObject } from "./model";
-import { type Fonts, wrapText } from "./drawObjects";
-function checkGlyphs(text: string, font: Fonts["sans"], label: string) {
+import { type Fonts, wrapText, fontFor } from "./drawObjects";
+function checkGlyphs(text: string, font: Fonts["sans"], label: string | UiMessage[]) {
   const supported = new Set(font.getCharacterSet());
   const missing = [
     ...new Set(
@@ -10,9 +11,7 @@ function checkGlyphs(text: string, font: Fonts["sans"], label: string) {
     ),
   ];
   if (missing.length)
-    throw new Error(
-      `${label} contains characters this font cannot export: ${missing.slice(0, 8).join(" ")}. Choose a supported font or import a signature image.`
-    );
+    throw failure("errors.textFont", { label, characters: missing.slice(0, 8).join(" ") });
 }
 export function validateText(document: EditorDocument, pages: Page[], fonts: Fonts) {
   for (const source of document.sources) {
@@ -29,8 +28,8 @@ export function validateText(document: EditorDocument, pages: Page[], fonts: Fon
 }
 function validateObject(object: PlacedObject, fonts: Fonts) {
   if (!["text", "stamp", "field"].includes(object.kind)) return;
-  const font = fonts[object.font],
-    label = object.fieldName || object.text.slice(0, 30) || "Text object";
+  const font = fontFor(fonts, object.font),
+    label = object.fieldName || object.text.slice(0, 30) || [message("defaults.textObject")];
   checkGlyphs(object.text, font, label);
   object.options.forEach((option) => checkGlyphs(option, fonts.sans, label));
   if (object.kind === "field") return;
@@ -39,8 +38,6 @@ function validateObject(object: PlacedObject, fonts: Fonts) {
     (lines.length - 1) * object.fontSize * 1.25 + object.fontSize > object.height ||
     lines.some((line) => font.widthOfTextAtSize(line, object.fontSize) > object.width)
   ) {
-    throw new Error(
-      `The text “${label}” does not fit its box. Enlarge the box or reduce the font size before export.`
-    );
+    throw failure("errors.textBox", { label });
   }
 }

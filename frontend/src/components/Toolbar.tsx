@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { type PointerEvent } from "react";
 import { Plus, Redo2, Undo2 } from "lucide-react";
 import { highlightTextSelection } from "../hooks/usePlacement";
@@ -22,7 +23,7 @@ export function Toolbar() {
     }
   };
   return (
-    <div className="toolbar" role="toolbar" aria-label="Editing tools">
+    <div className="toolbar" role="toolbar" aria-label={tr("toolbar.title")}>
       <HistoryButtons />
       <div className="desktop-tools">
         {["select", "fill", "sign", "annotate", "field"].map((group) => (
@@ -45,7 +46,7 @@ export function Toolbar() {
         ))}
       </div>
       <MobileTools select={select} />
-      <div className="tool-group scan-tools" role="group" aria-label="Scan tools">
+      <div className="tool-group scan-tools" role="group" aria-label={tr("toolbar.scanTools")}>
         {scanTools.map((item) => (
           <Tooltip key={item.dialog} label={item.label} detail={item.hint}>
             <button
@@ -81,7 +82,7 @@ function MobileTools({ select }: { select: (tool: Tool) => void }) {
             onClick={() => select(tool.id)}
           />
         ))}
-      <ActionPopover label="Add" icon={Plus}>
+      <ActionPopover label={tr("common.add")} icon={Plus}>
         {(close) => (
           <ToolChoices
             select={(tool) => {
@@ -107,21 +108,19 @@ function HistoryButtons() {
   return (
     <div className="history-buttons">
       <IconButton
-        label="Undo"
+        label={tr("common.undo")}
         icon={Undo2}
         shortcut="Ctrl/⌘ Z"
         disabled={!editor.history.past.length}
-        detail={editor.history.past.length ? "Undo the last edit." : "No edits to undo."}
+        detail={editor.history.past.length ? tr("toolbar.undoHint") : tr("toolbar.undoEmpty")}
         onClick={() => editor.dispatch({ type: "undo" })}
       />
       <IconButton
-        label="Redo"
+        label={tr("common.redo")}
         icon={Redo2}
         shortcut="Ctrl/⌘ Shift Z"
         disabled={!editor.history.future.length}
-        detail={
-          editor.history.future.length ? "Restore the last undone edit." : "No edits to redo."
-        }
+        detail={editor.history.future.length ? tr("toolbar.redoHint") : tr("toolbar.redoEmpty")}
         onClick={() => editor.dispatch({ type: "redo" })}
       />
     </div>
@@ -148,7 +147,7 @@ function ToolChoices({
             onClick={() => select(tool.id)}
           >
             <tool.icon size={18} strokeWidth={1.75} aria-hidden="true" />
-            <span>{tool.id === "highlight" ? "Area highlight" : tool.label}</span>
+            <span>{tool.id === "highlight" ? tr("toolbar.areaHighlight") : tool.label}</span>
           </button>
         ))}
       {scanTools.map((item) => (

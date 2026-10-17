@@ -1,4 +1,6 @@
 import { type SourceEncryption } from "./unlockPdf";
+import { type SourceWarning, type StructuralWarning } from "../i18n/diagnostics";
+import { english, message } from "../i18n/messages";
 export type Maybe<T> = T | null;
 export type FieldValue = string | string[] | boolean;
 export type FieldKind = "text" | "checkbox" | "radio" | "dropdown" | "list";
@@ -45,8 +47,8 @@ export type Source = {
   encryption: Maybe<SourceEncryption>;
   pageCount: number;
   fields: NativeField[];
-  warnings: string[];
-  structuralWarnings: string[];
+  warnings: SourceWarning[];
+  structuralWarnings: StructuralWarning[];
   title: string;
   author: string;
 };
@@ -138,9 +140,9 @@ export const sourceBytes = (source: Source) => source.decryptedBytes ?? source.b
 export const hasEncryptedSources = (document: EditorDocument) =>
   document.sources.some((source) => !!source.encryption);
 export const newId = () => crypto.randomUUID();
-export const emptyDocument = (): EditorDocument => ({
+export const emptyDocument = (name = english(message("defaults.untitled"))): EditorDocument => ({
   version: 1,
-  name: "Untitled.pdf",
+  name,
   sources: [],
   pages: [],
   values: {},
@@ -156,7 +158,7 @@ export const defaultObject = (kind: PlacedObject["kind"], point: Point): PlacedO
   width: 150,
   height: 28,
   rotation: 0,
-  text: kind === "stamp" ? "APPROVED" : "",
+  text: kind === "stamp" ? english(message("defaults.stamp")) : "",
   fontSize: 14,
   color: "#172c45",
   opacity: kind === "highlight" ? 0.3 : 1,

@@ -1,18 +1,24 @@
+import { message } from "../i18n/messages";
+import { text as tr } from "../i18n/runtime";
 import { useEditor } from "../hooks/editorContext";
 import { useCloseDialog } from "../hooks/useCloseDialog";
 import { Modal } from "./Modal";
 import { useId, useState } from "react";
 import { documentNameError, editorLimits } from "../core/editorValidation";
+import { useMessages } from "../i18n/react";
+import { warningKeys, structureKeys } from "../i18n/diagnostics";
+import { formatList, formatNumber } from "../i18n/format";
 export function DocumentDialog() {
+  const { renderMessage } = useMessages();
   const editor = useEditor();
   const close = useCloseDialog();
   const id = useId();
   const [name, setName] = useState(editor.document.name);
   const error = documentNameError(name);
   return (
-    <Modal title="Document details" onClose={close}>
+    <Modal title={tr("document.details")} onClose={close}>
       <label>
-        Document name
+        {tr("document.name")}
         <input
           value={name}
           maxLength={editorLimits.name}
@@ -24,44 +30,70 @@ export function DocumentDialog() {
             if (!documentNameError(next)) editor.commit({ ...editor.document, name: next });
           }}
         />
-        {error && <span id={id}>{error} The previous name is retained.</span>}
+        {error && (
+          <span id={id}>
+            {renderMessage(error)} {tr("document.nameRetained")}
+          </span>
+        )}
       </label>
       <p className="modal-description">
-        {editor.document.pages.length} pages · {editor.document.sources.length} source PDFs ·{" "}
-        {editor.document.assets.length} local images
+        {tr("document.summary", {
+          pages: [message("common.pages", { count: editor.document.pages.length })],
+          sources: [message("document.sourceCount", { count: editor.document.sources.length })],
+          images: [message("document.imageCount", { count: editor.document.assets.length })],
+        })}
       </p>
       {editor.document.sources.map((source) => (
-        <div className="document-source" key={source.id}>
-          <strong>{source.name}</strong>
-          {source.encryption && (
-            <p className="inline-warning">
-              Opened {source.encryption.algorithm} encrypted PDF using{" "}
-              {source.encryption.authenticatedAs} access. The editing copy is decrypted; export
-              protection is configured separately.
-            </p>
-          )}
-          <p>
-            {source.title || "No title"} · {source.author || "No author"} ·{" "}
-            {(source.bytes.length / 1024 / 1024).toFixed(2)} MB
-          </p>
-          {source.warnings.map((warning) => (
-            <p className="inline-warning" key={warning}>
-              {warning}
-            </p>
-          ))}
-          {!!source.structuralWarnings.length && (
-            <p className="inline-warning">
-              Page extraction or merging is restricted to preserve:{" "}
-              {source.structuralWarnings.join(", ")}. Export the complete original document to keep
-              these structures.
-            </p>
-          )}
-        </div>
+        <DocumentSource key={source.id} source={source} />
       ))}
-      <p className="field-note">
-        XFA forms and certificate signature fields are rejected. Visible signatures, text and shapes
-        do not provide certificate signing or secure redaction.
-      </p>
+      <p className="field-note">{tr("document.safety")}</p>
     </Modal>
+  );
+}
+
+function DocumentSource({ source }: { source: import("../core/model").Source }) {
+  const { text } = useMessages();
+  return (
+    <div className="document-source">
+      <strong>{source.name}</strong>
+      {source.encryption && (
+        <p className="inline-warning">
+          {tr("document.encryptionNotice", {
+            algorithm: source.encryption.algorithm,
+            access: tr(
+              (
+                {
+                  owner: "document.accessOwner",
+                  user: "document.accessUser",
+                  recipient: "document.accessRecipient",
+                } as const
+              )[source.encryption.authenticatedAs]
+            ),
+          })}
+        </p>
+      )}
+      <p>
+        {source.title || tr("document.noTitle")} · {source.author || tr("document.noAuthor")} ·{" "}
+        {formatNumber(source.bytes.length / 1024 / 1024, {
+          style: "unit",
+          unit: "megabyte",
+          maximumFractionDigits: 2,
+        })}
+      </p>
+      {source.warnings.map((warning) => (
+        <p className="inline-warning" key={warning}>
+          {text(warningKeys[warning])}
+        </p>
+      ))}
+      {!!source.structuralWarnings.length && (
+        <p className="inline-warning">
+          {tr("document.restrictedStructures", {
+            structures: formatList(
+              source.structuralWarnings.map((warning) => text(structureKeys[warning]))
+            ),
+          })}
+        </p>
+      )}
+    </div>
   );
 }

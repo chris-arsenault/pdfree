@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Grid3x3 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
@@ -19,7 +20,7 @@ export function CleanupDialog() {
   const { task } = state;
   return (
     <Modal
-      title="Clean up scans"
+      title={tr("cleanup.title")}
       className="cleanup-dialog"
       onClose={() => {
         task.cancel();
@@ -60,7 +61,7 @@ export function CleanupDialog() {
       <div className="modal-actions">
         {state.cleaned.length > 0 && (
           <button className="button secondary" disabled={task.busy} onClick={state.restore}>
-            Restore {state.cleaned.length} original page(s)
+            {tr("cleanup.restoreCount", { count: state.cleaned.length })}
           </button>
         )}
         <button
@@ -68,7 +69,7 @@ export function CleanupDialog() {
           disabled={task.busy || !state.ids.length || !state.ready || !state.analysis}
           onClick={state.applyAll}
         >
-          Apply to {state.ids.length} page(s)
+          {tr("cleanup.applyCount", { count: state.ids.length })}
         </button>
       </div>
     </Modal>
@@ -78,14 +79,14 @@ export function CleanupDialog() {
 function CleanupStage({ state }: { state: CleanupState }) {
   const [view, setView] = useState({ original: false, grid: false });
   const result = state.sample.result;
-  let placeholder = "No scanned pages selected.";
+  let placeholder = tr("cleanup.noPages");
   if (state.sample.error) placeholder = state.sample.error;
-  else if (state.ids.length) placeholder = "Analyzing page…";
+  else if (state.ids.length) placeholder = tr("cleanup.analyzing");
   return (
-    <section className="cleanup-stage" aria-label="Preview">
+    <section className="cleanup-stage" aria-label={tr("common.preview")}>
       <div className="stage-bar">
         <SamplePicker state={state} />
-        <div className="panel-tabs" role="tablist" aria-label="Preview version">
+        <div className="panel-tabs" role="tablist" aria-label={tr("cleanup.previewVersion")}>
           {[false, true].map((original) => (
             <button
               key={String(original)}
@@ -93,16 +94,16 @@ function CleanupStage({ state }: { state: CleanupState }) {
               aria-selected={view.original === original}
               onClick={() => setView({ ...view, original })}
             >
-              {original ? "Original" : "Cleaned"}
+              {original ? tr("common.original") : tr("common.cleaned")}
             </button>
           ))}
         </div>
         <IconButton
-          label="Alignment grid"
+          label={tr("cleanup.grid")}
           icon={Grid3x3}
           aria-pressed={view.grid}
           className={view.grid ? "active" : ""}
-          detail="Show straight guide lines over the preview."
+          detail={tr("cleanup.gridHint")}
           onClick={() => setView({ ...view, grid: !view.grid })}
         />
       </div>
@@ -136,23 +137,23 @@ function SamplePicker({ state }: { state: CleanupState }) {
   return (
     <div className="sample-picker">
       <IconButton
-        label="Previous page"
+        label={tr("common.previousPage")}
         icon={ChevronLeft}
         disabled={index <= 0}
         onClick={() => choose(ids[index - 1])}
       />
       <label>
-        <span className="sr-only">Preview page</span>
+        <span className="sr-only">{tr("common.previewPage")}</span>
         <select value={sampleId} onChange={(event) => choose(event.target.value)}>
           {ids.map((id) => (
             <option key={id} value={id}>
-              Page {numbers.get(id)}
+              {tr("common.pageNumber", { number: numbers.get(id)! })}
             </option>
           ))}
         </select>
       </label>
       <IconButton
-        label="Next page"
+        label={tr("common.nextPage")}
         icon={ChevronRight}
         disabled={index < 0 || index >= ids.length - 1}
         onClick={() => choose(ids[index + 1])}
@@ -166,12 +167,12 @@ function SettingsMode({ state }: { state: CleanupState }) {
   if (ids.length < 2)
     return shared ? (
       <button className="text-button" onClick={() => shareSettings(false)}>
-        Reset to detected settings
+        {tr("cleanup.resetDetected")}
       </button>
     ) : null;
   return (
     <fieldset className="export-formats settings-mode">
-      <legend>Settings for {ids.length} pages</legend>
+      <legend>{tr("cleanup.settingsCount", { count: ids.length })}</legend>
       <label className="export-format">
         <input
           type="radio"
@@ -180,8 +181,8 @@ function SettingsMode({ state }: { state: CleanupState }) {
           onChange={() => shareSettings(false)}
         />
         <span>
-          Detect for each page
-          <small>Each page is analyzed on its own; best for most scans.</small>
+          {tr("cleanup.eachPage")}
+          <small>{tr("cleanup.eachPageHint")}</small>
         </span>
       </label>
       <label className="export-format">
@@ -192,8 +193,8 @@ function SettingsMode({ state }: { state: CleanupState }) {
           onChange={() => shareSettings(true)}
         />
         <span>
-          Same settings on every page
-          <small>Adjusting a value switches to this, starting from the previewed page.</small>
+          {tr("cleanup.sameSettings")}
+          <small>{tr("cleanup.sameSettingsHint")}</small>
         </span>
       </label>
     </fieldset>
@@ -205,9 +206,7 @@ function SupportNote({ state }: { state: CleanupState }) {
   if (!limited.length) return null;
   return (
     <p className="field-note">
-      Page {limited.map((id) => state.numbers.get(id)).join(", ")}{" "}
-      {limited.length === 1 ? "is not" : "are not"} a single plain scan image, so only trimming
-      applies there.
+      {tr("cleanup.limitedPages", { pages: limited.map((id) => state.numbers.get(id)).join(", ") })}
     </p>
   );
 }

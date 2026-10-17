@@ -4,7 +4,7 @@ import { type Page, type Source } from "../core/model";
 import { sourcePage } from "../services/viewer";
 import { usePageBackground } from "../hooks/usePageBackground";
 import { toDisplay } from "../core/coordinates";
-import { recognizedPosition, uncertainConfidence } from "../core/recognition";
+import { recognizedPosition, uncertainConfidence } from "../core/recognitionModel";
 export function TextLayer({
   page,
   source,

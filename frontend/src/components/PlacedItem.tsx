@@ -1,3 +1,5 @@
+import { text as tr } from "../i18n/runtime";
+import { tools } from "./toolDefinitions";
 import { useEditor } from "../hooks/editorContext";
 import { useObjectDrag } from "../hooks/useObjectDrag";
 import { ObjectFrame } from "./ObjectFrame";
@@ -21,7 +23,10 @@ export function PlacedItem({ object: original }: { object: PlacedObject }) {
         className={`placed-object ${selected ? "selected" : ""} kind-${object.kind}`}
         role="button"
         tabIndex={0}
-        aria-label={`${object.kind}: ${object.text || object.fieldName || "object"}`}
+        aria-label={tr("objects.description", {
+          kind: tools.find((tool) => tool.id === object.kind)!.label,
+          text: object.text || object.fieldName || tr("defaults.object"),
+        })}
         aria-pressed={selected}
         onPointerDown={(event) => drag.start(event)}
         onPointerMove={drag.move}

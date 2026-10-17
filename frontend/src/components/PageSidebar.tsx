@@ -1,3 +1,5 @@
+import { formatNumber } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
 import { useState, type DragEvent } from "react";
 import { ChevronUp, ChevronDown, ScanText, X, Pin } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
@@ -17,14 +19,14 @@ export function PageSidebar() {
   return (
     <SidePanel
       id="pages-panel"
-      label={tab === "pages" ? "Pages" : "Bookmarks"}
+      label={tab === "pages" ? tr("common.pagesLabel") : tr("common.bookmarks")}
       className="page-sidebar"
       open={editor.pagesOpen}
       onClose={() => editor.setPagesOpen(false)}
       drawer
     >
       <div className="panel-heading">
-        <div className="panel-tabs" role="tablist" aria-label="Document contents">
+        <div className="panel-tabs" role="tablist" aria-label={tr("pages.contents")}>
           {(["pages", "bookmarks"] as const).map((item) => (
             <button
               key={item}
@@ -32,14 +34,18 @@ export function PageSidebar() {
               aria-selected={tab === item}
               onClick={() => editor.setLeftTab(item)}
             >
-              {item === "pages" ? "Pages" : "Bookmarks"}
+              {item === "pages" ? tr("common.pagesLabel") : tr("common.bookmarks")}
               {item === "pages" && (
-                <span className="panel-count">{editor.document.pages.length}</span>
+                <span className="panel-count">{formatNumber(editor.document.pages.length)}</span>
               )}
             </button>
           ))}
         </div>
-        <IconButton label={`Hide ${tab}`} icon={X} onClick={() => editor.setPagesOpen(false)} />
+        <IconButton
+          label={tr(tab === "pages" ? "pages.hidePages" : "pages.hideBookmarks")}
+          icon={X}
+          onClick={() => editor.setPagesOpen(false)}
+        />
       </div>
       {tab === "pages" ? <PagesView /> : <BookmarksPanel />}
     </SidePanel>
@@ -59,7 +65,7 @@ function PagesView() {
       <div className={`thumbnail-list ${dropping ? "dropping" : ""}`} ref={listRef} {...dropTarget}>
         {dropping && (
           <p className="drop-hint" role="status">
-            Drop to add pages at the end
+            {tr("pages.dropAdd")}
           </p>
         )}
         <div
@@ -102,9 +108,9 @@ function useAppendDrop() {
   };
 }
 const RecognizedBadge = () => (
-  <span className="thumbnail-badge" title="Text recognized">
+  <span className="thumbnail-badge" title={tr("pages.recognized")}>
     <ScanText size={12} aria-hidden="true" />
-    <span className="sr-only">Text recognized</span>
+    <span className="sr-only">{tr("pages.recognized")}</span>
   </span>
 );
 function Thumbnail({ page, index }: { page: Page; index: number }) {
@@ -132,7 +138,7 @@ function Thumbnail({ page, index }: { page: Page; index: number }) {
           editor.setObjectIds([]);
           if (window.matchMedia("(max-width: 760px)").matches) editor.setPagesOpen(false);
         }}
-        aria-label={`Go to page ${index + 1}`}
+        aria-label={tr("pages.goTo", { number: index + 1 })}
         aria-current={page.id === editor.page?.id ? "page" : undefined}
       >
         <PageCanvas page={page} source={source} scale={scale} thumbnail />
@@ -149,34 +155,12 @@ function Thumbnail({ page, index }: { page: Page; index: number }) {
                   : editor.pageIds.filter((id) => id !== page.id)
               )
             }
-            aria-label={`Select page ${index + 1}`}
+            aria-label={tr("pages.select", { number: index + 1 })}
           />
-          {index + 1}
+          {formatNumber(index + 1)}
         </label>
         {page.recognition && <RecognizedBadge />}
-        <div className="thumbnail-move">
-          <ThumbnailPin pageId={page.id} number={index + 1} />
-          <IconButton
-            label="Move page earlier"
-            icon={ChevronUp}
-            detail={
-              index === 0 ? "This is already the first page." : `Move page ${index + 1} earlier.`
-            }
-            disabled={index === 0}
-            onClick={() => editor.commit(movePage(editor.document, page.id, index - 1))}
-          />
-          <IconButton
-            label="Move page later"
-            icon={ChevronDown}
-            detail={
-              index === editor.document.pages.length - 1
-                ? "This is already the last page."
-                : `Move page ${index + 1} later.`
-            }
-            disabled={index === editor.document.pages.length - 1}
-            onClick={() => editor.commit(movePage(editor.document, page.id, index + 1))}
-          />
-        </div>
+        <ThumbnailMove page={page} index={index} />
       </div>
     </div>
   );
@@ -186,7 +170,7 @@ function ThumbnailPin({ pageId, number }: { pageId: string; number: number }) {
   const active = pinned.page?.id === pageId;
   return (
     <IconButton
-      label={`Pin page ${number}`}
+      label={tr("pages.pinNumber", { number })}
       icon={Pin}
       aria-pressed={active}
       className={active ? "thumbnail-pin active" : "thumbnail-pin"}
@@ -195,5 +179,34 @@ function ThumbnailPin({ pageId, number }: { pageId: string; number: number }) {
         if (window.matchMedia("(max-width: 760px)").matches) setPagesOpen(false);
       }}
     />
+  );
+}
+
+function ThumbnailMove({ page, index }: { page: Page; index: number }) {
+  const editor = useEditor();
+  return (
+    <div className="thumbnail-move">
+      <ThumbnailPin pageId={page.id} number={index + 1} />
+      <IconButton
+        label={tr("pages.earlier")}
+        icon={ChevronUp}
+        detail={
+          index === 0 ? tr("pages.firstAlready") : tr("pages.earlierDetail", { number: index + 1 })
+        }
+        disabled={index === 0}
+        onClick={() => editor.commit(movePage(editor.document, page.id, index - 1))}
+      />
+      <IconButton
+        label={tr("pages.later")}
+        icon={ChevronDown}
+        detail={
+          index === editor.document.pages.length - 1
+            ? tr("pages.lastAlready")
+            : tr("pages.laterDetail", { number: index + 1 })
+        }
+        disabled={index === editor.document.pages.length - 1}
+        onClick={() => editor.commit(movePage(editor.document, page.id, index + 1))}
+      />
+    </div>
   );
 }

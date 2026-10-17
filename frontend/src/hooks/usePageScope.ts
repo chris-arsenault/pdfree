@@ -1,22 +1,31 @@
 import { useState } from "react";
 import { useEditor } from "./editorContext";
 import { scopePageIds, type PageScope, type PageScopeKind } from "../core/pageScope";
+import { errorMessage } from "../i18n/messages";
+import { useMessages } from "../i18n/react";
 
 /** Dialog-local page scope, initialised from the caller's default and the thumbnail selection. */
 export function usePageScope(initial: PageScopeKind) {
+  const { renderMessage } = useMessages();
   const editor = useEditor();
   const [scope, setScope] = useState<PageScope>({ kind: initial, range: "" });
-  return { scope, setScope, ...resolveScope(editor, scope) };
+  const resolved = resolveScope(editor, scope);
+  return {
+    scope,
+    setScope,
+    ...resolved,
+    error: resolved.error ? renderMessage(resolved.error) : "",
+  };
 }
 
 export function resolveScope(editor: ReturnType<typeof useEditor>, scope: PageScope) {
   try {
     return {
       pageIds: scopePageIds(editor.document, scope, editor.pageIds, editor.page?.id ?? ""),
-      error: "",
+      error: null,
     };
   } catch (cause) {
-    return { pageIds: [] as string[], error: (cause as Error).message };
+    return { pageIds: [] as string[], error: errorMessage(cause) };
   }
 }
 

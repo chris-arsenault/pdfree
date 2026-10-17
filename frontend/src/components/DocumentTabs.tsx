@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useContext } from "react";
 import { Plus, X } from "lucide-react";
 import { SessionContext } from "../hooks/sessionContext";
@@ -8,7 +9,7 @@ export function DocumentTabs() {
   if (!manager) return null;
   const busy = manager.sessions.some((session) => session.busy);
   return (
-    <nav className="document-tabs" aria-label="Open documents">
+    <nav className="document-tabs" aria-label={tr("document.openDocuments")}>
       {manager.sessions.map((session) => (
         <div
           className={`document-tab ${manager.activeId === session.id ? "active" : ""}`}
@@ -19,11 +20,11 @@ export function DocumentTabs() {
             disabled={busy}
             onClick={() => manager.select(session.id)}
           >
-            {session.unsaved && <span aria-label="Unsaved edits">• </span>}
+            {session.unsaved && <span aria-label={tr("document.unsaved")}>• </span>}
             {session.name}
           </button>
           <IconButton
-            label={`Close ${session.name}`}
+            label={tr("common.closeNamed", { name: session.name })}
             icon={X}
             disabled={busy}
             onClick={() => manager.close(session.id)}
@@ -31,7 +32,7 @@ export function DocumentTabs() {
         </div>
       ))}
       <FileButton
-        label="Open another document"
+        label={tr("document.openAnother")}
         icon={Plus}
         accept="application/pdf,.pdf,.pdfree"
         multiple

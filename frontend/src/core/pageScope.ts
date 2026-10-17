@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { type EditorDocument } from "./model";
 import { parsePageRange } from "./pageRanges";
 
@@ -16,7 +17,7 @@ export function scopePageIds(
   if (scope.kind === "current") return pages.some((page) => page.id === activeId) ? [activeId] : [];
   if (scope.kind === "selected")
     return pages.filter((page) => selectedIds.includes(page.id)).map((page) => page.id);
-  if (!scope.range.trim()) throw new Error("Enter pages such as 1-3, 5.");
+  if (!scope.range.trim()) throw failure("errors.scopeRange");
   const numbers = new Set(parsePageRange(scope.range, pages.length));
   return pages.filter((_, index) => numbers.has(index + 1)).map((page) => page.id);
 }

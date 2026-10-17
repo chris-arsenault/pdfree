@@ -1,8 +1,11 @@
+import { message } from "../i18n/messages";
+import { useMessageState } from "../i18n/react";
+import { text as tr } from "../i18n/runtime";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { newId, type PageRule } from "../core/model";
 import { ruleSchema } from "../core/utilityModel";
-import { ruleText } from "../core/pageRules";
+import { ruleText } from "../core/ruleModel";
 import { useEditor } from "../hooks/editorContext";
 import { Modal } from "./Modal";
 import { RuleFields } from "./RuleFields";
@@ -24,14 +27,14 @@ export const newRule = (): PageRule => ({
 export function RepeatedDialog() {
   const editor = useEditor(),
     [rule, setRule] = useState(newRule),
-    [error, setError] = useState(""),
+    [error, setError] = useMessageState(),
     scope = usePageScope("all");
   const all = scope.scope.kind === "all";
   // An empty rule scope means every page, including pages added later.
   const scoped = { ...rule, pageIds: all ? [] : scope.pageIds };
   const pages = editor.document.pages.filter((page) => scope.pageIds.includes(page.id));
   return (
-    <Modal title="Repeat across pages" onClose={() => editor.setDialog("")}>
+    <Modal title={tr("pages.repeat")} onClose={() => editor.setDialog("")}>
       <RuleFields rule={rule} onChange={setRule} />
       <PageScopeField
         scope={scope.scope}
@@ -39,14 +42,11 @@ export function RepeatedDialog() {
         pageIds={scope.pageIds}
         error={scope.error}
       />
-      <p className="field-note">
-        Numbers follow current page order. All-page rules include pages added later. Other scopes
-        follow those page identities.
-      </p>
-      <div className="utility-preview" aria-label="Page rule preview">
+      <p className="field-note">{tr("repeat.description")}</p>
+      <div className="utility-preview" aria-label={tr("repeat.preview")}>
         {pages.slice(0, 3).map((page) => (
           <p key={page.id}>
-            Page {editor.document.pages.indexOf(page) + 1} ·{" "}
+            {tr("common.pageNumber", { number: editor.document.pages.indexOf(page) + 1 })} ·{" "}
             {ruleText(editor.document, page, scoped)}
           </p>
         ))}
@@ -64,7 +64,7 @@ export function RepeatedDialog() {
           onClick={() => {
             const parsed = ruleSchema.safeParse(scoped);
             if (!parsed.success || (!scoped.text.trim() && scoped.kind !== "number")) {
-              setError("Choose valid settings and text for this operation.");
+              setError(message("repeat.invalid"));
               return;
             }
             editor.commit({
@@ -74,7 +74,7 @@ export function RepeatedDialog() {
             editor.setDialog("");
           }}
         >
-          Apply rule
+          {tr("repeat.apply")}
         </button>
       </div>
     </Modal>
@@ -88,10 +88,29 @@ function RuleList() {
       {editor.document.rules.map((item) => (
         <div className="bookmark-row" key={item.id}>
           <span>
-            {item.kind} · {item.text || "Page numbers"}
+            {tr(
+              (
+                {
+                  number: "repeat.numbering",
+                  watermark: "repeat.watermark",
+                  stamp: "common.stamp",
+                } as const
+              )[item.kind]
+            )}{" "}
+            · {item.text || tr("repeat.pageNumbers")}
           </span>
           <IconButton
-            label={`Remove ${item.kind} rule`}
+            label={tr("rules.removeKind", {
+              kind: tr(
+                (
+                  {
+                    number: "repeat.numbering",
+                    watermark: "repeat.watermark",
+                    stamp: "common.stamp",
+                  } as const
+                )[item.kind]
+              ),
+            })}
             icon={Trash2}
             onClick={() =>
               editor.commit({

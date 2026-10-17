@@ -1,3 +1,4 @@
+import { failure, MessageError } from "../i18n/messages";
 import {
   type EditorDocument,
   type NativeField,
@@ -12,7 +13,7 @@ import { validateUtilities } from "./utilityModel";
 export function validateProjectReferences(document: EditorDocument) {
   validateUtilities(document);
   if (document.sources.some((source) => !!source.encryption !== !!source.decryptedBytes))
-    throw new Error("Encrypted sources need their original and decrypted working bytes.");
+    throw failure("errors.projectEncryptedBytes");
   const items = [
     ...document.sources,
     ...document.pages,
@@ -21,7 +22,7 @@ export function validateProjectReferences(document: EditorDocument) {
     ...document.pages.flatMap((page) => page.comments ?? []),
   ];
   if (new Set(items.map((item) => item.id)).size !== items.length)
-    throw new Error("This project has duplicate object identities.");
+    throw failure("errors.projectObjectIdentities");
   const sources = new Map(document.sources.map((source) => [source.id, source]));
   const assets = new Set(document.assets.map((asset) => asset.id));
   for (const page of document.pages) validatePageReferences(page, sources, assets);
@@ -30,7 +31,7 @@ export function validateProjectReferences(document: EditorDocument) {
   );
   for (const [id, value] of Object.entries(document.values)) {
     const field = fields.get(id);
-    if (!field) throw new Error("This project refers to a missing form field.");
+    if (!field) throw failure("errors.projectFieldMissing");
     validateFieldValue(field, value);
   }
 }
@@ -38,12 +39,12 @@ export function validateProjectReferences(document: EditorDocument) {
 function validatePageReferences(page: Page, sources: Map<string, Source>, assets: Set<string>) {
   const source = sources.get(page.sourceId);
   if (page.sourceId && (!source || page.sourceIndex >= source.pageCount))
-    throw new Error("This project refers to a missing PDF page.");
+    throw failure("errors.projectPageMissing");
   for (const object of page.objects) {
     const error = objectRotationError(object);
-    if (error) throw new Error(error);
+    if (error) throw new MessageError(error);
     if (object.kind === "image" && !assets.has(object.assetId))
-      throw new Error("This project refers to a missing image.");
+      throw failure("errors.projectImageMissing");
   }
   validateCommentReferences(page);
 }
@@ -52,19 +53,19 @@ function validateCommentReferences(page: Page) {
     comment.annotationIndex === null ? [] : [comment.annotationIndex]
   );
   if (new Set(annotations).size !== annotations.length)
-    throw new Error("This project has duplicate annotation references.");
+    throw failure("errors.projectAnnotationsDuplicate");
   validateCommentThreads(page.comments ?? []);
 }
 
 function validateFieldValue(field: NativeField, value: FieldValue) {
   if (field.kind === "checkbox" && typeof value !== "boolean")
-    throw new Error(`The value of ${field.name} must be checked or unchecked.`);
+    throw failure("validation.checkedValue", { name: field.name });
   if ((field.kind === "text" || field.kind === "radio") && typeof value !== "string")
-    throw new Error(`The value of ${field.name} must be text.`);
+    throw failure("validation.textValue", { name: field.name });
   if (
     (field.kind === "list" || field.kind === "dropdown") &&
     typeof value !== "string" &&
     !Array.isArray(value)
   )
-    throw new Error(`The value of ${field.name} must be a choice.`);
+    throw failure("validation.choiceValue", { name: field.name });
 }

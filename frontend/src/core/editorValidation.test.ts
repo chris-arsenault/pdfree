@@ -1,3 +1,4 @@
+import { message } from "../i18n/messages";
 import { describe, expect, it } from "vitest";
 import {
   choiceValues,
@@ -8,17 +9,17 @@ import {
 
 describe("document names", () => {
   it("rejects an empty name before replacing the current document name", () => {
-    expect(documentNameError("")).toBe("Give the document a name.");
+    expect(documentNameError("")).toEqual(message("validation.nameRequired"));
   });
   it("rejects whitespace-only names", () => {
-    expect(documentNameError(" \t ")).toBe("Give the document a name.");
+    expect(documentNameError(" \t ")).toEqual(message("validation.nameRequired"));
   });
   it("accepts a name exactly at the durable limit", () => {
-    expect(documentNameError("a".repeat(255))).toBe("");
+    expect(documentNameError("a".repeat(255))).toBeNull();
   });
   it("reports the name limit in readable language", () => {
-    expect(documentNameError("a".repeat(256))).toBe(
-      "Document names can contain at most 255 characters."
+    expect(documentNameError("a".repeat(256))).toEqual(
+      message("validation.nameLength", { count: 255 })
     );
   });
 });
@@ -63,17 +64,17 @@ describe("choice fields", () => {
     expect(choiceValues([" ", " North "])).toEqual([" ", " North "]);
   });
   it("rejects empty authored options", () => {
-    expect(fieldOptionsError(["East", ""])).toBe("Give each option a value.");
+    expect(fieldOptionsError(["East", ""])).toEqual(message("validation.optionRequired"));
   });
   it("rejects duplicate authored options", () => {
-    expect(fieldOptionsError(["East", "East"])).toBe("Each option must be unique.");
+    expect(fieldOptionsError(["East", "East"])).toEqual(message("validation.optionUnique"));
   });
   it("rejects more options than the project format supports", () => {
-    expect(fieldOptionsError(Array.from({ length: 1001 }, (_, index) => String(index)))).toBe(
-      "Use at most 1000 options."
+    expect(fieldOptionsError(Array.from({ length: 1001 }, (_, index) => String(index)))).toEqual(
+      message("validation.optionLimit", { count: 1000 })
     );
   });
   it("accepts distinct named options", () => {
-    expect(fieldOptionsError(["East", "West"])).toBe("");
+    expect(fieldOptionsError(["East", "West"])).toBeNull();
   });
 });

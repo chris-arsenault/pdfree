@@ -1,3 +1,5 @@
+import { message } from "../i18n/messages";
+import { text as tr } from "../i18n/runtime";
 import { useState, useCallback } from "react";
 import { useEditor } from "../hooks/editorContext";
 import { searchDocument, type NavigationItem } from "../services/navigation";
@@ -15,7 +17,7 @@ export function Navigator() {
     [searched, setSearched] = useState(false);
   const close = useCallback(() => setSearched(false), []);
   const search = () =>
-    editor.task.run("Searching text", async () => {
+    editor.task.run(message("task.searching"), async () => {
       setResults(await searchDocument(editor.document, query));
       setSearched(true);
     });
@@ -30,19 +32,19 @@ export function Navigator() {
         }}
       >
         <label>
-          <span className="sr-only">Find text</span>
+          <span className="sr-only">{tr("navigator.findText")}</span>
           <input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Find text in document"
+            placeholder={tr("navigator.input")}
           />
         </label>
         <IconButton
-          label="Find"
+          label={tr("common.find")}
           icon={Search}
           disabled={!query.trim() || !!editor.task.busy}
-          detail={query.trim() ? "Find text in this document." : "Enter text to search for."}
+          detail={query.trim() ? tr("navigator.hint") : tr("navigator.enter")}
           onClick={search}
         />
       </form>
@@ -59,8 +61,8 @@ export function Navigator() {
 function SearchResults({ results, close }: { results: NavigationItem[]; close: () => void }) {
   const editor = useEditor();
   return (
-    <div className="navigation-results" role="region" aria-label="Search results">
-      <IconButton label="Close results" icon={X} onClick={close} />
+    <div className="navigation-results" role="region" aria-label={tr("navigator.results")}>
+      <IconButton label={tr("navigator.close")} icon={X} onClick={close} />
       {results.length ? (
         results.map((result, index) => (
           <button
@@ -71,13 +73,15 @@ function SearchResults({ results, close }: { results: NavigationItem[]; close: (
             }}
           >
             <strong>
-              Page {editor.document.pages.findIndex((page) => page.id === result.pageId) + 1}
+              {tr("common.pageNumber", {
+                number: editor.document.pages.findIndex((page) => page.id === result.pageId) + 1,
+              })}
             </strong>{" "}
             {result.title}
           </button>
         ))
       ) : (
-        <p>No matching text. Scans need Recognize text before text search.</p>
+        <p>{tr("navigator.noResults")}</p>
       )}
     </div>
   );

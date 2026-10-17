@@ -1,3 +1,4 @@
+import { failure, message } from "../i18n/messages";
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { projectSchema } from "./projectSchema";
 import { type EditorDocument } from "./model";
@@ -31,7 +32,18 @@ export function writeProject(document: EditorDocument) {
   });
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    throw new Error(`Cannot save this editing project: ${issue.path.join(".")} — ${issue.message}`);
+    const known = {
+      "validation.destinationCoordinates": message("validation.destinationCoordinates"),
+      "validation.nameRequired": message("validation.nameRequired"),
+      "validation.encryptedSource": message("validation.encryptedSource"),
+      "validation.projectEncryptionVersion": message("validation.projectEncryptionVersion"),
+      "validation.projectComments": message("validation.projectComments"),
+      "validation.projectUtilities": message("validation.projectUtilities"),
+    };
+    const details = Object.hasOwn(known, issue.message)
+      ? known[issue.message as keyof typeof known]
+      : message("errors.projectInvalidValue");
+    throw failure("errors.projectSave", { path: issue.path.join("."), details: [details] });
   }
   validateProjectReferences(document);
   const manifest = parsed.data;
@@ -68,14 +80,13 @@ function projectFiles(bytes: Uint8Array) {
   });
 }
 function bytesFor(files: Record<string, Uint8Array>, path: string) {
-  if (!files[path]) throw new Error(`This project is missing ${path}.`);
+  if (!files[path]) throw failure("errors.projectFileMissing", { path });
   return files[path];
 }
 export async function readProject(bytes: Uint8Array): Promise<EditorDocument> {
   const files = projectFiles(bytes),
     parsed = projectSchema.safeParse(parseManifest(bytesFor(files, "manifest.json")));
-  if (!parsed.success)
-    throw new Error("This is not a supported PDFree version 1, 2, 3 or 4 project.");
+  if (!parsed.success) throw failure("errors.projectVersion");
   const manifest = parsed.data;
   const refreshed = await refreshSources(
     manifest.sources.map((item) => ({
@@ -107,6 +118,6 @@ function parseManifest(bytes: Uint8Array): unknown {
   try {
     return JSON.parse(strFromU8(bytes));
   } catch {
-    throw new Error("This project's manifest is not valid JSON.");
+    throw failure("errors.projectJson");
   }
 }

@@ -1,8 +1,14 @@
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { fileURLToPath } from "node:url";
 
 // Node release checks use a separate PDF.js reader for downloaded content.
 export async function savedPdfText(bytes: Uint8Array, pageNumber = 1) {
-  const pdf = await getDocument({ data: Uint8Array.from(bytes) }).promise;
+  const pdf = await getDocument({
+    data: Uint8Array.from(bytes),
+    standardFontDataUrl: fileURLToPath(
+      new URL("../node_modules/pdfjs-dist/standard_fonts/", import.meta.url)
+    ),
+  }).promise;
   try {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();

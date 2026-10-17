@@ -1,3 +1,5 @@
+import { en } from "./src/i18n/en";
+import { catalogHtml } from "./tooling/catalogHtml";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -8,13 +10,17 @@ copyPdfAssets();
 export default defineConfig({
   plugins: [
     react(),
+    {
+      name: "pdfree-catalog-html",
+      transformIndexHtml: catalogHtml,
+    },
     VitePWA({
       registerType: "prompt",
       injectRegister: null,
       manifest: {
-        name: "PDFree · Ahara",
+        name: en["page.title"],
         short_name: "PDFree",
-        description: "Fill, sign, and organize PDFs locally.",
+        description: en["page.appDescription"],
         theme_color: "#112c32",
         background_color: "#f4f3ed",
         display: "standalone",

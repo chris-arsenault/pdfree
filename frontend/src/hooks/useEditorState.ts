@@ -1,3 +1,4 @@
+import { message } from "../i18n/messages";
 import { useReducer, useCallback, useContext } from "react";
 import { emptyDocument, type EditorDocument, type PlacedObject } from "../core/model";
 import { historyReducer } from "../core/history";
@@ -44,7 +45,7 @@ export function useEditorState(initialDocument = emptyDocument(), initialDraftId
     [resetUi, resetPinned]
   );
   const importFiles = (files: File[], replaceCurrent = false, insertAfter = false) =>
-    task.run("Opening files", async () => {
+    task.run(message("task.openingFiles"), async () => {
       if (!files.length) return;
       if (sessions && replaceCurrent && document.pages.length) {
         sessions.openFiles(files);
@@ -109,9 +110,9 @@ function allowReplace(
 ) {
   if (!replacing || !pageCount || !unsaved) return Promise.resolve(true);
   return ask({
-    title: "Open a new document?",
-    message: "Download an editing project first if you need to keep these edits.",
-    confirmLabel: "Open document",
+    title: message("confirmation.openNew"),
+    message: message("confirmation.keepEdits"),
+    confirmLabel: message("common.openDocument"),
     tone: "primary",
   });
 }

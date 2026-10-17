@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { get, update, del } from "idb-keyval";
 import { type Asset, type PlacedObject, newId } from "../core/model";
 export type SavedSignature = {
@@ -32,13 +33,13 @@ export async function makeSignature(
     width: 200,
     height: 50,
   };
-  if (mode === "type" && !text.trim()) throw new Error("Type your signature first.");
+  if (mode === "type" && !text.trim()) throw failure("errors.signatureType");
   if (mode === "draw") {
-    if (!canvas) throw new Error("The signature canvas is unavailable.");
+    if (!canvas) throw failure("errors.signatureCanvas");
     asset = await canvasSignature(canvas);
   }
   if (mode === "image") {
-    if (!image) throw new Error("Choose a signature image first.");
+    if (!image) throw failure("errors.signatureChooseImage");
     asset = image;
   }
   if (asset) {
@@ -57,7 +58,7 @@ export async function makeSignature(
 }
 export async function canvasSignature(canvas: HTMLCanvasElement): Promise<Asset> {
   const context = canvas.getContext("2d");
-  if (!context) throw new Error("Drawing is unavailable in this browser.");
+  if (!context) throw failure("errors.drawingUnavailable");
   const image = context.getImageData(0, 0, canvas.width, canvas.height);
   let left = canvas.width,
     top = canvas.height,
@@ -72,7 +73,7 @@ export async function canvasSignature(canvas: HTMLCanvasElement): Promise<Asset>
         bottom = Math.max(bottom, y);
       }
     }
-  if (right < left) throw new Error("Draw your signature first.");
+  if (right < left) throw failure("errors.signatureDraw");
   const trimmed = document.createElement("canvas");
   trimmed.width = right - left + 9;
   trimmed.height = bottom - top + 9;
@@ -91,8 +92,7 @@ export async function canvasSignature(canvas: HTMLCanvasElement): Promise<Asset>
     );
   const blob = await new Promise<Blob>((resolve, reject) =>
     trimmed.toBlob(
-      (value) =>
-        value ? resolve(value) : reject(new Error("Signature image could not be created.")),
+      (value) => (value ? resolve(value) : reject(failure("errors.signatureImage"))),
       "image/png"
     )
   );

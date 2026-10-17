@@ -10,6 +10,7 @@ import sonar from "eslint-plugin-sonarjs";
 import prettier from "eslint-config-prettier";
 import * as ahara from "@ahara/standards/eslint-rules";
 import { type Linter } from "eslint";
+import { findHardcodedCopy } from "./tooling/uiCopyGuard";
 const sonarRules = (sonar.configs?.recommended as { rules: Linter.RulesRecord }).rules;
 
 export default tseslint.config(
@@ -94,5 +95,45 @@ export default tseslint.config(
       "sonarjs/no-hardcoded-passwords": 0,
     },
   },
-  prettier
+  prettier,
+  {
+    // Catalogs describe password controls; they contain no credentials or executable logic.
+    files: ["src/i18n/en*.ts", "src/i18n/catalogs/**/*.ts"],
+    rules: { "sonarjs/no-hardcoded-passwords": 0, "max-lines": "off" },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: [
+      "src/**/*.test.ts",
+      "src/core/fixtures.ts",
+      "src/core/fixtures/**",
+      "src/i18n/en*.ts",
+      "src/i18n/catalogs/**/*.ts",
+    ],
+    plugins: {
+      "pdfree-copy": {
+        rules: {
+          catalog: {
+            meta: { type: "problem", schema: [], messages: { copy: "{{reason}}" } },
+            create: (context) => ({
+              Program: () => {
+                const source = context.sourceCode;
+                findHardcodedCopy(source.text, context.filename).forEach((issue) =>
+                  context.report({
+                    loc: {
+                      start: source.getLocFromIndex(issue.start),
+                      end: source.getLocFromIndex(issue.start + issue.length),
+                    },
+                    messageId: "copy",
+                    data: { reason: issue.reason },
+                  })
+                );
+              },
+            }),
+          },
+        },
+      },
+    },
+    rules: { "pdfree-copy/catalog": "error" },
+  }
 );

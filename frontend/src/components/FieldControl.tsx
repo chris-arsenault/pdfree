@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { type FieldValue, type NativeField } from "../core/model";
 import { choiceValues } from "../core/editorValidation";
 export function FieldControl({
@@ -78,7 +79,7 @@ function ChoiceControl({
         onChange(choiceValues(Array.from(e.target.selectedOptions, (option) => option.value)))
       }
     >
-      {!field.multiSelect && <option value="">Choose…</option>}
+      {!field.multiSelect && <option value="">{tr("common.choose")}</option>}
       {choices.map((option, index) => (
         <option key={`${option.value}:${index}`} value={option.value}>
           {option.label}

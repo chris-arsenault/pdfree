@@ -1,3 +1,5 @@
+import { useMessageState } from "../i18n/react";
+import { message } from "../i18n/messages";
 import { useEffect, useState } from "react";
 import { useEditor } from "./editorContext";
 import { savedSignatures, removeSignature, type SavedSignature } from "../services/signatures";
@@ -5,7 +7,7 @@ import { savedSignatures, removeSignature, type SavedSignature } from "../servic
 export function useSavedSignatures() {
   const editor = useEditor();
   const [saved, setSaved] = useState<SavedSignature[]>([]),
-    [error, setError] = useState("");
+    [error, setError] = useMessageState();
   useEffect(() => {
     let cancelled = false;
     savedSignatures()
@@ -13,12 +15,12 @@ export function useSavedSignatures() {
         if (!cancelled) setSaved(items);
       })
       .catch(() => {
-        if (!cancelled) setError("Saved signatures are unavailable in this browser.");
+        if (!cancelled) setError(message("library.signaturesUnavailable"));
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setError]);
   const use = (signature: SavedSignature) => {
     if (!editor.page) return;
     if (
@@ -31,7 +33,7 @@ export function useSavedSignatures() {
     editor.setDialog("");
   };
   const remove = (id: string) =>
-    editor.task.run("Removing signature", async () => {
+    editor.task.run(message("task.removingSignature"), async () => {
       await removeSignature(id);
       setSaved(await savedSignatures());
     });

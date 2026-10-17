@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import {
   PDFArray,
   PDFDict,
@@ -98,12 +99,12 @@ function writeComment(
   const existing =
     comment.annotationIndex === null ? undefined : originals[comment.annotationIndex];
   if (comment.annotationIndex !== null && !existing)
-    throw new Error("This comment refers to a missing PDF annotation.");
+    throw failure("errors.commentAnnotationMissing");
   if (existing && commentReadOnly(existing.dict) && !comment.readOnly)
-    throw new Error("This PDF comment is read-only.");
+    throw failure("errors.commentReadOnly");
   const item = annotationFor(pdf, output, comment, existing);
   if (!comment.readOnly && annotationType(item.dict) !== "Text")
-    throw new Error("This markup comment cannot be edited.");
+    throw failure("errors.commentMarkup");
   if (!comment.readOnly) {
     writeText(item.dict, comment);
     item.dict.set(name("NM"), PDFHexString.fromText(comment.id));
@@ -132,7 +133,7 @@ function writeReply(comment: PdfComment, live: Map<string, LiveAnnotation>) {
     return;
   }
   const parent = live.get(comment.parentId);
-  if (!parent) throw new Error("This comment refers to a missing reply thread.");
+  if (!parent) throw failure("errors.commentReplyMissing");
   dict.set(name("IRT"), parent.ref);
   dict.set(name("RT"), name("R"));
 }

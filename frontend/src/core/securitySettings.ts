@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import {
   certificateSizeLimit,
   defaultPermissions,
@@ -48,7 +49,7 @@ export async function securityCredentials(settings: SecuritySettings): Promise<P
   if (settings.mode !== "none") {
     const file = settings.certificate;
     if (!file || !file.size || file.size > certificateSizeLimit)
-      throw new Error("Choose a PKCS#12 (.p12/.pfx) certificate no larger than 2 MiB.");
+      throw failure("errors.certificateFile");
     signing = {
       certificate: new Uint8Array(await file.arrayBuffer()),
       password: settings.certificatePassword,
@@ -71,9 +72,7 @@ async function protectionCredentials(
       settings.recipients.length > 32 ||
       settings.recipients.some((file) => !file.size || file.size > certificateSizeLimit)
     )
-      throw new Error(
-        "Choose between 1 and 32 X.509 recipient certificates, each no larger than 2 MiB."
-      );
+      throw failure("errors.recipientX509Count");
     return {
       recipients: await Promise.all(
         settings.recipients.map(async (file) => new Uint8Array(await file.arrayBuffer()))
@@ -86,7 +85,7 @@ async function protectionCredentials(
     (settings.userPassword !== settings.userConfirmation ||
       settings.ownerPassword !== settings.ownerConfirmation)
   )
-    throw new Error("The opening and owner password confirmations must match.");
+    throw failure("errors.passwordConfirmations");
   return settings.protect
     ? {
         userPassword: settings.userPassword,

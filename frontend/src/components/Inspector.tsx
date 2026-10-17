@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { X } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { ImagePicker } from "./ImagePicker";
@@ -18,12 +19,14 @@ export function Inspector() {
   const editor = useEditor();
   const objects = editor.page?.objects.filter((item) => editor.objectIds.includes(item.id)) ?? [];
   const object = objects.length === 1 ? objects[0] : null;
-  let title = object ? tools.find((tool) => tool.id === object.kind)?.label : "Properties";
-  if (objects.length > 1) title = `${objects.length} objects selected`;
+  let title = object
+    ? tools.find((tool) => tool.id === object.kind)?.label
+    : tr("common.properties");
+  if (objects.length > 1) title = tr("objects.selected", { count: objects.length });
   return (
     <SidePanel
       id="properties-panel"
-      label="Object properties"
+      label={tr("inspector.object")}
       className="inspector"
       open={editor.propertiesOpen}
       onClose={() => editor.setPropertiesOpen(false)}
@@ -31,7 +34,7 @@ export function Inspector() {
       <div className="panel-heading">
         <strong>{title}</strong>
         <IconButton
-          label="Hide properties"
+          label={tr("inspector.hide")}
           icon={X}
           onClick={() => editor.setPropertiesOpen(false)}
         />
@@ -52,7 +55,7 @@ function SelectedProperties({ object }: { object: PlacedObject }) {
     <>
       {object.kind === "field" && (
         <fieldset className="property-section">
-          <legend>Fillable field</legend>
+          <legend>{tr("inspector.field")}</legend>
           <FieldProperties object={object} />
           <FieldAppearanceProperties object={object} />
         </fieldset>
@@ -64,12 +67,12 @@ function SelectedProperties({ object }: { object: PlacedObject }) {
       )}
       {object.kind !== "field" && (
         <fieldset className="property-section">
-          <legend>Appearance</legend>
+          <legend>{tr("inspector.appearance")}</legend>
           <AppearanceProperties object={object} />
         </fieldset>
       )}
       <fieldset className="property-section">
-        <legend>Size & rotation</legend>
+        <legend>{tr("inspector.sizeRotation")}</legend>
         <GeometryProperties object={object} />
       </fieldset>
     </>
@@ -79,17 +82,13 @@ function EmptyInspector() {
   const editor = useEditor();
   return (
     <div className="inspector-empty">
-      <p>
-        {editor.tool === "image"
-          ? imageInstructions(editor)
-          : "Select an object to adjust its appearance."}
-      </p>
+      <p>{editor.tool === "image" ? imageInstructions(editor) : tr("inspector.select")}</p>
       {editor.tool === "image" && <ImagePicker />}
     </div>
   );
 }
 function imageInstructions(editor: ReturnType<typeof useEditor>) {
   return hasPlacementAsset(editor.document, editor.pendingObject)
-    ? "Click the page to place your image."
-    : "Choose an image, then click the page to place it.";
+    ? tr("image.place")
+    : tr("image.placeHint");
 }

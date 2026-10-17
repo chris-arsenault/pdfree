@@ -173,8 +173,8 @@ it("runs English OCR from the production offline cache with no external requests
       .getByRole("group", { name: "Scan tools", exact: true })
       .getByRole("button", { name: "Recognize text", exact: true })
       .click();
-    await page.getByRole("button", { name: "Recognize 1 page(s)", exact: true }).click();
-    await page.getByText(/word\(s\) found on 1 page\(s\)/).waitFor();
+    await page.getByRole("button", { name: "Recognize 1 page", exact: true }).click();
+    await page.getByText(/^\d+ words? found on 1 page\./).waitFor();
     expect(await page.locator(".ocr-text").textContent()).toContain("SEARCHABLE");
     await page.getByRole("button", { name: "Show on page", exact: true }).click();
     await page.locator(".recognized-layer.revealed").waitFor();

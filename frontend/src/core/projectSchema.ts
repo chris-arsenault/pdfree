@@ -55,7 +55,7 @@ export const projectSchema = z
       .string()
       .min(1)
       .max(editorLimits.name)
-      .refine((name) => Boolean(name.trim()), "Give the document a name."),
+      .refine((name) => Boolean(name.trim()), "validation.nameRequired"),
     sources: z
       .array(
         z
@@ -77,7 +77,7 @@ export const projectSchema = z
           })
           .refine(
             (source) => !!source.workingPath === !!source.encryption,
-            "Encrypted sources need working bytes and encryption metadata."
+            "validation.encryptedSource"
           )
       )
       .max(1000),
@@ -135,11 +135,11 @@ export const projectSchema = z
   })
   .refine(
     (manifest) => manifest.version >= 2 || manifest.sources.every((source) => !source.workingPath),
-    "Encrypted sources require project version 2 or newer."
+    "validation.projectEncryptionVersion"
   )
   .refine(
     (manifest) => manifest.version < 3 || manifest.pages.every((page) => !!page.comments),
-    "Version 3 projects require comment records."
+    "validation.projectComments"
   )
   .refine(
     (manifest) =>
@@ -150,5 +150,5 @@ export const projectSchema = z
           (page) =>
             page.recognition !== undefined && page.scan !== undefined && page.links !== undefined
         )),
-    "Version 4 projects require explicit utility records."
+    "validation.projectUtilities"
   );

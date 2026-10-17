@@ -1,3 +1,7 @@
+import { renderMessage } from "../i18n/runtime";
+import { formatList, formatNumber } from "../i18n/format";
+import { type UiMessage } from "../i18n/messages";
+import { text as tr } from "../i18n/runtime";
 import { type ReactNode } from "react";
 import { Minus, Plus, RotateCcw, RotateCw } from "lucide-react";
 import {
@@ -31,15 +35,19 @@ export function CleanupCorrections({
 }) {
   const toggle = (key: keyof Corrections) => (on: boolean) => setEnabled({ ...enabled, [key]: on });
   return (
-    <div className="corrections" aria-label={`Corrections found on page ${page}`} role="group">
-      {analysis.blank && <p className="field-note">Page {page} looks blank.</p>}
+    <div
+      className="corrections"
+      aria-label={tr("cleanup.correctionsPage", { number: page })}
+      role="group"
+    >
+      {analysis.blank && <p className="field-note">{tr("cleanup.blankPage", { number: page })}</p>}
       {imageCorrections(analysis, page, values, edit).map((card) => (
         <Correction
           key={card.key}
           title={card.title}
           on={enabled[card.key]}
           toggle={toggle(card.key)}
-          blocked={(card.key === "straighten" ? support?.straighten : support?.image) ?? ""}
+          blocked={(card.key === "straighten" ? support?.straighten : support?.image) ?? null}
           finding={card.finding}
         >
           <Stepper {...card.stepper} />
@@ -64,35 +72,35 @@ function imageCorrections(
   return [
     {
       key: "straighten" as const,
-      title: "Straighten",
+      title: tr("cleanup.straighten"),
       finding: straightFinding(analysis, page),
       stepper: {
-        label: "rotation",
-        display: `${values.angle.toFixed(2)}°`,
-        less: { label: "Rotate clockwise 0.1°", icon: RotateCw },
-        more: { label: "Rotate counter-clockwise 0.1°", icon: RotateCcw },
+        label: tr("cleanup.rotation"),
+        display: `${formatNumber(values.angle, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}°`,
+        less: { label: tr("cleanup.rotateClockwise"), icon: RotateCw },
+        more: { label: tr("cleanup.rotateCounterclockwise"), icon: RotateCcw },
         change: (direction: -1 | 1) =>
           edit({ angle: clamp(round(values.angle + direction * 0.1, 0.05), -10, 10) }),
       },
     },
     {
       key: "background" as const,
-      title: "Whiten paper",
+      title: tr("cleanup.whiten"),
       finding: paperFinding(analysis),
       stepper: {
-        label: "whitening",
-        display: `${values.background}`,
+        label: tr("cleanup.whitening"),
+        display: formatNumber(values.background),
         change: (direction: -1 | 1) =>
           edit({ background: clamp(values.background + direction * 5, 0, 100) }),
       },
     },
     {
       key: "contrast" as const,
-      title: "Darken text",
+      title: tr("cleanup.darken"),
       finding: inkFinding(analysis),
       stepper: {
-        label: "contrast",
-        display: `×${values.contrast.toFixed(2)}`,
+        label: tr("cleanup.contrast"),
+        display: `×${formatNumber(values.contrast, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         change: (direction: -1 | 1) =>
           edit({ contrast: clamp(round(values.contrast + direction * 0.1, 0.05), 0.5, 3) }),
       },
@@ -113,15 +121,15 @@ function TrimCorrection({
 }) {
   return (
     <Correction
-      title="Trim edges"
+      title={tr("cleanup.trim")}
       on={on}
       toggle={toggle}
-      blocked=""
+      blocked={null}
       finding={trimFinding(analysis)}
     >
       <p className="field-note">
-        {hasCrop(crop) ? `Trims ${cropText(crop)}` : "Nothing trimmed."} Drag the page edges in the
-        preview to adjust. Trimming hides content; it does not redact it.
+        {hasCrop(crop) ? tr("cleanup.trims", { sides: cropText(crop) }) : tr("cleanup.noTrim")}{" "}
+        {tr("cleanup.trimHint")}
       </p>
     </Correction>
   );
@@ -138,7 +146,7 @@ function Correction({
   title: string;
   on: boolean;
   toggle: (on: boolean) => void;
-  blocked: string;
+  blocked: UiMessage | null;
   finding: string;
   children: ReactNode;
 }) {
@@ -154,7 +162,9 @@ function Correction({
         />
         <span>{title}</span>
       </label>
-      <p className="correction-finding">{blocked ? `Unavailable: ${blocked}` : finding}</p>
+      <p className="correction-finding">
+        {blocked ? tr("cleanup.unavailableReason", { reason: renderMessage(blocked) }) : finding}
+      </p>
       {on && !blocked && children}
     </div>
   );
@@ -164,8 +174,8 @@ function Stepper({
   label,
   display,
   change,
-  less = { label: `Less ${label}`, icon: Minus },
-  more = { label: `More ${label}`, icon: Plus },
+  less = { label: tr("cleanup.less", { label }), icon: Minus },
+  more = { label: tr("cleanup.more", { label }), icon: Plus },
 }: {
   label: string;
   display: string;
@@ -202,36 +212,40 @@ const percent = (level: number) => Math.round((level / 255) * 100);
 
 function straightFinding(analysis: ScanAnalysis, page: number) {
   if (analysis.angle === null)
-    return analysis.photo
-      ? "Mostly picture content; no text lines to measure tilt."
-      : "No text lines to measure tilt.";
-  if (!analysis.angle) return `Page ${page} is already straight.`;
+    return analysis.photo ? tr("cleanup.photoTilt") : tr("cleanup.noTiltLines");
+  if (!analysis.angle) return tr("cleanup.alreadyStraight", { number: page });
   // A counter-clockwise correction means the scan leans clockwise.
-  const direction = analysis.angle > 0 ? "clockwise" : "counter-clockwise";
-  return `Tilted ${Math.abs(analysis.angle).toFixed(2)}° ${direction}.`;
+  return tr(analysis.angle > 0 ? "cleanup.tiltClockwise" : "cleanup.tiltCounterclockwise", {
+    angle: formatNumber(Math.abs(analysis.angle), {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+  });
 }
 function paperFinding(analysis: ScanAnalysis) {
-  if (analysis.photo) return "Photo or shading found; whitening is left off to keep its tones.";
-  if (!analysis.backgroundAlone) return "Paper is already white.";
-  const paper = `Paper is ${percent(analysis.paper)}% bright`;
-  return analysis.background
-    ? `${paper} with visible grain or tint.`
-    : `${paper}; darkening the text whitens it too.`;
+  if (analysis.photo) return tr("cleanup.photoWhitening");
+  if (!analysis.backgroundAlone) return tr("cleanup.whitePaper");
+  return tr(analysis.background ? "cleanup.paperGrain" : "cleanup.paperDarkening", {
+    percent: percent(analysis.paper),
+  });
 }
 function inkFinding(analysis: ScanAnalysis) {
-  if (analysis.blank) return "No text found.";
-  if (analysis.contrast === 1) return "Text is already dark.";
-  return `Text is faded (${100 - percent(analysis.ink)}% dark).`;
+  if (analysis.blank) return tr("cleanup.noText");
+  if (analysis.contrast === 1) return tr("cleanup.darkText");
+  return tr("cleanup.faded", { percent: 100 - percent(analysis.ink) });
 }
 function trimFinding(analysis: ScanAnalysis) {
-  if (!hasCrop(analysis.crop)) return "No dark scanner edges found.";
+  if (!hasCrop(analysis.crop)) return tr("cleanup.noEdges");
   const sides = (Object.keys(analysis.crop) as (keyof typeof analysis.crop)[]).filter(
     (side) => analysis.crop[side] > 0
   );
-  return `Dark scanner edge along the ${sides.join(", ")} side.`;
+  return tr("cleanup.darkEdges", { sides: formatList(sides.map((side) => tr(`sides.${side}`))) });
 }
 const cropText = (crop: CleanupOptions["crop"]) =>
-  (Object.entries(crop) as [string, number][])
-    .filter(([, value]) => value > 0)
-    .map(([side, value]) => `${side} ${value} pt`)
-    .join(", ") + ".";
+  formatList(
+    (Object.entries(crop) as [keyof typeof crop, number][])
+      .filter(([, value]) => value > 0)
+      .map(([side, value]) =>
+        tr("cleanup.sidePoints", { side: tr(`sides.${side}`), points: value })
+      )
+  );

@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 /**
  * Opt-in offline copy. PDFree registers its service worker only after the user
  * asks for offline access (or installs the app); a plain visit precaches nothing.
@@ -83,7 +84,7 @@ export async function enableOffline(events: OfflineEvents) {
     onRegisterError: (error: unknown) => {
       remember(false);
       events.onRegisterError(error);
-      fail(error ?? new Error("Registration failed."));
+      fail(error ?? failure("errors.offlineRegistration"));
     },
   });
   await Promise.race([navigator.serviceWorker.ready, failed]);

@@ -1,3 +1,5 @@
+import { message } from "../i18n/messages";
+import { text as tr } from "../i18n/runtime";
 import { newId } from "../core/model";
 import { useEditor } from "../hooks/editorContext";
 import { ImagePlus } from "lucide-react";
@@ -6,7 +8,7 @@ export function ImagePicker() {
   const editor = useEditor();
   return (
     <FileButton
-      label="Choose image"
+      label={tr("image.choose")}
       icon={ImagePlus}
       multiple={false}
       disabled={!!editor.task.busy}
@@ -14,7 +16,7 @@ export function ImagePicker() {
       onFiles={(files) => {
         const file = files[0];
         if (!file) return;
-        editor.task.run("Opening image", async () => {
+        editor.task.run(message("task.openingImage"), async () => {
           const bitmap = await createImageBitmap(file);
           const asset = {
             id: newId(),

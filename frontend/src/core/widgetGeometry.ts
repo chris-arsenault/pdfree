@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { displayBox } from "./coordinates";
 import { type Page, type Widget } from "./model";
 
@@ -14,6 +15,6 @@ export function widgetDisplayGeometry(widget: Widget, page: Page) {
     270: { x: bounds.x, y: bounds.y + bounds.height },
   };
   const anchor = anchors[rotation as keyof typeof anchors];
-  if (!anchor) throw new Error("This form widget uses an unsupported rotation.");
+  if (!anchor) throw failure("errors.fieldWidgetRotation");
   return { ...anchor, width, height, rotation };
 }

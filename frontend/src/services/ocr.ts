@@ -1,3 +1,4 @@
+import { failure, message, AbortMessageError, type UiMessage } from "../i18n/messages";
 import { recognitionEngine } from "./ocrClient";
 import { type EditorDocument, type Page, type Recognition } from "../core/model";
 import { viewedPage } from "./viewer";
@@ -17,12 +18,12 @@ export async function recognizePages(
   document: EditorDocument,
   ids: string[],
   signal: AbortSignal,
-  progress: (message: string) => void,
+  progress: (ui: UiMessage) => void,
   { replace }: { replace: boolean } = { replace: false }
 ) {
   let worker: Awaited<ReturnType<typeof recognitionEngine>> | null = null;
   const check = () => {
-    if (signal.aborted) throw new DOMException("Recognition canceled.", "AbortError");
+    if (signal.aborted) throw new AbortMessageError();
   };
   const results = new Map<string, Recognition>(),
     outcomes: RecognitionOutcome[] = [];
@@ -31,7 +32,7 @@ export async function recognizePages(
     for (const [index, id] of ids.entries()) {
       check();
       const page = document.pages.find((page) => page.id === id);
-      if (!page) throw new Error("A selected page no longer exists.");
+      if (!page) throw failure("errors.selectedPageMissing");
       const skipped = await skipStatus(document, page, replace);
       if (skipped) {
         outcomes.push({ pageId: id, status: skipped });
@@ -42,7 +43,7 @@ export async function recognizePages(
         scan: page.scan ? { ...page.scan, angle: 0 } : null,
       });
       try {
-        progress(`Recognizing page ${index + 1} of ${ids.length}`);
+        progress(message("progress.recognizing", { index: index + 1, count: ids.length }));
         worker ??= await recognitionEngine(signal, progress);
         results.set(id, await recognizeImage(view.page, worker, signal));
         outcomes.push({ pageId: id, status: "recognized" });
@@ -79,7 +80,7 @@ async function recognizeImage(
   signal: AbortSignal
 ): Promise<Recognition> {
   const check = () => {
-    if (signal.aborted) throw new DOMException("Recognition canceled.", "AbortError");
+    if (signal.aborted) throw new AbortMessageError();
   };
   // Recognition coordinates are measured against original unrotated PDF
   // coordinates; the durable deskew transform is applied at display/export.
@@ -105,8 +106,7 @@ async function recognizeImage(
     check();
     const blob = await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(
-        (value) =>
-          value ? resolve(value) : reject(new Error("Could not prepare recognition image.")),
+        (value) => (value ? resolve(value) : reject(failure("errors.recognitionImage"))),
         "image/png"
       )
     );

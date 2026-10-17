@@ -35,7 +35,7 @@ it("recovers editable native values and a typed signature from the local draft",
   await page.getByRole("region", { name: "PDF page", exact: true }).click({
     position: { x: 100, y: 130 },
   });
-  await expect.element(page.getByRole("button", { name: "text: Ada", exact: true })).toBeVisible();
+  await expect.element(page.getByRole("button", { name: "Text: Ada", exact: true })).toBeVisible();
   await expect.poll(async () => (await loadDraft())?.document.pages[0].objects[0].text).toBe("Ada");
   root.unmount();
   root = createRoot(host);
@@ -43,7 +43,7 @@ it("recovers editable native values and a typed signature from the local draft",
   await expect
     .element(page.getByRole("textbox", { name: "name", exact: true }))
     .toHaveValue("Draft value");
-  await expect.element(page.getByRole("button", { name: "text: Ada", exact: true })).toBeVisible();
+  await expect.element(page.getByRole("button", { name: "Text: Ada", exact: true })).toBeVisible();
 });
 
 it("opens a local form, renders a page, and navigates without uploading it", async () => {
@@ -69,13 +69,13 @@ it("opens a local form, renders a page, and navigates without uploading it", asy
     .click({ position: { x: 100, y: 100 } });
   await expect.element(page.getByRole("textbox", { name: "Object text" })).toBeVisible();
   await page.getByRole("textbox", { name: "Object text" }).fill("Added text");
-  await page.getByRole("button", { name: "text: Added text" }).click();
+  await page.getByRole("button", { name: "Text: Added text" }).click();
   await userEvent.keyboard("{Delete}");
   await expect
-    .element(page.getByRole("button", { name: "text: Added text" }))
+    .element(page.getByRole("button", { name: "Text: Added text" }))
     .not.toBeInTheDocument();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
-  await expect.element(page.getByRole("button", { name: "text: Added text" })).toBeVisible();
+  await expect.element(page.getByRole("button", { name: "Text: Added text" })).toBeVisible();
   await page.getByRole("button", { name: "Go to page 3" }).click();
   await expect.element(page.getByText("PAGE 3 OF 3")).toBeVisible();
   const canvas = document.querySelector<HTMLCanvasElement>(".page-surface canvas")!;

@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useRef, useSyncExternalStore, type ReactNode } from "react";
 import { useEditor } from "../hooks/editorContext";
 import { useElementSize } from "../hooks/useElementSize";
@@ -21,7 +22,7 @@ export function DocumentWorkspace({ children }: { children: ReactNode }) {
   const narrow = phone || size.width < 640;
   const docked = !!pinned.page && !pinned.view.floating && !narrow;
   return (
-    <main className="workspace" aria-label="Document editor">
+    <main className="workspace" aria-label={tr("document.editor")}>
       <div
         ref={ref}
         className="reference-layout"

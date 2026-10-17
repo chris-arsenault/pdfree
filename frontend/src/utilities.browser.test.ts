@@ -57,7 +57,12 @@ it("recognizes real scan words locally and exports searchable Unicode text witho
   try {
     await expect(
       recognizePages(document, [document.pages[0].id], cancellation.signal, (message) => {
-        if (message.includes("loading tesseract core")) cancellation.abort();
+        if (
+          message.key === "progress.ocrPhase" &&
+          Array.isArray(message.values.phase) &&
+          message.values.phase.some((phase) => phase.key === "progress.ocrEngine")
+        )
+          cancellation.abort();
       })
     ).rejects.toThrow(/canceled/i);
     expect(terminate).toHaveBeenCalled();

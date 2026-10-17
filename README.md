@@ -19,6 +19,10 @@ Recognize English scanned text, clean up supported scans, compress images, edit
 bookmarks and apply numbering, watermarks or stamps. Process multiple PDFs and
 prepare 2/4/6-up print copies. Document tabs keep each file's edits and undo separate.
 
+Choose from 17 interface languages using the flag in the bottom status bar.
+The choice stays in this browser; switching preserves open documents and edits.
+Document translation, additional OCR languages and RTL layout are outside this feature.
+
 See the [user guide](docs/user-guide.md) and
 [signing and protection guide](docs/security.md) for workflows and boundaries.
 

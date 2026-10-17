@@ -1,3 +1,4 @@
+import { failure, message, AbortMessageError, type UiMessage } from "../i18n/messages";
 import { type EditorDocument } from "../core/model";
 import { analyzeScan, pixelLevels, type ScanAnalysis } from "../core/scanAnalysis";
 import { sourcePdf } from "./viewer";
@@ -21,7 +22,7 @@ export async function renderSample(
 ): Promise<ScanSample> {
   const page = document.pages.find((page) => page.id === pageId);
   const source = document.sources.find((source) => source.id === page?.sourceId);
-  if (!page || !source) throw new Error("Inserted blank pages have no scan to analyze.");
+  if (!page || !source) throw failure("errors.scanBlank");
   const original = await (await sourcePdf(source)).getPage(page.sourceIndex + 1);
   const size = original.getViewport({ scale: 1, rotation: 0 });
   const scale = Math.min(2, sampleEdge / Math.max(size.width, size.height));
@@ -38,7 +39,7 @@ export async function renderSample(
     } finally {
       signal.removeEventListener("abort", cancel);
     }
-    if (signal.aborted) throw new DOMException("Analysis canceled.", "AbortError");
+    if (signal.aborted) throw new AbortMessageError();
     const context = canvas.getContext("2d", { willReadFrequently: true })!;
     return {
       pageId,
@@ -62,15 +63,15 @@ export async function analyzePages(
   document: EditorDocument,
   ids: string[],
   signal: AbortSignal,
-  progress: (message: string) => void
+  progress: (ui: UiMessage) => void
 ) {
   const results = new Map<string, ScanAnalysis>();
   for (const [index, id] of ids.entries()) {
-    progress(`Analyzing page ${index + 1} of ${ids.length}`);
+    progress(message("progress.analyzing", { index: index + 1, count: ids.length }));
     results.set(id, analyzeSample(await renderSample(document, id, signal)));
     // Yield between pages so progress and Cancel stay responsive.
     await new Promise((resolve) => setTimeout(resolve));
-    if (signal.aborted) throw new DOMException("Analysis canceled.", "AbortError");
+    if (signal.aborted) throw new AbortMessageError();
   }
   return results;
 }

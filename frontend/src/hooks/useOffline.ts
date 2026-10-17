@@ -1,3 +1,5 @@
+import { message } from "../i18n/messages";
+import { useMessageState } from "../i18n/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   canInstallApp,
@@ -16,7 +18,7 @@ import {
 
 /** "off" is the default: the app loads from the network and nothing is precached. */
 export type OfflineMode = "unsupported" | "off" | "saving" | "on";
-const unavailable = "Offline installation is unavailable in this browser.";
+const unavailable = message("offline.unavailableDescription");
 
 export function useOffline() {
   const [mode, setMode] = useState<OfflineMode>(() => (offlineSupported() ? "off" : "unsupported"));
@@ -24,33 +26,36 @@ export function useOffline() {
   const [stored, setStored] = useState(0);
   const [kept, setKept] = useState(false);
   const [waiting, setWaiting] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useMessageState();
   const [installable, setInstallable] = useState(canInstallApp);
   const update = useRef<(reloadPage?: boolean) => Promise<void>>(async () => {});
-  const enable = useCallback(async (askToKeep: boolean) => {
-    setMode("saving");
-    setError("");
-    const poll = window.setInterval(() => {
-      precachedFiles()
-        .then(setStored)
-        .catch(() => {});
-    }, 500);
-    try {
-      update.current = await enableOffline({
-        onNeedRefresh: () => setWaiting(true),
-        onRegisterError: () => setError(unavailable),
-      });
-      setStored(await precachedFiles());
-      setMode("on");
-      // Firefox asks the user before keeping storage; the copy already works meanwhile.
-      (askToKeep ? keepOfflineCopy() : offlineCopyKept()).then(setKept).catch(() => {});
-    } catch {
-      setError(unavailable);
-      setMode("off");
-    } finally {
-      window.clearInterval(poll);
-    }
-  }, []);
+  const enable = useCallback(
+    async (askToKeep: boolean) => {
+      setMode("saving");
+      setError(null);
+      const poll = window.setInterval(() => {
+        precachedFiles()
+          .then(setStored)
+          .catch(() => {});
+      }, 500);
+      try {
+        update.current = await enableOffline({
+          onNeedRefresh: () => setWaiting(true),
+          onRegisterError: () => setError(unavailable),
+        });
+        setStored(await precachedFiles());
+        setMode("on");
+        // Firefox asks the user before keeping storage; the copy already works meanwhile.
+        (askToKeep ? keepOfflineCopy() : offlineCopyKept()).then(setKept).catch(() => {});
+      } catch {
+        setError(unavailable);
+        setMode("off");
+      } finally {
+        window.clearInterval(poll);
+      }
+    },
+    [setError]
+  );
   useEffect(() => {
     if (!offlineSupported()) return;
     let active = true;
@@ -74,9 +79,7 @@ export function useOffline() {
     error,
     setError,
     installable,
-    enable: () => {
-      enable(true).catch(() => setError(unavailable));
-    },
+    enable: () => enable(true),
     remove: () =>
       removeOffline()
         .then(() => {
@@ -84,7 +87,7 @@ export function useOffline() {
           setStored(0);
           setMode("off");
         })
-        .catch(() => setError("The offline copy could not be removed. Try again.")),
+        .catch(() => setError(message("offline.removeFailed"))),
     install: () => {
       // Installing implies offline use: an installed app must open without a connection.
       installApp()

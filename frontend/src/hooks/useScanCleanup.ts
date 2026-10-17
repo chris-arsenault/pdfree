@@ -4,6 +4,8 @@ import { type ScanSupport } from "../core/scanCleanup";
 import { type ScanAnalysis } from "../core/scanAnalysis";
 import { analyzeSample, renderSample, type ScanSample } from "../services/scanSample";
 import { runPdfWorker } from "../services/workerClient";
+import { errorMessage, type UiMessage } from "../i18n/messages";
+import { useMessages } from "../i18n/react";
 
 export type AnalyzedSample = { sample: ScanSample; analysis: ScanAnalysis };
 
@@ -12,9 +14,10 @@ export type AnalyzedSample = { sample: ScanSample; analysis: ScanAnalysis };
  * dialog's lifetime so applying per-page settings reuses pages already seen.
  */
 export function useSampleAnalysis(pageId: string, cache: Map<string, ScanAnalysis>) {
+  const { renderMessage } = useMessages();
   const editor = useEditor(),
     document = editor.document;
-  const [state, setState] = useState<{ id: string; result?: AnalyzedSample; error?: string }>({
+  const [state, setState] = useState<{ id: string; result?: AnalyzedSample; error?: UiMessage }>({
     id: "",
   });
   useEffect(() => {
@@ -27,14 +30,14 @@ export function useSampleAnalysis(pageId: string, cache: Map<string, ScanAnalysi
         if (!controller.signal.aborted) setState({ id: pageId, result: { sample, analysis } });
       })
       .catch((error: Error) => {
-        if (!controller.signal.aborted) setState({ id: pageId, error: error.message });
+        if (!controller.signal.aborted) setState({ id: pageId, error: errorMessage(error) });
       });
     return () => controller.abort();
   }, [document, pageId, cache]);
   const current = state.id === pageId ? state : { id: pageId };
   return {
     result: current.result,
-    error: current.error ?? "",
+    error: current.error ? renderMessage(current.error) : "",
     loading: !current.result && !current.error,
   };
 }

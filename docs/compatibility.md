@@ -50,6 +50,12 @@ redaction. English OCR adds searchable/selectable invisible text to scans; recog
 accuracy and reading order require review. Pages already containing PDF text are
 skipped. OCR does not provide handwriting guarantees, paragraph editing or PDF/UA.
 
+The 17 interface languages use browser font fallback and do not extend PDF font
+or OCR language coverage. UI language changes preserve document content and
+reading direction; RTL mirroring and vertical layouts remain deferred. New date
+templates use local date order with Latin digits. Stamp templates remain
+`APPROVED` for scripts that the existing PDF font cannot export.
+
 Scan image processing supports a single upright direct image with optional OCR
 text, 8-bit DeviceRGB/DeviceGray, JPEG or plain/Flate samples without masks or
 predictors. Cleanup rejects mixed vector layouts, nested forms, rotated image

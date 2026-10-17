@@ -5,12 +5,13 @@ import { type EditorDocument } from "../core/model";
 import { writeProject, readProject } from "../core/projects";
 import { imagePdf } from "../core/imagePdf";
 import { exportSplitArchive } from "../core/exportBatch";
-import { commentView } from "../core/commentView";
-import { PDFDocument } from "pdf-lib";
 import { applyScan, cleanupPages, scanSupport, type PageCleanup } from "../core/scanCleanup";
 import { compressPdf, type CompressionOptions } from "../core/compressPdf";
 import { type Page, type Asset, emptyDocument } from "../core/model";
+import { errorMessage, message, failure, type UiMessage } from "../i18n/messages";
 import { nupPdf, type NupOptions } from "../core/nupPdf";
+import { commentView } from "../core/commentView";
+import { PDFDocument } from "pdf-lib";
 export type WorkerRequest =
   | { id: string; kind: "import"; bytes: Uint8Array; name: string }
   | {
@@ -46,7 +47,7 @@ export type WorkerRequest =
     };
 
 function processRequest(request: WorkerRequest) {
-  const progress = (message: string) => self.postMessage({ id: request.id, progress: message });
+  const progress = (ui: UiMessage) => self.postMessage({ id: request.id, progress: ui });
   if (request.kind === "import") return importPdf(request.bytes, request.name);
   if (request.kind === "project-save") return writeProject(request.document);
   if (request.kind === "project-open") return readProject(request.bytes);
@@ -64,15 +65,15 @@ function processRequest(request: WorkerRequest) {
     );
   if (request.kind === "export")
     return exportPdf(request.document, request.flatten, request.pageIds, request.fonts);
-  throw new Error("Unknown PDF request.");
+  throw failure("errors.pdfRequest");
 }
-function processUtility(request: WorkerRequest, progress: (message: string) => void) {
+function processUtility(request: WorkerRequest, progress: (ui: UiMessage) => void) {
   if (request.kind === "page-view") return pageView(request);
   if (request.kind === "compress") return compressPdf(request.bytes, request.options, progress);
   if (request.kind === "nup") return nupPdf(request.bytes, request.options);
   if (request.kind === "cleanup") return cleanupPages(request.document, request.pages, progress);
   if (request.kind === "scan-support") return scanSupport(request.document, request.pageIds);
-  throw new Error("Unknown utility request.");
+  throw failure("errors.utilityRequest");
 }
 
 async function pageView(request: Extract<WorkerRequest, { kind: "page-view" }>) {
@@ -93,7 +94,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   } catch (error) {
     self.postMessage({
       id: request.id,
-      error: error instanceof Error ? error.message : "PDF processing failed.",
+      ui: errorMessage(error, message("errors.processing")),
     });
   }
 };

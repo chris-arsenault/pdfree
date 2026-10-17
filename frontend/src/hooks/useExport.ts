@@ -1,5 +1,6 @@
+import { text as tr } from "../i18n/runtime";
+import { message } from "../i18n/messages";
 import { useEditor } from "./editorContext";
-import { runPdfWorker } from "../services/workerClient";
 import { download } from "../services/resources";
 import { filePicker, saveDirect } from "../services/fileSave";
 import { pageImages } from "../services/pageImages";
@@ -7,6 +8,7 @@ import { printPdf } from "../services/print";
 import { type SecuritySettings } from "../core/securitySettings";
 import { useExportPdf, type ExportProcessing } from "./useExportPdf";
 import { hasEncryptedSources } from "../core/model";
+import { runPdfWorker } from "../services/workerClient";
 /** `pageIds` empty exports the whole document; otherwise only those pages in that order. */
 export function useExport(
   name: string,
@@ -19,14 +21,13 @@ export function useExport(
     selected = pageIds.length > 0;
   const pdfBytes = useExportPdf(pageIds, flatten, security, processing);
   const saveProject = () =>
-    editor.task.run("Saving editing project", async () => {
+    editor.task.run(message("task.savingProject"), async () => {
       if (
         hasEncryptedSources(editor.document) &&
         !(await editor.confirmation.ask({
-          title: "Download an unprotected project?",
-          message:
-            "This editing project includes decrypted document content without password protection. Keep the downloaded file private.",
-          confirmLabel: "Download project",
+          title: message("confirmation.unprotectedProject"),
+          message: message("confirmation.unprotectedProjectDescription"),
+          confirmLabel: message("confirmation.downloadProject"),
           tone: "primary",
         }))
       )
@@ -40,11 +41,11 @@ export function useExport(
       editor.setDialog("");
     });
   const direct = () =>
-    editor.task.run("Saving PDF directly", async () => {
+    editor.task.run(message("task.savingPdf"), async () => {
       if (!filePicker) return;
       const handle = await filePicker({
         suggestedName: name,
-        types: [{ description: "PDF document", accept: { "application/pdf": [".pdf"] } }],
+        types: [{ description: tr("export.pdfDocument"), accept: { "application/pdf": [".pdf"] } }],
       });
       await saveDirect(handle, await pdfBytes());
       if (!selected && (!processing.nup || processing.nup.count === 1))
@@ -52,7 +53,7 @@ export function useExport(
       editor.setDialog("");
     });
   const images = () =>
-    editor.task.run("Exporting page images", async () => {
+    editor.task.run(message("task.exportingImages"), async () => {
       download(
         await pageImages(editor.document, pageIds),
         `${name.replace(/\.pdf$/i, "")}-images.zip`,
@@ -60,18 +61,21 @@ export function useExport(
       );
     });
   const exportFile = (print = false) =>
-    editor.task.run(print ? "Preparing print" : "Exporting PDF", async () => {
-      const bytes = await pdfBytes(!print);
-      if (print) printPdf(bytes);
-      else
-        download(
-          bytes,
-          name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`,
-          "application/pdf"
-        );
-      if (!selected && !print && (!processing.nup || processing.nup.count === 1))
-        editor.setSavedRevision(editor.history.revision);
-      editor.setDialog("");
-    });
+    editor.task.run(
+      print ? message("task.preparingPrint") : message("task.exportingPdf"),
+      async () => {
+        const bytes = await pdfBytes(!print);
+        if (print) printPdf(bytes);
+        else
+          download(
+            bytes,
+            name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`,
+            "application/pdf"
+          );
+        if (!selected && !print && (!processing.nup || processing.nup.count === 1))
+          editor.setSavedRevision(editor.history.revision);
+        editor.setDialog("");
+      }
+    );
   return { saveProject, direct, images, exportFile };
 }

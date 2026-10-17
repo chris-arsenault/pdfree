@@ -1,9 +1,10 @@
+import { failure } from "../i18n/messages";
 import { defaultObject, type Page } from "./model";
 import { toPdf } from "./coordinates";
 export function selectedHighlights(surface: HTMLElement, page: Page, zoom: number) {
   const selection = window.getSelection();
   if (!selection?.rangeCount || !selection.anchorNode || !surface.contains(selection.anchorNode))
-    throw new Error("Select text on the PDF page first.");
+    throw failure("errors.selectText");
   const bounds = surface.getBoundingClientRect(),
     rects = [...selection.getRangeAt(0).getClientRects()];
   const objects = rects

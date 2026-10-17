@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useRef, type RefObject, type PointerEvent } from "react";
 export function SignatureCanvas({ canvasRef }: { canvasRef: RefObject<HTMLCanvasElement | null> }) {
   const drawing = useRef(false);
@@ -34,7 +35,7 @@ export function SignatureCanvas({ canvasRef }: { canvasRef: RefObject<HTMLCanvas
         ref={canvasRef}
         width="640"
         height="200"
-        aria-label="Draw your signature"
+        aria-label={tr("signature.draw")}
         onPointerDown={start}
         onPointerMove={move}
         onPointerUp={() => {
@@ -44,12 +45,12 @@ export function SignatureCanvas({ canvasRef }: { canvasRef: RefObject<HTMLCanvas
           drawing.current = false;
         }}
       />
-      <span>Sign above</span>
+      <span>{tr("signature.above")}</span>
       <button
         className="text-button"
         onClick={() => canvasRef.current?.getContext("2d")?.clearRect(0, 0, 640, 200)}
       >
-        Clear
+        {tr("common.clear")}
       </button>
     </div>
   );

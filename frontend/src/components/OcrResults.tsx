@@ -1,3 +1,7 @@
+import { useMessageState } from "../i18n/react";
+import { message } from "../i18n/messages";
+import { formatList, formatNumber } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
 import { useState } from "react";
 import { Copy, Eye, Trash2 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
@@ -7,7 +11,7 @@ import {
   recognizedLines,
   recognizedText,
   uncertainConfidence,
-} from "../core/recognition";
+} from "../core/recognitionModel";
 import { recognizable, type PageContent } from "../services/pageContent";
 import { type RecognitionOutcome } from "../services/ocr";
 
@@ -62,7 +66,7 @@ export function OcrResults({
       <ResultsHeadline rows={rows} recognizeMore={recognizeMore} />
       {recognized.length > 0 && (
         <div className="ocr-results">
-          <ul className="ocr-pages" aria-label="Recognized pages">
+          <ul className="ocr-pages" aria-label={tr("ocr.pages")}>
             {recognized.map((row) => (
               <ResultRow
                 key={row.page.id}
@@ -84,18 +88,18 @@ export function OcrResults({
         {recognized.length > 0 && (
           <>
             <button className="button secondary" onClick={actions.remove}>
-              <Trash2 size={16} aria-hidden="true" /> Remove text
+              <Trash2 size={16} aria-hidden="true" /> {tr("ocr.remove")}
             </button>
             <button className="button secondary" onClick={actions.copy}>
-              <Copy size={16} aria-hidden="true" /> Copy text
+              <Copy size={16} aria-hidden="true" /> {tr("ocr.copy")}
             </button>
             <button className="button secondary" onClick={actions.show}>
-              <Eye size={16} aria-hidden="true" /> Show on page
+              <Eye size={16} aria-hidden="true" /> {tr("ocr.show")}
             </button>
           </>
         )}
         <button className="button primary" onClick={close}>
-          Done
+          {tr("common.done")}
         </button>
       </div>
     </>
@@ -104,15 +108,18 @@ export function OcrResults({
 
 function useResultActions(recognized: OcrRow[], selected: OcrRow | undefined, close: () => void) {
   const editor = useEditor();
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useMessageState();
   const copy = () => {
     const text = recognized
-      .map((row) => `Page ${row.number}\n${recognizedText(row.recognition!)}`)
+      .map(
+        (row) =>
+          `${tr("common.pageNumber", { number: row.number })}\n${recognizedText(row.recognition!)}`
+      )
       .join("\n\n");
     navigator.clipboard
       .writeText(text)
-      .then(() => setNotice(`Copied text from ${recognized.length} page(s).`))
-      .catch(() => setNotice("This browser blocked copying. Select the text above instead."));
+      .then(() => setNotice(message("ocr.copied", { count: recognized.length })))
+      .catch(() => setNotice(message("ocr.copyBlocked")));
   };
   const show = () => {
     editor.setShowRecognition(true);
@@ -127,7 +134,7 @@ function useResultActions(recognized: OcrRow[], selected: OcrRow | undefined, cl
         ids.has(page.id) ? { ...page, recognition: null } : page
       ),
     });
-    setNotice(`Removed recognized text from ${ids.size} page(s). Undo restores it.`);
+    setNotice(message("ocr.removed", { count: ids.size }));
   };
   return { notice, copy, show, remove };
 }
@@ -145,25 +152,28 @@ function ResultsHeadline({ rows, recognizeMore }: { rows: OcrRow[]; recognizeMor
       {recognized.length ? (
         <p>
           <strong>
-            {words.toLocaleString()} word(s) found on {recognized.length} page(s).
+            {tr("ocr.wordTotal", {
+              words: tr("ocr.words", { count: words }),
+              count: recognized.length,
+            })}
           </strong>{" "}
-          {fresh > 0 && `${fresh} page(s) recognized just now. `}
-          Text is searchable and selectable, and is saved in exported PDFs.
+          {fresh > 0 && tr("ocr.fresh", { count: fresh })} {tr("ocr.savedHint")}
         </p>
       ) : (
-        <p>No page in this selection has recognized text yet.</p>
+        <p>{tr("ocr.noneYet")}</p>
       )}
       {empty.length > 0 && (
         <p className="inline-warning">
-          No text found on page {empty.map((row) => row.number).join(", ")}. The scan may be blank,
-          a photograph, or too faint; Clean up scan can darken faint text before recognizing again.
+          {tr("ocr.emptyPages", {
+            pages: formatList(empty.map((row) => formatNumber(row.number))),
+          })}
         </p>
       )}
       {pending > 0 && (
         <p className="ocr-pending">
-          {pending} scanned page(s) not recognized yet.
+          {tr("ocr.pending", { count: pending })}
           <button className="button secondary" onClick={recognizeMore}>
-            Recognize…
+            {tr("ocr.more")}
           </button>
         </p>
       )}
@@ -187,19 +197,23 @@ function ResultRow({
   return (
     <li>
       <button aria-pressed={selected} onClick={select}>
-        <span className="ocr-page">Page {row.number}</span>
+        <span className="ocr-page">{tr("common.pageNumber", { number: row.number })}</span>
         {summary.words ? (
           <>
-            <span>{summary.words} words</span>
-            <span className={`confidence ${quality}`}>{summary.confidence}% confident</span>
+            <span>{tr("ocr.words", { count: summary.words })}</span>
+            <span className={`confidence ${quality}`}>
+              {tr("ocr.confidence", { percent: summary.confidence })}
+            </span>
             {summary.uncertain > 0 && (
-              <span className="uncertain">{summary.uncertain} to check</span>
+              <span className="uncertain">
+                {tr("ocr.checkWords", { count: summary.uncertain })}
+              </span>
             )}
           </>
         ) : (
-          <span className="confidence poor">No text found</span>
+          <span className="confidence poor">{tr("ocr.noText")}</span>
         )}
-        {row.fresh && <span className="fresh">New</span>}
+        {row.fresh && <span className="fresh">{tr("common.new")}</span>}
       </button>
     </li>
   );
@@ -209,13 +223,16 @@ function ResultRow({
 function RecognizedText({ row }: { row: OcrRow }) {
   const lines = recognizedLines(row.recognition!);
   return (
-    <section className="ocr-text" aria-label={`Recognized text on page ${row.number}`}>
+    <section className="ocr-text" aria-label={tr("ocr.pageText", { number: row.number })}>
       {lines.length ? (
         lines.map((line, index) => (
           <p key={index}>
             {line.map((word, position) =>
               word.confidence < uncertainConfidence ? (
-                <mark key={position} title={`${Math.round(word.confidence)}% confident`}>
+                <mark
+                  key={position}
+                  title={tr("ocr.confidence", { percent: Math.round(word.confidence) })}
+                >
                   {word.text}{" "}
                 </mark>
               ) : (
@@ -225,7 +242,7 @@ function RecognizedText({ row }: { row: OcrRow }) {
           </p>
         ))
       ) : (
-        <p className="field-note">Recognition found no words on this page.</p>
+        <p className="field-note">{tr("ocr.emptyPage")}</p>
       )}
     </section>
   );

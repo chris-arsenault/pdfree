@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 export type Certification = 0 | 1 | 2 | 3;
 export type PdfPermissions = {
   print: boolean;
@@ -44,20 +45,16 @@ function validateProtection(protection: PdfProtection) {
         (certificate) => !certificate.length || certificate.length > certificateSizeLimit
       )
     )
-      throw new Error("Choose between 1 and 32 recipient certificates, each no larger than 2 MiB.");
+      throw failure("errors.recipientCount");
     validatePermissions(protection.permissions);
     return;
   }
-  if (!protection.ownerPassword)
-    throw new Error("Enter an owner password to control PDF permissions.");
+  if (!protection.ownerPassword) throw failure("errors.ownerPasswordRequired");
   if (protection.userPassword === protection.ownerPassword)
-    throw new Error(
-      "Use different opening and owner passwords; the owner password bypasses restrictions."
-    );
+    throw failure("errors.passwordsDifferent");
   for (const password of [protection.userPassword, protection.ownerPassword]) {
-    if (new TextEncoder().encode(password).length > 127)
-      throw new Error("PDF passwords must be no longer than 127 UTF-8 bytes.");
-    if (password.includes("\0")) throw new Error("PDF passwords cannot contain a null character.");
+    if (new TextEncoder().encode(password).length > 127) throw failure("errors.passwordByteLimit");
+    if (password.includes("\0")) throw failure("errors.passwordNull");
   }
   validatePermissions(protection.permissions);
 }
@@ -67,7 +64,7 @@ function validatePermissions(permissions: PdfPermissions) {
       (key) => typeof permissions[key as keyof PdfPermissions] !== "boolean"
     )
   )
-    throw new Error("Choose valid PDF permissions.");
+    throw failure("errors.permissions");
 }
 
 export function validatePdfSecurity(security: PdfSecurity) {
@@ -75,11 +72,9 @@ export function validatePdfSecurity(security: PdfSecurity) {
   const signing = security.signing;
   if (!signing) return;
   if (!signing.certificate.length || signing.certificate.length > certificateSizeLimit)
-    throw new Error("Choose a PKCS#12 (.p12/.pfx) certificate no larger than 2 MiB.");
-  if (![0, 1, 2, 3].includes(signing.certification))
-    throw new Error("Choose a valid PDF certification policy.");
+    throw failure("errors.certificateFile");
+  if (![0, 1, 2, 3].includes(signing.certification)) throw failure("errors.certificationPolicy");
   if (signing.reason.length > 1024 || signing.location.length > 1024)
-    throw new Error("Signing reason and location must be no longer than 1024 characters.");
-  if (signing.password.length > 1024)
-    throw new Error("Certificate passwords must be no longer than 1024 characters.");
+    throw failure("errors.signingMetadataLength");
+  if (signing.password.length > 1024) throw failure("errors.certificatePasswordLength");
 }

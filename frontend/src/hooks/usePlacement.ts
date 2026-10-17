@@ -1,3 +1,6 @@
+import { formatDocumentDate } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
+import { message } from "../i18n/messages";
 import { useRef, useState, type PointerEvent } from "react";
 import { useEditor } from "./editorContext";
 import { pagePoint } from "../core/coordinates";
@@ -63,7 +66,7 @@ export function usePlacement() {
       return;
     }
     if (editor.tool === "image" && !hasPlacementAsset(editor.document, editor.pendingObject)) {
-      editor.task.notify("Choose an image in the properties panel first.");
+      editor.task.notify(message("placement.chooseImage"));
       return;
     }
     const point = pagePoint(event, event.currentTarget, editor.page, editor.zoom);
@@ -121,7 +124,8 @@ function placementObject(tool: Tool, point: Point, pending: Partial<PlacedObject
   const kind = ["date", "signature", "initials"].includes(tool) ? "text" : tool;
   const object = { ...defaultObject(kind as PlacedObject["kind"], point), ...pending };
   object.y -= object.height;
-  if (tool === "date") object.text = new Date().toLocaleDateString();
+  if (tool === "date") object.text = formatDocumentDate(new Date());
+  if (tool === "stamp" && !pending.text) object.text = tr("defaults.stamp");
   if (tool === "check" || tool === "cross") {
     object.width = 20;
     object.height = 20;

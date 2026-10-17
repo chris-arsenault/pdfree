@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useEffect, useRef } from "react";
 import { type PlacedObject, type Asset } from "../core/model";
 
@@ -9,7 +10,7 @@ export function ObjectImage({ asset }: { asset: Asset | null }) {
     if (ref.current) ref.current.src = next;
     return () => URL.revokeObjectURL(next);
   }, [asset]);
-  return <img ref={ref} alt={asset?.name ?? "Image"} draggable={false} />;
+  return <img ref={ref} alt={asset?.name ?? tr("common.image")} draggable={false} />;
 }
 export function ObjectAppearance({ object, assets }: { object: PlacedObject; assets: Asset[] }) {
   if (object.kind === "image")
@@ -17,11 +18,11 @@ export function ObjectAppearance({ object, assets }: { object: PlacedObject; ass
   if (object.kind === "text" || object.kind === "stamp")
     return (
       <span className={`object-text ${object.font === "signature" ? "signature-font" : ""}`}>
-        {object.text || "Type your text"}
+        {object.text || tr("objects.textPlaceholder")}
       </span>
     );
   if (object.kind === "field")
-    return <span className="field-preview">{object.fieldName || "New field"}</span>;
+    return <span className="field-preview">{object.fieldName || tr("objects.newField")}</span>;
   return <ShapeAppearance object={object} />;
 }
 function shapePath(object: PlacedObject) {

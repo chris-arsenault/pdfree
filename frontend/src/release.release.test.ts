@@ -170,7 +170,7 @@ it("supports a touch-sized workspace, drawn signatures, splitting and project do
   await page.getByRole("button", { name: "Pages", exact: true }).tap();
   await page.getByRole("button", { name: "More", exact: true }).tap();
   await page.getByRole("button", { name: "Split", exact: true }).click();
-  expect(await page.locator(".split-preview li").count()).toBe(2);
+  await expect.poll(() => page.locator(".split-preview li").count()).toBe(2);
   const single = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download local-01.pdf", exact: true }).click();
   expect((await PDFDocument.load(await downloadBytes(await single))).getPageCount()).toBe(1);

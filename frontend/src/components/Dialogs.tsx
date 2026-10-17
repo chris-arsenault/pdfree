@@ -1,55 +1,66 @@
+import { text as tr } from "../i18n/runtime";
 import { useEditor } from "../hooks/editorContext";
 import { useCloseDialog } from "../hooks/useCloseDialog";
-import { SignatureDialog } from "./SignatureDialog";
-import { ExportDialog } from "./ExportDialog";
 import { Modal } from "./Modal";
-import { DocumentDialog } from "./DocumentDialog";
-import { PdfPasswordDialog } from "./PdfPasswordDialog";
-import { OcrDialog } from "./OcrDialog";
-import { CleanupDialog } from "./CleanupDialog";
-import { RepeatedDialog } from "./RepeatedDialog";
-import { BatchDialog } from "./BatchDialog";
-import { LibraryDialog } from "./LibraryDialog";
-import { type ComponentType } from "react";
 import { type DialogName } from "../hooks/useEditorUi";
+import { lazy, type ComponentType } from "react";
+import { DeferredView } from "./DeferredView";
+const signature = lazy(() =>
+  import("./SignatureDialog").then((module) => ({ default: module.SignatureDialog }))
+);
+const Password = lazy(() =>
+  import("./PdfPasswordDialog").then((module) => ({ default: module.PdfPasswordDialog }))
+);
 const components: Partial<Record<DialogName, ComponentType>> = {
-  signature: SignatureDialog,
-  initials: SignatureDialog,
-  export: ExportDialog,
-  ocr: OcrDialog,
-  cleanup: CleanupDialog,
-  repeat: RepeatedDialog,
-  batch: BatchDialog,
-  properties: DocumentDialog,
-  library: LibraryDialog,
-  help: HelpDialog,
+  signature,
+  initials: signature,
+  export: lazy(() => import("./ExportDialog").then((module) => ({ default: module.ExportDialog }))),
+  ocr: lazy(() => import("./OcrDialog").then((module) => ({ default: module.OcrDialog }))),
+  cleanup: lazy(() =>
+    import("./CleanupDialog").then((module) => ({ default: module.CleanupDialog }))
+  ),
+  repeat: lazy(() =>
+    import("./RepeatedDialog").then((module) => ({ default: module.RepeatedDialog }))
+  ),
+  batch: lazy(() => import("./BatchDialog").then((module) => ({ default: module.BatchDialog }))),
+  properties: lazy(() =>
+    import("./DocumentDialog").then((module) => ({ default: module.DocumentDialog }))
+  ),
+  library: lazy(() =>
+    import("./LibraryDialog").then((module) => ({ default: module.LibraryDialog }))
+  ),
 };
 export function Dialogs() {
   const editor = useEditor();
-  if (editor.password.request) return <PdfPasswordDialog />;
+  const close = useCloseDialog();
+  if (editor.password.request)
+    return (
+      <DeferredView key="password" onClose={editor.password.cancel}>
+        <Password />
+      </DeferredView>
+    );
+  if (editor.dialog === "help") return <HelpDialog />;
   const Dialog = components[editor.dialog];
-  return Dialog ? <Dialog /> : null;
+  return Dialog ? (
+    <DeferredView key={editor.dialog} onClose={close}>
+      <Dialog />
+    </DeferredView>
+  ) : null;
 }
 function HelpDialog() {
   const close = useCloseDialog();
   return (
-    <Modal title="A little help" onClose={close}>
-      <p className="modal-description">
-        Click existing form fields to fill them. For scans, choose Text and click the page. Drag
-        objects to move them; use the corner to resize.
-      </p>
+    <Modal title={tr("help.title")} onClose={close}>
+      <p className="modal-description">{tr("help.introduction")}</p>
       <ul className="help-list">
-        <li>Ctrl/⌘ Z: undo · Ctrl/⌘ Shift Z: redo</li>
-        <li>Shift-click: select multiple objects</li>
-        <li>Arrow keys: nudge selected objects · Shift: larger steps</li>
-        <li>Ctrl/⌘ C and V: copy and paste objects</li>
-        <li>Delete: remove selected objects</li>
-        <li>Rotation and splitting use physical page numbers.</li>
+        <li>{tr("help.undo")}</li>
+        <li>{tr("help.multiSelect")}</li>
+        <li>{tr("help.nudge")}</li>
+        <li>{tr("help.clipboard")}</li>
+        <li>{tr("help.delete")}</li>
+        <li>{tr("help.pageNumbers")}</li>
       </ul>
-      <p className="field-note">
-        Signatures are visible marks. Covering text with a shape does not securely redact it. PDF
-        JavaScript is not executed.
-      </p>
+      <p className="field-note">{tr("help.safety")}</p>
     </Modal>
   );
 }

@@ -114,7 +114,7 @@ it("previews, uses and individually removes signatures without removing placed m
     .getByRole("region", { name: "PDF page", exact: true })
     .click({ position: { x: 100, y: 100 } });
   await expect
-    .element(page.getByRole("button", { name: "text: Alice", exact: true }))
+    .element(page.getByRole("button", { name: "Text: Alice", exact: true }))
     .toBeVisible();
   await openLibrary();
   await page.getByRole("button", { name: "Delete signature Alice", exact: true }).click();
@@ -128,9 +128,9 @@ it("previews, uses and individually removes signatures without removing placed m
     .getByRole("region", { name: "PDF page", exact: true })
     .click({ position: { x: 100, y: 200 } });
   await expect
-    .element(page.getByRole("button", { name: "image: object", exact: true }))
+    .element(page.getByRole("button", { name: "Image: object", exact: true }))
     .toBeVisible();
   await expect
-    .element(page.getByRole("button", { name: "text: Alice", exact: true }))
+    .element(page.getByRole("button", { name: "Text: Alice", exact: true }))
     .toBeVisible();
 });

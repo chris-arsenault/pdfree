@@ -1,3 +1,5 @@
+import { formatDate } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
 import {
   FileUp,
   ShieldCheck,
@@ -17,25 +19,26 @@ export function EmptyWorkspace() {
   return (
     <section className="empty-workspace">
       <EditorNotifications />
-      <div className="intro-label">A LITTLE LESS PAPERWORK</div>
+      <div className="intro-label">{tr("welcome.eyebrow")}</div>
       <h1>
-        Your paperwork.
+        {tr("welcome.heading")}
         <br />
-        <span>Without the paper.</span>
+        <span>{tr("welcome.headingSecond")}</span>
       </h1>
       <p className="intro-copy">
-        Fill a form, add your signature, and get on with your day.
+        {tr("welcome.description")}
         <br />
-        Everything happens right here, on your device.
+        {tr("welcome.local")}
       </p>
       <label className="drop-card">
         <div className="upload-icon">
           <FileUp size={30} />
         </div>
-        <strong>Drop your PDF here</strong>
-        <span>or choose a file to get started</span>
+        <strong>{tr("welcome.drop")}</strong>
+        <span>{tr("welcome.choose")}</span>
         <span className="button primary">
-          Open a PDF <ArrowRight size={17} />
+          {tr("welcome.open")}
+          <ArrowRight size={17} />
         </span>
         <input
           className="visually-hidden"
@@ -49,16 +52,16 @@ export function EmptyWorkspace() {
       <SavedWork />
       <div className="intro-features">
         <span>
-          <PenLine size={18} /> Fill & sign
+          <PenLine size={18} /> {tr("welcome.fillSign")}
         </span>
         <span>
-          <Layers size={18} /> Organize pages
+          <Layers size={18} /> {tr("welcome.organize")}
         </span>
         <span>
-          <ShieldCheck size={18} /> Files stay on your device
+          <ShieldCheck size={18} /> {tr("welcome.filesLocal")}
         </span>
       </div>
-      <div className="privacy-note">No uploads. No account. No watermarks.</div>
+      <div className="privacy-note">{tr("welcome.privacy")}</div>
     </section>
   );
 }
@@ -72,27 +75,34 @@ function SavedWork() {
   return (
     <div className="saved-work">
       {recovery && (
-        <section className="recent-document" aria-label="Saved document">
+        <section className="recent-document" aria-label={tr("welcome.savedDocument")}>
           <FileClock size={20} aria-hidden="true" />
           <span>
             <strong>{recovery.document.name}</strong>
-            <small>Saved {new Date(recovery.savedAt).toLocaleString()}</small>
+            <small>
+              {tr("draft.savedAt", {
+                date: formatDate(new Date(recovery.savedAt), {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }),
+              })}
+            </small>
           </span>
           <button
             className="button secondary"
             disabled={busy}
             onClick={() => draft.restore(recovery)}
           >
-            Recover draft
+            {tr("welcome.recover")}
           </button>
         </section>
       )}
       <div className="saved-work-links">
         <button className="text-button" disabled={busy} onClick={() => editor.setDialog("library")}>
-          <Library size={15} aria-hidden="true" /> Saved documents
+          <Library size={15} aria-hidden="true" /> {tr("welcome.savedDocuments")}
         </button>
         <button className="text-button" disabled={busy} onClick={() => editor.setDialog("batch")}>
-          <Files size={15} aria-hidden="true" /> Process multiple PDFs
+          <Files size={15} aria-hidden="true" /> {tr("batch.title")}
         </button>
       </div>
     </div>

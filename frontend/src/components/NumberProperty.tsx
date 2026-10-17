@@ -1,3 +1,7 @@
+import { type UiMessage, errorMessage } from "../i18n/messages";
+import { renderMessage } from "../i18n/runtime";
+import { text as tr } from "../i18n/runtime";
+import { useMessageState } from "../i18n/react";
 import { useId, useState } from "react";
 import { propertyNumber } from "../core/editorValidation";
 import { type PlacedObject } from "../core/model";
@@ -12,7 +16,7 @@ export function NumberProperty({
   field,
   onChange,
 }: {
-  label: string;
+  label: UiMessage;
   value: number;
   minimum: number;
   maximum: number;
@@ -23,23 +27,23 @@ export function NumberProperty({
   const id = useId();
   const [raw, setRaw] = useState(String(value));
   const [editing, setEditing] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useMessageState();
   const change = (next: string) => {
     setRaw(next);
     try {
       const number = propertyNumber(next, label, minimum, maximum);
-      setError("");
+      setError(null);
       onChange({ [field]: number });
     } catch (error) {
-      setError((error as Error).message);
+      setError(errorMessage(error));
     }
   };
   return (
     <label>
-      {label}
+      {renderMessage(label)}
       <input
         type="number"
-        aria-label={label}
+        aria-label={renderMessage(label)}
         min={minimum}
         max={maximum}
         step={step}
@@ -53,7 +57,11 @@ export function NumberProperty({
         onBlur={() => setEditing(false)}
         onChange={(event) => change(event.target.value)}
       />
-      {error && <span id={id}>{error} The previous value is retained.</span>}
+      {error && (
+        <span id={id}>
+          {error} {tr("number.retained")}
+        </span>
+      )}
     </label>
   );
 }

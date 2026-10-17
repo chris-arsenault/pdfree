@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { type PdfCredential } from "../core/pdfCredentials";
+import { type UiMessage } from "../i18n/messages";
 
 export function usePdfPassword() {
   const [request, setRequest] = useState<{
     name: string;
-    message: string;
+    message: UiMessage;
     kind: "password" | "recipient";
   } | null>(null);
   const pending = useRef<((credential: PdfCredential | null) => void) | null>(null);
@@ -16,7 +17,7 @@ export function usePdfPassword() {
     },
     []
   );
-  const ask = (name: string, message: string, kind: "password" | "recipient") =>
+  const ask = (name: string, message: UiMessage, kind: "password" | "recipient") =>
     new Promise<PdfCredential | null>((resolve) => {
       pending.current = resolve;
       setRequest({ name, message, kind });

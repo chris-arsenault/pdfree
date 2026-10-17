@@ -1,3 +1,4 @@
+import { useMessageState } from "../i18n/react";
 import { useState } from "react";
 import { useEditor } from "./editorContext";
 import { useProcessing } from "./useProcessing";
@@ -18,6 +19,7 @@ import { type EditorDocument } from "../core/model";
 import { type PageCleanup, type ScanSupport } from "../core/scanCleanup";
 import { analyzePages } from "../services/scanSample";
 import { runProcessingWorker } from "../services/workerClient";
+import { message, type UiMessage } from "../i18n/messages";
 
 const allCorrections: Corrections = {
   straighten: true,
@@ -25,7 +27,7 @@ const allCorrections: Corrections = {
   background: true,
   trim: true,
 };
-const supported = { image: "", straighten: "" };
+const supported = { image: null, straighten: null };
 
 /** Settings for one page: its own analysis, or the shared settings when the user chose them. */
 function pageOptions(
@@ -37,7 +39,7 @@ function pageOptions(
   let options = noCleanup;
   if (shared) options = enabledOptions(shared, enabled);
   else if (analysis) options = analyzedOptions(analysis, enabled);
-  return supportedOptions(options, support);
+  return supportedOptions(options, { image: !!support.image, straighten: !!support.straighten });
 }
 
 /**
@@ -61,12 +63,12 @@ export function useCleanupState() {
   const { support, ready } = useScanSupport(ids);
   const [enabled, updateEnabled] = useState(allCorrections);
   const [shared, setShared] = useState<CleanupOptions | null>(null);
-  const [done, setDone] = useState("");
+  const [done, setDone] = useMessageState();
   const analysis = sample.result?.analysis;
   const edit = (patch: Partial<CleanupOptions>) => {
     if (!analysis) return;
     setShared({ ...(shared ?? recommendedOptions(analysis)), ...patch });
-    setDone("");
+    setDone(null);
   };
   const apply = (requests: () => PageCleanup[], analyze: boolean) =>
     task.run(
@@ -92,7 +94,7 @@ export function useCleanupState() {
     enabled,
     setEnabled: (next: Corrections) => {
       updateEnabled(next);
-      setDone("");
+      setDone(null);
     },
     shared,
     shareSettings: (on: boolean) => setShared(on && analysis ? recommendedOptions(analysis) : null),
@@ -121,7 +123,7 @@ async function runCleanup(
   cache: Map<string, ScanAnalysis>,
   requests: () => PageCleanup[],
   signal: AbortSignal,
-  progress: (message: string) => void
+  progress: (ui: UiMessage) => void
 ) {
   const missing = analyze.filter((id) => !cache.has(id));
   const found = await analyzePages(document, missing, signal, progress);
@@ -137,19 +139,19 @@ async function runCleanup(
 
 function summaryText(pages: PageCleanup[]) {
   if (pages.every((page) => page.options === noCleanup))
-    return `Restored ${pages.length} original page(s). Undo brings the cleanup back.`;
+    return message("cleanup.restored", { count: pages.length });
   const summary = cleanupSummary(pages.map((page) => page.options));
   const parts = (
     [
-      [summary.straightened, "straightened"],
-      [summary.whitened, "whitened"],
-      [summary.darkened, "darkened"],
-      [summary.trimmed, "trimmed"],
+      [summary.straightened, "cleanup.summaryStraightened"],
+      [summary.whitened, "cleanup.summaryWhitened"],
+      [summary.darkened, "cleanup.summaryDarkened"],
+      [summary.trimmed, "cleanup.summaryTrimmed"],
     ] as const
   )
     .filter(([count]) => count)
-    .map(([count, label]) => `${count} ${label}`);
+    .map(([count, label]) => message(label, { count }));
   return parts.length
-    ? `Cleaned ${pages.length} page(s): ${parts.join(", ")}. Undo reverts it.`
-    : "No page in this selection needed cleanup.";
+    ? message("cleanup.cleaned", { count: pages.length, parts })
+    : message("cleanup.noneNeeded");
 }

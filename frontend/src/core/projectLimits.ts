@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 export const projectLimits = {
   archiveBytes: 256 * 1024 * 1024,
   expandedBytes: 512 * 1024 * 1024,
@@ -14,13 +15,12 @@ export type ProjectBudget = {
 
 export function validateProjectBudget(budget: ProjectBudget) {
   if (Object.values(budget).some((value) => !Number.isSafeInteger(value) || value < 0))
-    throw new Error("This project has invalid archive sizes.");
-  if (budget.archiveBytes > projectLimits.archiveBytes)
-    throw new Error("This project exceeds the 256 MB archive limit. Save fewer source PDFs.");
+    throw failure("errors.projectArchiveSize");
+  if (budget.archiveBytes > projectLimits.archiveBytes) throw failure("errors.projectArchiveLimit");
   if (budget.expandedBytes > projectLimits.expandedBytes || budget.entries > projectLimits.entries)
-    throw new Error("This project expands beyond the supported size.");
+    throw failure("errors.projectExpandedLimit");
   if (budget.manifestBytes > projectLimits.manifestBytes)
-    throw new Error("This project's manifest is too large.");
+    throw failure("errors.projectManifestLimit");
 }
 
 // The writer uses stored entries with no comments or extra fields. Count both

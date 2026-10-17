@@ -1,3 +1,5 @@
+import { formatNumber } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
 import { ChevronLeft, ChevronRight, Pin } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { IconButton } from "./ui/IconButton";
@@ -15,14 +17,14 @@ export function PageNavigation() {
   return (
     <div className="page-navigation">
       <IconButton
-        label="Previous page"
+        label={tr("common.previousPage")}
         icon={ChevronLeft}
         disabled={index === 0}
-        detail={index === 0 ? "This is the first page." : "Go to the previous physical page."}
+        detail={index === 0 ? tr("pages.first") : tr("pages.previousHint")}
         onClick={() => goToPage(index - 1)}
       />
       <label className="page-position">
-        <span className="sr-only">Page</span>
+        <span className="sr-only">{tr("common.page")}</span>
         <input
           className="page-jump"
           type="number"
@@ -31,28 +33,26 @@ export function PageNavigation() {
           value={index + 1}
           onChange={(event) => goToPage(Number(event.target.value) - 1)}
         />
-        <span aria-hidden="true">/ {editor.document.pages.length}</span>
+        <span aria-hidden="true">/ {formatNumber(editor.document.pages.length)}</span>
       </label>
       <span className="sr-only">
-        PAGE {index + 1} OF {editor.document.pages.length}
+        {tr("pages.position", { number: index + 1, total: editor.document.pages.length })}
       </span>
       <IconButton
-        label="Next page"
+        label={tr("common.nextPage")}
         icon={ChevronRight}
         disabled={index === editor.document.pages.length - 1}
         detail={
-          index === editor.document.pages.length - 1
-            ? "This is the last page."
-            : "Go to the next physical page."
+          index === editor.document.pages.length - 1 ? tr("pages.last") : tr("pages.nextHint")
         }
         onClick={() => goToPage(index + 1)}
       />
       <IconButton
-        label="Pin page"
+        label={tr("pages.pin")}
         icon={Pin}
         data-pin-current
         aria-pressed={editor.pinned.page?.id === editor.page?.id}
-        detail="Keep this page visible while working on another page. A new pin replaces the reference."
+        detail={tr("pages.pinHint")}
         onClick={() => editor.page && editor.pinned.pin(editor.page.id)}
       />
     </div>

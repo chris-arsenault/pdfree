@@ -230,7 +230,7 @@ it("keeps common desktop actions stable, explains icons and exposes contextual p
     await page.getByRole("button", { name: "Hide properties", exact: true }).click();
     expect(
       await page
-        .getByRole("button", { name: "text: Review note", exact: true })
+        .getByRole("button", { name: "Text: Review note", exact: true })
         .getAttribute("aria-pressed")
     ).toBe("true");
   } finally {
@@ -351,7 +351,7 @@ it("opens image selection from the keyboard and frees touch canvas space before 
     await picker.setFiles({ name: "mark.png", mimeType: "image/png", buffer: PNG.sync.write(png) });
     await expect.poll(() => page.locator(".inspector").count()).toBe(0);
     await page.locator(".page-surface").tap({ position: { x: 70, y: 100 } });
-    await page.getByRole("button", { name: "image: object", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Image: object", exact: true }).waitFor();
     expect(await page.getByRole("combobox", { name: "Font", exact: true }).count()).toBe(0);
     await page.getByRole("slider", { name: "Opacity", exact: true }).waitFor();
     await accessible(page);

@@ -111,7 +111,7 @@ function selectText(span: Element) {
 }
 const highlights = () =>
   [...document.querySelectorAll(".placed-object")].filter((item) =>
-    item.getAttribute("aria-label")?.startsWith("highlight")
+    item.classList.contains("kind-highlight")
   );
 
 it("highlights PDF text with the Highlight tool when the drag starts on text", async () => {

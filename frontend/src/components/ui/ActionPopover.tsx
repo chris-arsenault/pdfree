@@ -11,6 +11,7 @@ import {
   useFloating,
   useInteractions,
   useRole,
+  type Placement,
 } from "@floating-ui/react";
 
 export function ActionPopover({
@@ -19,6 +20,8 @@ export function ActionPopover({
   children,
   className = "",
   compact = false,
+  iconOnly = false,
+  placement = "bottom-start",
 }: {
   label: string;
   icon: LucideIcon;
@@ -26,6 +29,9 @@ export function ActionPopover({
   className?: string;
   /** Shows only the chevron, for a menu attached to an adjacent button. */
   compact?: boolean;
+  /** Retain the icon and accessible name without visible text or a chevron. */
+  iconOnly?: boolean;
+  placement?: Placement;
 }) {
   const [open, setOpen] = useState(false);
   const {
@@ -38,7 +44,7 @@ export function ActionPopover({
       if (reason === "escape-key") event?.preventDefault();
       setOpen(next);
     },
-    placement: "bottom-start",
+    placement,
     strategy: "fixed",
     whileElementsMounted: autoUpdate,
     middleware: [offset(6), flip({ padding: 8 }), shift({ padding: 8 })],
@@ -56,9 +62,7 @@ export function ActionPopover({
         aria-label={label}
         {...getReferenceProps()}
       >
-        {!compact && <Icon size={17} strokeWidth={1.75} aria-hidden="true" />}
-        <span className={compact ? "sr-only" : undefined}>{label}</span>
-        <ChevronDown size={compact ? 16 : 13} aria-hidden="true" />
+        <TriggerContent label={label} icon={Icon} compact={compact} iconOnly={iconOnly} />
       </button>
       {open && (
         <FloatingFocusManager context={context} modal={false}>
@@ -74,6 +78,26 @@ export function ActionPopover({
           </div>
         </FloatingFocusManager>
       )}
+    </>
+  );
+}
+
+function TriggerContent({
+  label,
+  icon: Icon,
+  compact,
+  iconOnly,
+}: {
+  label: string;
+  icon: LucideIcon;
+  compact: boolean;
+  iconOnly: boolean;
+}) {
+  return (
+    <>
+      {(!compact || iconOnly) && <Icon size={17} strokeWidth={1.75} aria-hidden="true" />}
+      <span className={compact || iconOnly ? "sr-only" : undefined}>{label}</span>
+      {!iconOnly && <ChevronDown size={compact ? 16 : 13} aria-hidden="true" />}
     </>
   );
 }

@@ -13,7 +13,7 @@ class TestWorker {
   onmessage: ((event: MessageEvent) => void) | null = null;
   onerror: (() => void) | null = null;
   onmessageerror: (() => void) | null = null;
-  constructor() {
+  constructor(readonly url: URL) {
     TestWorker.instances.push(this);
   }
 }
@@ -26,6 +26,16 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 const security = () => ({ protection: null, signing: null });
+it("loads the import entry independently of secured export", async () => {
+  const opened = runImportWorker(new Uint8Array([1]), "ordinary.pdf");
+  const secured = runSecurityWorker(new Uint8Array([2]), security());
+  expect(TestWorker.instances[0].url.pathname).toMatch(/\/importWorker\.ts$/);
+  expect(TestWorker.instances[1].url.pathname).toMatch(/\/securityWorker\.ts$/);
+  TestWorker.instances[0].onmessage?.({ data: { result: "imported" } } as MessageEvent);
+  TestWorker.instances[1].onmessage?.({ data: { result: new Uint8Array([3]) } } as MessageEvent);
+  expect(await opened).toBe("imported");
+  expect(await secured).toEqual(new Uint8Array([3]));
+});
 it("does not launch or transfer credentials for an already canceled export", async () => {
   const controller = new AbortController();
   controller.abort();
@@ -70,8 +80,10 @@ it.each(["onerror", "onmessageerror"] as const)(
 );
 it("terminates the worker when signing reports an invalid identity", async () => {
   const output = runSecurityWorker(new Uint8Array([1]), security());
-  const check = expect(output).rejects.toThrow("Invalid certificate");
-  TestWorker.instances[0].onmessage?.({ data: { error: "Invalid certificate" } } as MessageEvent);
+  const check = expect(output).rejects.toMatchObject({ ui: { key: "errors.security" } });
+  TestWorker.instances[0].onmessage?.({
+    data: { ui: { key: "errors.security", values: {} } },
+  } as MessageEvent);
   await check;
   expect(TestWorker.instances[0].terminate).toHaveBeenCalledOnce();
 });

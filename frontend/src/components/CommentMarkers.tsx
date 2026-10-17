@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { MessageSquare } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { displayBox, displaySize } from "../core/coordinates";
@@ -35,15 +36,17 @@ export function CommentMarkers({
                 style={{ "--x": x, "--y": y }}
               >
                 <MessageSquare size={18} aria-hidden="true" />
-                <span className="sr-only">Comment: {comment.text}</span>
+                <span className="sr-only">{tr("comments.named", { text: comment.text })}</span>
               </span>
             );
           return (
             <IconButton
               key={comment.id}
               icon={MessageSquare}
-              label={`Comment: ${comment.text.trim().slice(0, 80) || "Untitled note"}`}
-              detail={comment.author || "Open this comment thread."}
+              label={tr("comments.named", {
+                text: comment.text.trim().slice(0, 80) || tr("comments.untitled"),
+              })}
+              detail={comment.author || tr("comments.openThread")}
               className={`comment-marker ${editor.commentId === comment.id && editor.commentsOpen ? "active" : ""}`}
               aria-pressed={editor.commentId === comment.id && editor.commentsOpen}
               style={{ "--x": x, "--y": y }}

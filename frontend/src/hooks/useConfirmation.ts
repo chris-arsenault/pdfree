@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { type UiMessage } from "../i18n/messages";
 
 export interface Confirmation {
-  title: string;
-  message: string;
-  confirmLabel: string;
+  title: UiMessage;
+  message: UiMessage;
+  confirmLabel: UiMessage;
   tone: "primary" | "danger";
 }
 

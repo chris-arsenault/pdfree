@@ -1,5 +1,5 @@
 import { useEditor } from "../hooks/editorContext";
-import { pageRules, ruleText, ruleY } from "../core/pageRules";
+import { pageRules, ruleText, ruleY } from "../core/ruleModel";
 import { displaySize } from "../core/coordinates";
 import { type Page } from "../core/model";
 export function RulesLayer({ page: requestedPage, scale }: { page?: Page; scale?: number }) {

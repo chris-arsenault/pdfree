@@ -148,7 +148,7 @@ export const analyzedOptions = (analysis: ScanAnalysis, enabled: Corrections) =>
 /** Neutralizes corrections a page cannot take; reasons are empty when supported. */
 export function supportedOptions(
   options: CleanupOptions,
-  support: { image: string; straighten: string }
+  support: { image: boolean; straighten: boolean }
 ): CleanupOptions {
   return {
     ...options,

@@ -18,20 +18,22 @@ are excluded from application assets.
 
 ## Commands
 
-| Location               | Command                                   | Purpose                                                                     |
-| ---------------------- | ----------------------------------------- | --------------------------------------------------------------------------- |
-| Root                   | `make ci`                                 | Shared ESLint, strict TypeScript, tests, Prettier and Terraform formatting  |
-| Root                   | `make build`                              | Type check and production build                                             |
-| Root                   | `make release-check`                      | Build, native security verification and production tests                    |
-| Root                   | `make test-unit`                          | Unit contracts without browser interaction                                  |
-| Root                   | `make test-coverage`                      | Core coverage, separate from browser behavior                               |
-| Root                   | `make test-browser BROWSER=firefox`       | Real browser interactions and independent PDF.js reading/rendering          |
-| Root                   | `make test-browser-docker BROWSER=webkit` | Browser interactions using the preserved Playwright image                   |
-| Root                   | `make security-check`                     | Docker-hosted OpenSSL, qpdf, Poppler and PDFBox encryption/signature checks |
-| Root                   | `make test-release`                       | Existing production bundle, headers, downloads and lifecycle checks         |
-| Root                   | `make test-release-docker BROWSER=webkit` | Existing production bundle checks using the Playwright image                |
-| Root                   | `make test-sample`                        | Local private sample regression; defaults to `.sulion-paste/s.pdf`          |
-| Root, after build/init | `make terraform-test`                     | Mock-provider hosting checks using actual assets                            |
+| Location                    | Command                                   | Purpose                                                                     |
+| --------------------------- | ----------------------------------------- | --------------------------------------------------------------------------- |
+| Root                        | `make ci`                                 | Shared ESLint, strict TypeScript, tests, Prettier and Terraform formatting  |
+| Root                        | `make build`                              | Type check and production build                                             |
+| Root                        | `make release-check`                      | Build, native security verification and production tests                    |
+| Root                        | `make test-unit`                          | Unit contracts without browser interaction                                  |
+| Root                        | `make test-coverage`                      | Core coverage, separate from browser behavior                               |
+| Root                        | `make test-browser BROWSER=firefox`       | Real browser interactions and independent PDF.js reading/rendering          |
+| Root                        | `make test-browser-docker BROWSER=webkit` | Browser interactions using the preserved Playwright image                   |
+| Root                        | `make security-check`                     | Docker-hosted OpenSSL, qpdf, Poppler and PDFBox encryption/signature checks |
+| Root                        | `make test-release`                       | Existing production bundle, headers, downloads and lifecycle checks         |
+| Root                        | `make test-release-docker BROWSER=webkit` | Existing production bundle checks using the Playwright image                |
+| Root                        | `make test-sample`                        | Local private sample regression; defaults to `.sulion-paste/s.pdf`          |
+| Root, after build           | `make test-performance`                   | Optional 2,000-page operation measurements and saved-output checks          |
+| Root, optional font tooling | `make font-ui`                            | Regenerate UI WOFF2 from the original PDF TTF using FontTools/Brotli        |
+| Root, after build/init      | `make terraform-test`                     | Mock-provider hosting checks using actual assets                            |
 
 `make ci` runs unit and Chromium browser tests locally. With `CI` set and no
 `PDFREE_BROWSER`, Vitest config selects unit tests only, matching Ahara's shared
@@ -66,6 +68,35 @@ same official Playwright base environment as shared CI. `make browser-test-image
 from the installed, locked Playwright package. `make security-test-image` builds
 the separate native-verifier image. Both test images mount `frontend/`, run as
 the current user and remove their temporary containers afterward.
+
+## Interface copy
+
+Add application messages to the canonical `frontend/src/i18n/en*.ts` catalogs
+and every locale under `src/i18n/catalogs/`. Use semantic keys, complete
+sentences, named values and native plural forms. `pluralCatalog` groups native
+forms and supports an invariant value only when the sentence does not change
+with the count. English fallback provides runtime recovery; it does not satisfy
+translation coverage.
+
+Call `text` during rendering. Retain a typed `message` descriptor in state or
+worker progress/errors so open copy updates when the language changes. Do not
+evaluate translated labels at module initialization or use prose as a task kind,
+diagnostic code or cancellation condition. Document/user text, protocol values
+and numeric input/serialization formats stay independent of UI translation.
+
+`make ci` enforces the TypeScript AST copy guard through ESLint and runs its
+positive/negative fixtures. It covers visible and accessible JSX copy, indirect
+local labels, configuration and message producers. Catalog tests require every
+logical key, matching interpolation and every native plural category. Technical
+exceptions are narrow; no production directory or legacy-copy baseline is
+exempted. Static analysis cannot determine the origin of arbitrary runtime
+document text, so typed state/worker boundaries remain part of the contract.
+
+`language.browser.test.ts` covers all choices, focus, storage/load failures,
+state retention and legacy diagnostic rendering. `language.release.test.ts`
+uses the actual bundle for offline switching, script glyphs, cross-tab OCR and
+saved PDF/project content. Translation integrity tests do not establish
+native-speaker review or complete RTL layout.
 
 ## Independent PDF verification
 
@@ -132,6 +163,31 @@ requirement. Temporary test servers and containers must be stopped afterward.
 Generated screenshots, accessibility output and scan measurements live in ignored
 `frontend/test-results/`; coverage output is also generated. Synthetic fixtures
 contain no user documents. See [fixture provenance](../frontend/tooling/fixtures/README.md).
+
+The [loading plan](loading-performance-plan.md) describes the loading changes
+and measurement approach. Its redistributable R reference manual contains 3,993
+pages; provenance and checksum live beside the fixture in
+`frontend/tooling/fixtures/performance/README.md`. The performance target generates
+real/mixed inputs before timing, then measures the 2,000-page cases. It checks
+extracted text, page counts and project/split output, and logs opening, navigation,
+editing and export times without enforcing byte or timing budgets. Opening ends
+when text and editing controls are available; navigation measures page-selection
+UI response, not completed raster rendering. These are local samples, not total
+memory measurements or guarantees across devices.
+
+Use `make test-performance PERF_BUILD=test-results/performance/baseline-dist`
+to measure a preserved build, then `make test-performance` for the current build.
+`BROWSER` selects the engine; `make test-performance-docker` provides the standard
+browser libraries. Run comparisons serially on the same quiet host and repeat
+when differences need investigation. Each run writes ignored
+`frontend/test-results/performance/measurements-<browser>.json`; retain the previous
+file before comparing another build. Existing production/security tests cover
+offline use, recovery and secured documents.
+
+The checked-in UI WOFF2 requires no generation tool at application build time.
+To regenerate it, install Python FontTools with WOFF2/Brotli support and run
+`make font-ui`; `python frontend/tooling/uiFont.py --check` verifies character
+mapping, glyph outlines, metrics and retained tables against the original TTF.
 
 Summarize checks and material failures in chat or existing CI output. Create
 verification or release report files only when explicitly requested.

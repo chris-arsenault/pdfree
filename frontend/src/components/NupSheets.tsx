@@ -1,9 +1,10 @@
+import { text as tr } from "../i18n/runtime";
 import { useState } from "react";
 import { type NupOptions } from "../core/nupPdf";
 import { useEditor } from "../hooks/editorContext";
 import { useProcessing } from "../hooks/useProcessing";
 import { runProcessingWorker } from "../services/workerClient";
-import { fontData } from "../services/resources";
+import { fontData, documentFontOptions } from "../services/resources";
 import { PdfPreview } from "./PdfPreview";
 import { ProcessingStatus } from "./ProcessingStatus";
 /** Printable-sheets Export format options; `pageIds` empty means the whole document. */
@@ -32,7 +33,7 @@ export function NupSheets({
           document: editor.document,
           flatten: true,
           pageIds,
-          fonts: await fontData(),
+          fonts: await fontData(documentFontOptions(editor.document, pageIds)),
         },
         signal,
         progress
@@ -48,15 +49,11 @@ export function NupSheets({
     }, setPreview);
   return (
     <fieldset className="utility-fields" disabled={task.busy}>
-      <legend>Pages per printed sheet</legend>
+      <legend>{tr("print.sheetsTitle")}</legend>
       <NupFields options={options} change={change} />
-      <p className="field-note">
-        Places several pages on each sheet with field and comment appearances baked in. Interactive
-        fields, comment threads and navigation are left out; keep a PDF or editing project for
-        those. Print at actual size.
-      </p>
+      <p className="field-note">{tr("print.sheetsDescription")}</p>
       <button className="button secondary" disabled={task.busy} onClick={generate}>
-        Preview first sheet
+        {tr("print.preview")}
       </button>
       <ProcessingStatus task={task} />
       {preview?.key === key && <PdfPreview bytes={preview.bytes} />}
@@ -73,7 +70,7 @@ function NupFields({
   return (
     <div className="utility-grid">
       <label>
-        Pages per sheet
+        {tr("print.perSheet")}
         <select
           value={options.count}
           onChange={(event) =>
@@ -99,44 +96,44 @@ function NupPaperFields({
   return (
     <>
       <label>
-        Paper
+        {tr("print.paper")}
         <select
           value={options.paper}
           onChange={(event) =>
             change({ ...options, paper: event.target.value as NupOptions["paper"] })
           }
         >
-          <option value="letter">Letter</option>
+          <option value="letter">{tr("paper.letter")}</option>
           <option value="a4">A4</option>
-          <option value="legal">Legal</option>
+          <option value="legal">{tr("paper.legal")}</option>
         </select>
       </label>
       <label>
-        Orientation
+        {tr("print.orientation")}
         <select
           value={options.landscape ? "landscape" : "portrait"}
           onChange={(event) =>
             change({ ...options, landscape: event.target.value === "landscape" })
           }
         >
-          <option value="portrait">Portrait</option>
-          <option value="landscape">Landscape</option>
+          <option value="portrait">{tr("print.portrait")}</option>
+          <option value="landscape">{tr("print.landscape")}</option>
         </select>
       </label>
       <label>
-        Ordering
+        {tr("print.order")}
         <select
           value={options.order}
           onChange={(event) =>
             change({ ...options, order: event.target.value as NupOptions["order"] })
           }
         >
-          <option value="rows">Across, then down</option>
-          <option value="columns">Down, then across</option>
+          <option value="rows">{tr("print.across")}</option>
+          <option value="columns">{tr("print.down")}</option>
         </select>
       </label>
       <label>
-        Margin / gap (points)
+        {tr("print.margins")}
         <input
           type="number"
           min="0"

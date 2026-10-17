@@ -1,3 +1,6 @@
+import { renderMessage } from "../i18n/runtime";
+import { text as tr } from "../i18n/runtime";
+import { message } from "../i18n/messages";
 import { useState } from "react";
 import {
   RotateCw,
@@ -25,12 +28,15 @@ import { FileButton } from "./ui/FileButton";
 export function PageActions() {
   const editor = useEditor();
   const remove = () =>
-    editor.task.run("Deleting selected pages", async () => {
+    editor.task.run(message("task.deletingPages"), async () => {
       if (
         !(await editor.confirmation.ask({
-          title: `Delete ${pageScope(editor)}?`,
-          message: "Pages and their edits will be removed from this document. You can undo this.",
-          confirmLabel: editor.selectedPageIds.length === 1 ? "Delete page" : "Delete pages",
+          title: message("common.deleteQuestion", { name: [pageScope(editor)] }),
+          message: message("pages.deleteDescription"),
+          confirmLabel:
+            editor.selectedPageIds.length === 1
+              ? message("pages.delete")
+              : message("pages.deleteMany"),
           tone: "danger",
         }))
       )
@@ -40,32 +46,32 @@ export function PageActions() {
       editor.setObjectIds([]);
     });
   return (
-    <div className="page-actions" role="toolbar" aria-label="Page operations">
+    <div className="page-actions" role="toolbar" aria-label={tr("pages.operations")}>
       <div className="page-scope">
         <PageSelection />
       </div>
       <IconButton
-        label="Rotate"
+        label={tr("common.rotate")}
         icon={RotateCw}
-        detail={`Rotate ${pageScope(editor)} clockwise by 90°.`}
+        detail={tr("pages.rotateScope", { scope: [pageScope(editor)] })}
         onClick={() => editor.commit(rotatePages(editor.document, editor.selectedPageIds))}
       />
       <IconButton
-        label="Duplicate"
+        label={tr("common.duplicate")}
         icon={Copy}
-        detail={`Duplicate ${pageScope(editor)}.`}
+        detail={tr("pages.duplicateScope", { scope: [pageScope(editor)] })}
         onClick={() => editor.commit(duplicatePages(editor.document, editor.selectedPageIds))}
       />
       <IconButton
-        label="Delete pages"
+        label={tr("pages.deleteMany")}
         icon={Trash2}
-        detail={`Delete ${pageScope(editor)}. You can undo this.`}
+        detail={tr("pages.deleteScope", { scope: [pageScope(editor)] })}
         onClick={remove}
       />
-      <ActionPopover label="Insert" icon={FilePlus2}>
+      <ActionPopover label={tr("common.insert")} icon={FilePlus2}>
         {(close) => <InsertChoices close={close} />}
       </ActionPopover>
-      <ActionPopover label="More" icon={MoreHorizontal}>
+      <ActionPopover label={tr("common.more")} icon={MoreHorizontal}>
         {(close) => <PageTools close={close} />}
       </ActionPopover>
     </div>
@@ -91,25 +97,25 @@ function InsertChoices({ close }: { close: () => void }) {
       >
         <File size={17} aria-hidden="true" />
         <span>
-          Blank page
-          <small aria-hidden="true">After the current page</small>
+          {tr("pages.blank")}
+          <small aria-hidden="true">{tr("pages.afterCurrent")}</small>
         </span>
       </button>
       <FileButton
-        label="Pages from file"
+        label={tr("pages.fromFile")}
         multiple
         icon={FilePlus2}
-        detail="PDF, PNG or JPG after the current page"
+        detail={tr("pages.fromFileHint")}
         className="file-action"
         accept="application/pdf,image/png,image/jpeg,.pdf"
         disabled={!!editor.task.busy}
         onFiles={insert}
       />
       <FileButton
-        label="Merge PDFs"
+        label={tr("pages.merge")}
         multiple
         icon={Files}
-        detail="Append to the end of this document"
+        detail={tr("pages.mergeHint")}
         className="file-action"
         accept="application/pdf,.pdf"
         disabled={!!editor.task.busy}
@@ -121,9 +127,9 @@ function InsertChoices({ close }: { close: () => void }) {
 function PageTools({ close }: { close: () => void }) {
   const editor = useEditor();
   const items: { label: string; icon: LucideIcon; open: () => void }[] = [
-    { label: "Extract", icon: Download, open: () => editor.openExport("extract") },
-    { label: "Split", icon: Scissors, open: () => editor.openExport("split") },
-    { label: "Repeat across pages", icon: ListOrdered, open: () => editor.setDialog("repeat") },
+    { label: tr("common.extract"), icon: Download, open: () => editor.openExport("extract") },
+    { label: tr("common.split"), icon: Scissors, open: () => editor.openExport("split") },
+    { label: tr("pages.repeat"), icon: ListOrdered, open: () => editor.setDialog("repeat") },
   ];
   return items.map((item) => (
     <button
@@ -143,9 +149,9 @@ function PageSelection() {
   const editor = useEditor(),
     kind = selectionScope(editor.document, editor.pageIds);
   const labels = {
-    all: "All pages",
-    selected: `${editor.selectedPageIds.length} selected pages`,
-    current: "Current page",
+    all: tr("scope.all"),
+    selected: tr("common.selectedPages", { count: editor.selectedPageIds.length }),
+    current: tr("scope.current"),
     range: "",
   };
   return (
@@ -168,12 +174,16 @@ function SelectionScope({ initial }: { initial: PageScopeKind }) {
   };
   return (
     <>
-      <p>Rotate, duplicate, delete and Extract apply to these pages.</p>
+      <p>{tr("scope.actions")}</p>
       <PageScopeField
         scope={scope}
         onChange={change}
         pageIds={reportedPageIds(scope, resolved.pageIds, editor.selectedPageIds)}
-        error={scope.kind === "range" && scope.range.trim() ? resolved.error : ""}
+        error={
+          scope.kind === "range" && scope.range.trim() && resolved.error
+            ? renderMessage(resolved.error)
+            : ""
+        }
       />
     </>
   );
@@ -184,8 +194,10 @@ const reportedPageIds = (scope: PageScope, resolved: string[], selected: string[
 
 function pageScope(editor: ReturnType<typeof useEditor>) {
   const kind = selectionScope(editor.document, editor.pageIds);
-  if (kind === "all") return "all pages";
+  if (kind === "all") return message("scope.all");
   return kind === "selected"
-    ? `${editor.selectedPageIds.length} selected pages`
-    : `page ${editor.document.pages.findIndex((page) => page.id === editor.page?.id) + 1}`;
+    ? message("common.selectedPages", { count: editor.selectedPageIds.length })
+    : message("common.pageLower", {
+        number: editor.document.pages.findIndex((page) => page.id === editor.page?.id) + 1,
+      });
 }

@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { emptyDocument } from "../core/model";
+import { message, type UiMessage } from "../i18n/messages";
 
-type Reply = { id: string; result: unknown } | { id: string; error: string };
+type Reply =
+  { id: string; result: unknown } | { id: string; ui: unknown } | { id: string; ui: UiMessage };
 class TestWorker {
   static readonly instances: TestWorker[] = [];
   messages: { id: string; kind: string }[] = [];
@@ -43,9 +45,21 @@ it("pairs out-of-order worker replies with the correct requests", async () => {
 it("rejects only the request with a processing error", async () => {
   const { runPdfWorker } = await import("./workerClient"),
     result = runPdfWorker(request());
-  const assertion = expect(result).rejects.toThrow("damaged file"),
+  const assertion = expect(result).rejects.toMatchObject({ ui: message("errors.processing") }),
     worker = TestWorker.instances[0];
-  worker.reply({ id: worker.messages[0].id, error: "damaged file" });
+  worker.reply({ id: worker.messages[0].id, ui: { key: "invalid", values: {} } });
+  await assertion;
+});
+it("retains a structured diagnostic and its nested categories across the worker boundary", async () => {
+  const { runPdfWorker } = await import("./workerClient");
+  const ui = message("errors.composition", {
+    name: "東京.pdf",
+    structures: [message("structure.accessibility")],
+  });
+  const result = runPdfWorker(request());
+  const assertion = expect(result).rejects.toMatchObject({ ui });
+  const worker = TestWorker.instances[0];
+  worker.reply({ id: worker.messages[0].id, ui: structuredClone(ui) });
   await assertion;
 });
 it("rejects outstanding work on a crash and recreates the worker for a retry", async () => {
@@ -64,12 +78,32 @@ it("rejects outstanding work on a crash and recreates the worker for a retry", a
   worker.reply({ id: worker.messages[0].id, result: "retried" });
   expect(await retry).toBe("retried");
 });
+it("keeps disposable work alive when the shared worker crashes and ignores its late crash", async () => {
+  const { runPdfWorker, runProcessingWorker } = await import("./workerClient");
+  const rendered = runPdfWorker({ kind: "comment-view", bytes: new Uint8Array([1]) });
+  const saved = runProcessingWorker<string>(request(), new AbortController().signal);
+  const rendering = TestWorker.instances[0],
+    processing = TestWorker.instances[1];
+  const failed = expect(rendered).rejects.toThrow("worker stopped");
+  rendering.onerror?.();
+  await failed;
+  processing.reply({ id: processing.messages[0].id, result: "saved" });
+  expect(await saved).toBe("saved");
+  expect(processing.terminate).toHaveBeenCalledOnce();
+  const retried = runPdfWorker<string>({ kind: "comment-view", bytes: new Uint8Array([2]) });
+  const retry = TestWorker.instances[2];
+  rendering.onerror?.();
+  retry.reply({ id: retry.messages[0].id, result: "rendered" });
+  expect(await retried).toBe("rendered");
+});
 it("surfaces a synchronous message-cloning failure and permits the next request", async () => {
   const { runPdfWorker } = await import("./workerClient");
   vi.spyOn(TestWorker.prototype, "postMessage").mockImplementationOnce(() => {
     throw new DOMException("Cannot clone", "DataCloneError");
   });
-  await expect(runPdfWorker(request())).rejects.toThrow("Cannot clone");
+  await expect(runPdfWorker(request())).rejects.toMatchObject({
+    ui: message("errors.workerStart"),
+  });
   const retry = runPdfWorker<number>(request()),
     worker = TestWorker.instances[0];
   worker.reply({ id: worker.messages[0].id, result: 42 });
@@ -85,5 +119,7 @@ it("reports worker-construction failures without leaving the editor waiting", as
     }
   );
   const { runPdfWorker } = await import("./workerClient");
-  await expect(runPdfWorker(request())).rejects.toThrow("Worker blocked");
+  await expect(runPdfWorker(request())).rejects.toMatchObject({
+    ui: message("errors.workerStart"),
+  });
 });

@@ -1,8 +1,9 @@
+import { failure } from "../i18n/messages";
 import { localPdf } from "./viewer";
 import { zipSync } from "fflate";
 import { type EditorDocument } from "../core/model";
 import { runPdfWorker } from "./workerClient";
-import { fontData } from "./resources";
+import { fontData, documentFontOptions } from "./resources";
 import { imageArchiveSize, imageRasterSize } from "./rasterBudget";
 import { type PDFPageProxy } from "pdfjs-dist";
 
@@ -12,7 +13,7 @@ export async function pageImages(document: EditorDocument, pageIds: string[]) {
     document,
     flatten: true,
     pageIds,
-    fonts: await fontData(),
+    fonts: await fontData(documentFontOptions(document, pageIds)),
   });
   const pdf = await localPdf(bytes),
     files: Record<string, Uint8Array> = {};
@@ -41,7 +42,7 @@ async function renderPageImage(page: PDFPageProxy) {
     await page.render({ canvas, viewport }).promise;
     const blob = await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(
-        (value) => (value ? resolve(value) : reject(new Error("Page image export failed."))),
+        (value) => (value ? resolve(value) : reject(failure("errors.pageImage"))),
         "image/png"
       )
     );

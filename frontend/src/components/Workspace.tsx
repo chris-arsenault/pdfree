@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useEditor } from "../hooks/editorContext";
 import { displaySize } from "../core/coordinates";
 import { PageCanvas } from "./PageCanvas";
@@ -16,8 +17,11 @@ import { ScanNotice } from "./ScanNotice";
 import { DocumentWorkspace } from "./DocumentWorkspace";
 import { useReadingPosition } from "../hooks/useReadingPosition";
 import { useRef } from "react";
+import { useMessages } from "../i18n/react";
+import { warningKeys } from "../i18n/diagnostics";
 
 export function Workspace() {
+  const { text } = useMessages();
   const editor = useEditor(),
     page = editor.page;
   const placement = usePlacement();
@@ -30,7 +34,9 @@ export function Workspace() {
   return (
     <DocumentWorkspace>
       {!!source?.warnings.length && (
-        <div className="inline-warning">{source.warnings.join(" ")}</div>
+        <div className="inline-warning">
+          {source.warnings.map((warning) => text(warningKeys[warning])).join(" ")}
+        </div>
       )}
       <ScanNotice key={editor.documentEpoch} />
       <div className="page-scroll" ref={scrollRef} onScroll={remember}>
@@ -38,7 +44,7 @@ export function Workspace() {
           className={`page-surface tool-${editor.tool}`}
           role="region"
           tabIndex={-1}
-          aria-label="PDF page"
+          aria-label={tr("pages.pdf")}
           onPointerDown={placement.start}
           onPointerMove={placement.move}
           onPointerUp={placement.end}
@@ -82,7 +88,7 @@ export function Workspace() {
       {editor.tool !== "select" && (
         <div className="workspace-hint" role="status">
           {editor.tool === "image" && hasPlacementAsset(editor.document, editor.pendingObject)
-            ? "Click the page to place your image."
+            ? tr("image.place")
             : tools.find((tool) => tool.id === editor.tool)?.hint}
         </div>
       )}

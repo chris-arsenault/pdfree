@@ -48,11 +48,11 @@ it.each([0, 90, 180, 270, -90, -360, 360, 450])(
 
 it("keeps arbitrary rotations for text objects while restricting radio fields", () => {
   const object = defaultObject("text", { x: 20, y: 30 });
-  expect(objectRotationError({ ...object, rotation: 30 })).toBe("");
+  expect(objectRotationError({ ...object, rotation: 30 })).toBeNull();
   expect(
     objectRotationError({ ...object, kind: "field", fieldKind: "radio", rotation: 90 })
-  ).toContain("Radio groups");
-  expect(objectRotationError({ ...object, kind: "field", fieldKind: "radio", rotation: 360 })).toBe(
-    ""
-  );
+  ).toMatchObject({ key: "validation.radioRotation" });
+  expect(
+    objectRotationError({ ...object, kind: "field", fieldKind: "radio", rotation: 360 })
+  ).toBeNull();
 });

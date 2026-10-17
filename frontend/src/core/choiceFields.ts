@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import {
   PDFDocument,
   PDFDropdown,
@@ -39,7 +40,7 @@ function storeSelection(field: ChoiceField, selected: { value: string; index: nu
 export function writeChoices(field: ChoiceField, value: FieldValue) {
   const selected = selectedValues(value);
   if (selected.length > 1 && !field.isMultiselect())
-    throw new Error(`The field ${field.getName()} accepts only one selected option.`);
+    throw failure("validation.singleChoice", { name: field.getName() });
   const options = choiceOptions(field);
   const entries = selected.map((item) => ({
     value: item,
@@ -49,7 +50,7 @@ export function writeChoices(field: ChoiceField, value: FieldValue) {
     entries.some((item) => item.index < 0) &&
     !(field instanceof PDFDropdown && field.isEditable())
   )
-    throw new Error(`The value of ${field.getName()} is not one of its options.`);
+    throw failure("validation.fieldChoice", { name: field.getName() });
   storeSelection(
     field,
     entries.sort((a, b) => a.index - b.index)

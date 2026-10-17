@@ -1,3 +1,5 @@
+import { formatNumber } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
 import { useId } from "react";
 import { useEditor } from "../hooks/editorContext";
 import { type PageScope, type PageScopeKind } from "../core/pageScope";
@@ -8,7 +10,7 @@ export function PageScopeField({
   pageIds,
   error,
   disabled = false,
-  legend = "Pages",
+  legend = tr("common.pagesLabel"),
 }: {
   scope: PageScope;
   onChange: (scope: PageScope) => void;
@@ -24,10 +26,18 @@ export function PageScopeField({
   const selected = pages.filter((page) => editor.pageIds.includes(page.id)).length;
   const current = pages.findIndex((page) => page.id === editor.page?.id) + 1;
   const choices: { kind: PageScopeKind; label: string; detail: string }[] = [
-    { kind: "all", label: "All pages", detail: `${pages.length}` },
-    { kind: "current", label: "Current page", detail: `page ${current}` },
-    { kind: "selected", label: "Selected pages", detail: selected ? `${selected}` : "none" },
-    { kind: "range", label: "Page range", detail: "" },
+    { kind: "all", label: tr("scope.all"), detail: formatNumber(pages.length) },
+    {
+      kind: "current",
+      label: tr("scope.current"),
+      detail: tr("common.pageLower", { number: current }),
+    },
+    {
+      kind: "selected",
+      label: tr("scope.selected"),
+      detail: selected ? formatNumber(selected) : tr("common.none"),
+    },
+    { kind: "range", label: tr("scope.range"), detail: "" },
   ];
   return (
     <fieldset className="page-scope-field" disabled={disabled} aria-describedby={noteId}>
@@ -53,15 +63,15 @@ export function PageScopeField({
       </div>
       {scope.kind === "range" && (
         <input
-          placeholder="1-3, 5, 7-end"
-          aria-label="Pages to include"
+          placeholder={tr("scope.placeholder")}
+          aria-label={tr("scope.include")}
           aria-invalid={!!error}
           value={scope.range}
           onChange={(event) => onChange({ ...scope, range: event.target.value })}
         />
       )}
       <p id={noteId} className={error ? "field-note scope-error" : "field-note"} aria-live="polite">
-        {error || `${pageIds.length} of ${pages.length} page(s)`}
+        {error || tr("scope.count", { selected: pageIds.length, count: pages.length })}
       </p>
     </fieldset>
   );

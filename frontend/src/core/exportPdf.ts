@@ -12,6 +12,8 @@ import { applyScan } from "./scanCleanup";
 import { writeRecognition } from "./recognition";
 import { writeRules } from "./pageRules";
 import { visiblePageBox } from "./visiblePage";
+import { MessageError, message, failure } from "../i18n/messages";
+import { structureKeys } from "../i18n/diagnostics";
 
 export function canPreserveCatalog(document: EditorDocument, pages: Page[]) {
   const source = preservedSource(document, pages);
@@ -53,8 +55,11 @@ async function composeDocument(
   for (const source of document.sources) {
     if (!pages.some((page) => page.sourceId === source.id)) continue;
     if (source.structuralWarnings.length)
-      throw new Error(
-        `Page extraction/merge would discard ${source.structuralWarnings.join(", ")} in ${source.name}. Export the complete original document instead.`
+      throw new MessageError(
+        message("errors.composition", {
+          structures: source.structuralWarnings.map((warning) => message(structureKeys[warning])),
+          name: source.name,
+        })
       );
     let original = sourceCache.get(source.id);
     if (!original) {
@@ -106,8 +111,7 @@ function writeMappedValues(
       const original = document.sources
         .find((source) => source.id === sourceId)
         ?.fields.find((candidate) => candidate.name === name);
-      if (!original?.options.includes(value))
-        throw new Error(`The value of ${name} is not one of its options.`);
+      if (!original?.options.includes(value)) throw failure("validation.fieldChoice", { name });
       field.clear();
     } else writeValue(field, value);
   }
@@ -120,13 +124,13 @@ export async function prepareExport(
   const pages = selectedIds.length
     ? selectedIds.map((id) => {
         const page = document.pages.find((candidate) => candidate.id === id);
-        if (!page) throw new Error("An export page no longer exists.");
+        if (!page) throw failure("errors.exportPageMissing");
         return page;
       })
     : document.pages;
   if (new Set(pages.map((page) => page.id)).size !== pages.length)
-    throw new Error("Choose each export page only once.");
-  if (!pages.length) throw new Error("Choose at least one page to export.");
+    throw failure("errors.exportPageDuplicate");
+  if (!pages.length) throw failure("errors.exportPagesRequired");
   const pdf = canPreserveCatalog(document, pages)
     ? await preserveDocument(document, pages)
     : await composeDocument(document, pages, sourceCache);

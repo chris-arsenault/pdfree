@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { message, errorMessage } from "../i18n/messages";
+import { text as tr } from "../i18n/runtime";
+import { useMessageState } from "../i18n/react";
+import { useEffect, useRef } from "react";
 import { localPdf } from "../services/viewer";
 export function PdfPreview({ bytes, pageIndex = 0 }: { bytes: Uint8Array; pageIndex?: number }) {
   const ref = useRef<HTMLCanvasElement>(null),
-    [error, setError] = useState("");
+    [error, setError] = useMessageState();
   useEffect(() => {
     let disposed = false,
       pdf: Awaited<ReturnType<typeof localPdf>> | null = null;
@@ -26,7 +29,7 @@ export function PdfPreview({ bytes, pageIndex = 0 }: { bytes: Uint8Array; pageIn
       await task.promise;
     };
     render().catch((error) => {
-      if (!disposed) setError(error instanceof Error ? error.message : "Preview failed.");
+      if (!disposed) setError(errorMessage(error, message("preview.failed")));
     });
     return () => {
       disposed = true;
@@ -36,7 +39,7 @@ export function PdfPreview({ bytes, pageIndex = 0 }: { bytes: Uint8Array; pageIn
   }, [bytes, pageIndex]);
   return (
     <div className="utility-preview">
-      <canvas ref={ref} aria-label={`Output page ${pageIndex + 1} preview`} />
+      <canvas ref={ref} aria-label={tr("preview.outputPage", { number: pageIndex + 1 })} />
       {error && <p role="alert">{error}</p>}
     </div>
   );

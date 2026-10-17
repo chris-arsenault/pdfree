@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import {
   PDFDocument,
   PDFName,
@@ -8,71 +9,58 @@ import {
   PDFNumber,
 } from "pdf-lib";
 import { describeFields, fieldKind } from "./nativeFields";
-import { newId, fieldKey, type EditorDocument, type Page, type Source } from "./model";
+import { newId, type Page, type Source } from "./model";
+export { appendSource } from "./appendSource";
 import { visiblePageBox } from "./visiblePage";
 import { hasCertificateSignature } from "./signedPdf";
 import { unlockPdf } from "./unlockPdf";
 import { type PdfCredential } from "./pdfCredentials";
 import { readComments } from "./importComments";
 import { readNavigation } from "./bookmarks";
+import { type SourceWarning, type StructuralWarning } from "../i18n/diagnostics";
 
 function validateControls(pdf: PDFDocument) {
   if (pdf.catalog.lookupMaybe(PDFName.of("AcroForm"), PDFDict)?.has(PDFName.of("XFA")))
-    throw new Error(
-      "This document uses XFA forms, which PDFree cannot safely edit. Open it in an XFA-capable editor."
-    );
+    throw failure("errors.xfa");
   const fields = pdf.getForm().getFields();
-  if (hasCertificateSignature(pdf))
-    throw new Error(
-      "This PDF has certificate signature fields. Editing could invalidate signatures; use an unsigned copy."
-    );
+  if (hasCertificateSignature(pdf)) throw failure("errors.signedInput");
   const unsupported = fields.filter(
     (field) =>
       !(field instanceof PDFSignature) && !(field instanceof PDFButton) && !fieldKind(field)
   );
-  if (unsupported.length)
-    throw new Error(
-      "This PDF contains unsupported form controls. Use a copy without those controls."
-    );
+  if (unsupported.length) throw failure("errors.formControls");
   const invalidRotation = fields.some((field) =>
     field.acroField.getWidgets().some((widget) => {
       const angle = widget.getAppearanceCharacteristics()?.getRotation() ?? 0;
       return !Number.isFinite(angle) || angle % 90 !== 0;
     })
   );
-  if (invalidRotation)
-    throw new Error(
-      "This PDF contains a form widget with unsupported rotation. Use quarter-turn rotations."
-    );
+  if (invalidRotation) throw failure("errors.widgetRotation");
   return fields;
 }
 function pageLinks(pdf: PDFDocument) {
   return pdf.getPages().flatMap(internalPageLinks);
 }
 function internalPageLinks(page: PDFPage) {
-  const warnings: string[] = [];
+  const warnings: StructuralWarning[] = [];
   const annots = page.node.Annots();
   if (!annots) return warnings;
   for (let i = 0; i < annots.size(); i++) {
     const annot = annots.lookup(i, PDFDict);
-    if (annot.has(PDFName.of("Dest"))) warnings.push("internal page links");
+    if (annot.has(PDFName.of("Dest"))) warnings.push("links");
     const action = annot.lookupMaybe(PDFName.of("A"), PDFDict);
-    if (action?.get(PDFName.of("S"))?.toString() === "/GoTo") warnings.push("internal page links");
+    if (action?.get(PDFName.of("S"))?.toString() === "/GoTo") warnings.push("links");
   }
   return warnings;
 }
 function inspect(pdf: PDFDocument) {
   const fields = validateControls(pdf);
-  const structuralWarnings: string[] = [];
-  if (pdf.catalog.has(PDFName.of("Outlines"))) structuralWarnings.push("document bookmarks");
-  if (pdf.catalog.has(PDFName.of("Names")))
-    structuralWarnings.push("named destinations or attachments");
-  if (pdf.catalog.has(PDFName.of("StructTreeRoot")))
-    structuralWarnings.push("accessibility structure");
+  const structuralWarnings: StructuralWarning[] = [];
+  if (pdf.catalog.has(PDFName.of("Outlines"))) structuralWarnings.push("bookmarks");
+  if (pdf.catalog.has(PDFName.of("Names"))) structuralWarnings.push("destinations");
+  if (pdf.catalog.has(PDFName.of("StructTreeRoot"))) structuralWarnings.push("accessibility");
   const scripted = fields.some((field) => field.acroField.dict.has(PDFName.of("AA")));
-  const warnings = scripted
-    ? ["Embedded form scripts are not executed; check calculated values manually."]
-    : [];
+  const warnings: SourceWarning[] = scripted ? ["scripts"] : [];
   structuralWarnings.push(...pageLinks(pdf));
   return { warnings, structuralWarnings: [...new Set(structuralWarnings)] };
 }
@@ -82,7 +70,7 @@ export async function importPdf(bytes: Uint8Array, name: string, credential?: Pd
   try {
     pdf = await PDFDocument.load(unlocked.bytes, { updateMetadata: false });
   } catch {
-    throw new Error("This file could not be read as a PDF. It may be damaged or unsupported.");
+    throw failure("errors.pdfUnreadable");
   }
   const id = newId();
   const inspection = inspect(pdf);
@@ -95,9 +83,7 @@ export async function importPdf(bytes: Uint8Array, name: string, credential?: Pd
         (page) => (page.node.lookupMaybe(PDFName.of("UserUnit"), PDFNumber)?.asNumber() ?? 1) !== 1
       )
   )
-    throw new Error(
-      "This PDF uses nonstandard page units. Convert it to standard PDF page units before editing."
-    );
+    throw failure("errors.pageUnits");
   const source: Source = {
     id,
     name,
@@ -126,36 +112,18 @@ export async function importPdf(bytes: Uint8Array, name: string, credential?: Pd
   try {
     bookmarks = readNavigation(pdf, pages);
     source.structuralWarnings = source.structuralWarnings.filter(
-      (warning) => !["document bookmarks", "internal page links"].includes(warning)
+      (warning) => !["bookmarks", "links"].includes(warning)
     );
     const names = pdf.catalog.lookupMaybe(PDFName.of("Names"), PDFDict);
     if (names && names.keys().every((key) => key.toString() === "/Dests"))
       source.structuralWarnings = source.structuralWarnings.filter(
-        (warning) => warning !== "named destinations or attachments"
+        (warning) => warning !== "destinations"
       );
   } catch {
-    source.warnings.push(
-      "Some bookmarks or internal destinations are unsupported; navigation editing is unavailable for this source."
-    );
+    source.warnings.push("navigation");
     pages.forEach((page) => {
       page.links = [];
     });
   }
   return { source, pages, bookmarks };
-}
-export function appendSource(
-  document: EditorDocument,
-  imported: Awaited<ReturnType<typeof importPdf>>
-): EditorDocument {
-  const values = { ...document.values };
-  for (const field of imported.source.fields)
-    values[fieldKey(imported.source.id, field.name)] = field.value;
-  return {
-    ...document,
-    name: document.pages.length ? document.name : imported.source.name,
-    sources: [...document.sources, imported.source],
-    pages: [...document.pages, ...imported.pages],
-    values,
-    bookmarks: [...(document.bookmarks ?? []), ...(imported.bookmarks ?? [])],
-  };
 }

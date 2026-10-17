@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useEditor } from "../hooks/editorContext";
 import { useSignature } from "../hooks/useSignature";
 import { useCloseDialog } from "../hooks/useCloseDialog";
@@ -9,12 +10,10 @@ export function SignatureDialog() {
     close = useCloseDialog();
   return (
     <Modal
-      title={editor.dialog === "initials" ? "Add your initials" : "Add your signature"}
+      title={editor.dialog === "initials" ? tr("signature.addInitials") : tr("signature.add")}
       onClose={close}
     >
-      <p className="modal-description">
-        Create your signature, then click the document to place it.
-      </p>
+      <p className="modal-description">{tr("signature.description")}</p>
       {signature.error && <p role="alert">{signature.error}</p>}
       <SignatureInput signature={signature} />
       <label className="checkbox-label">
@@ -23,15 +22,15 @@ export function SignatureDialog() {
           checked={signature.remember}
           onChange={(event) => signature.setRemember(event.target.checked)}
         />{" "}
-        Remember on this device
+        {tr("signature.remember")}
       </label>
       <SavedSignatures signature={signature} />
       <div className="modal-actions">
         <button className="button secondary" onClick={close}>
-          Cancel
+          {tr("common.cancel")}
         </button>
         <button className="button primary" disabled={!!editor.task.busy} onClick={signature.create}>
-          Use signature
+          {tr("signature.use")}
         </button>
       </div>
     </Modal>
@@ -41,13 +40,21 @@ function SignatureInput({ signature }: { signature: ReturnType<typeof useSignatu
   return (
     <>
       <div className="tabs">
-        {["draw", "type", "image"].map((tab) => (
+        {(["draw", "type", "image"] as const).map((tab) => (
           <button
             className={signature.mode === tab ? "active" : ""}
             key={tab}
             onClick={() => signature.setMode(tab)}
           >
-            {tab[0].toUpperCase() + tab.slice(1)}
+            {tr(
+              (
+                {
+                  draw: "signature.modeDraw",
+                  type: "signature.type",
+                  image: "common.image",
+                } as const
+              )[tab]
+            )}
           </button>
         ))}
       </div>
@@ -55,19 +62,21 @@ function SignatureInput({ signature }: { signature: ReturnType<typeof useSignatu
       {signature.mode === "type" && (
         <>
           <label>
-            Your name or initials
+            {tr("signature.nameInitials")}
             <input
               value={signature.text}
               onChange={(event) => signature.setText(event.target.value)}
-              placeholder="Your name"
+              placeholder={tr("signature.name")}
             />
           </label>
-          <div className="typed-signature signature-font">{signature.text || "Your signature"}</div>
+          <div className="typed-signature signature-font">
+            {signature.text || tr("signature.preview")}
+          </div>
         </>
       )}
       {signature.mode === "image" && (
         <label className="image-drop">
-          {signature.image ? signature.image.name : "Choose a PNG or JPG signature"}
+          {signature.image ? signature.image.name : tr("signature.chooseImage")}
           <input
             type="file"
             accept="image/png,image/jpeg"
@@ -85,7 +94,7 @@ function SavedSignatures({ signature }: { signature: ReturnType<typeof useSignat
   if (!signature.saved.length) return null;
   return (
     <div className="saved-signatures">
-      <span className="section-label">SAVED SIGNATURES</span>
+      <span className="section-label">{tr("signature.saved")}</span>
       {signature.saved.map((saved) => (
         <div key={saved.id}>
           <button className="text-button" onClick={() => signature.use(saved)}>
@@ -93,10 +102,10 @@ function SavedSignatures({ signature }: { signature: ReturnType<typeof useSignat
           </button>
           <button
             className="text-button"
-            aria-label={`Remove ${saved.label}`}
+            aria-label={tr("common.removeNamed", { name: saved.label })}
             onClick={() => signature.remove(saved.id)}
           >
-            Remove
+            {tr("common.remove")}
           </button>
         </div>
       ))}

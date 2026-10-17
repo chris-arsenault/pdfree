@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useDraft } from "../hooks/useDraft";
 import { useEditor } from "../hooks/editorContext";
 import { FileCheck2, FileLock2, FileWarning, FileClock } from "lucide-react";
@@ -19,31 +20,28 @@ function DraftMessage() {
   if (draft.autosaveOff)
     return (
       <span role="status" className="draft-message">
-        <Tooltip
-          label="Autosave off"
-          detail="Autosave is off for protected PDFs in this browser. Open Library storage settings to change this for all documents."
-        >
+        <Tooltip label={tr("draft.autosaveOff")} detail={tr("draft.autosaveHint")}>
           <button
             type="button"
             className="popover-trigger draft-settings-trigger"
-            aria-label="Autosave off"
+            aria-label={tr("draft.autosaveOff")}
             disabled={!!editor.task.busy}
             onClick={showStorage}
           >
             <FileLock2 size={17} aria-hidden="true" />
-            <span>Autosave off</span>
+            <span>{tr("draft.autosaveOff")}</span>
           </button>
         </Tooltip>
       </span>
     );
   const routine =
-    !draft.status || ["Saving draft…", "Draft saved on this device"].includes(draft.status);
+    !draft.statusKind || ["draft.saving", "draft.savedAccessible"].includes(draft.statusKind);
   if (!routine) {
-    const removed = draft.status.startsWith("Removed from library.");
+    const removed = draft.statusKind === "draft.removed";
     return (
       <span role="status">
         <ActionPopover
-          label={removed ? "Removed from library" : "Draft not saved"}
+          label={removed ? tr("draft.removedLabel") : tr("draft.notSaved")}
           icon={removed ? FileClock : FileWarning}
           className="status-warning"
         >
@@ -53,7 +51,7 @@ function DraftMessage() {
     );
   }
   if (!draft.status) return null;
-  const saving = draft.status === "Saving draft…";
+  const saving = draft.statusKind === "draft.saving";
   // Plain status text: a hover tooltip here only repeated it and could open over
   // the page list whenever autosave ran under a resting pointer.
   return (
@@ -63,8 +61,10 @@ function DraftMessage() {
       ) : (
         <FileCheck2 size={14} aria-hidden="true" />
       )}
-      <span>{saving ? "Saving…" : "Saved"}</span>
-      <span className="sr-only">{saving ? " draft" : " draft on this device"}</span>
+      <span>{saving ? tr("draft.savingLabel") : tr("draft.savedLabel")}</span>
+      <span className="sr-only">
+        {saving ? tr("draft.savingAccessible") : tr("draft.savedAccessible")}
+      </span>
     </span>
   );
 }

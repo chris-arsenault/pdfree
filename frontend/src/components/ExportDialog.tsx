@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useState } from "react";
 import { Download, Printer, Save } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
@@ -11,18 +12,56 @@ import { ExportSecurity } from "./ExportSecurity";
 import { hasEncryptedSources } from "../core/model";
 import { type CompressionOptions } from "../core/compressPdf";
 import { CompressionControls } from "./CompressionControls";
-import { defaultNup, type NupOptions } from "../core/nupPdf";
+import { defaultNup, type NupOptions } from "../core/nupOptions";
 import { NupSheets } from "./NupSheets";
 import { SplitExport } from "./SplitExport";
 import { PageScopeField } from "./PageScopeField";
 
 type ExportFormat = "pdf" | "sheets" | "split" | "images" | "project";
 const formats: { id: ExportFormat; label: string; detail: string }[] = [
-  { id: "pdf", label: "PDF", detail: "Fields, comments and edits; optional signing" },
-  { id: "sheets", label: "Printable sheets", detail: "2, 4 or 6 pages on each sheet" },
-  { id: "split", label: "Split into files", detail: "Several PDFs in a ZIP" },
-  { id: "images", label: "Page images", detail: "PNG files in a ZIP" },
-  { id: "project", label: "Editing project", detail: "Reopen later with movable objects" },
+  {
+    id: "pdf",
+    label: "PDF",
+    get detail() {
+      return tr("export.pdfHint");
+    },
+  },
+  {
+    id: "sheets",
+    get label() {
+      return tr("export.sheets");
+    },
+    get detail() {
+      return tr("export.sheetsHint");
+    },
+  },
+  {
+    id: "split",
+    get label() {
+      return tr("export.split");
+    },
+    get detail() {
+      return tr("export.splitHint");
+    },
+  },
+  {
+    id: "images",
+    get label() {
+      return tr("export.images");
+    },
+    get detail() {
+      return tr("export.imagesHint");
+    },
+  },
+  {
+    id: "project",
+    get label() {
+      return tr("export.project");
+    },
+    get detail() {
+      return tr("export.projectHint");
+    },
+  },
 ];
 
 // Only formats whose file depends on these settings show them.
@@ -39,12 +78,12 @@ export function ExportDialog() {
   const [flatten, setFlatten] = useState(false);
   const scope = usePageScope(editor.exportStart === "extract" ? selectionDefault(editor) : "all");
   return (
-    <Modal title="Export your document" onClose={close}>
-      <p className="modal-description">Files are created on this device and downloaded directly.</p>
+    <Modal title={tr("export.title")} onClose={close}>
+      <p className="modal-description">{tr("export.description")}</p>
       <FormatPicker format={format} onChange={setFormat} />
       <ProtectionNotice />
       <label>
-        {format === "split" ? "File name prefix" : "File name"}
+        {format === "split" ? tr("export.prefix") : tr("export.fileName")}
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </label>
       {scopedFormats.includes(format) && (
@@ -79,7 +118,7 @@ function FormatPicker({
 }) {
   return (
     <fieldset className="export-formats">
-      <legend>Output</legend>
+      <legend>{tr("common.output")}</legend>
       {formats.map((item) => (
         <label key={item.id} className="export-format">
           <input
@@ -122,12 +161,9 @@ function ScopedExport({
   if (format === "project")
     return (
       <>
-        <p className="field-note">
-          Saves the whole document with its original sources so added objects, comments and fields
-          stay editable when you reopen it in PDFree.
-        </p>
+        <p className="field-note">{tr("export.projectDescription")}</p>
         <PrimaryAction
-          label="Download editing project"
+          label={tr("export.downloadProject")}
           onClick={actions.saveProject}
           disabled={blocked}
         />
@@ -136,7 +172,7 @@ function ScopedExport({
   if (format === "images")
     return (
       <PrimaryAction
-        label="Download page images (ZIP)"
+        label={tr("export.downloadImages")}
         onClick={actions.images}
         disabled={blocked || invalid}
       />
@@ -195,8 +231,10 @@ function PdfOptions({
       />
       <PdfActions
         actions={actions}
-        printLabel={hasSecurity(security) ? "Print unprotected copy" : "Print"}
-        downloadLabel={sheets ? `Download ${nup.count}-up PDF` : "Download PDF"}
+        printLabel={hasSecurity(security) ? tr("export.printUnprotected") : tr("common.print")}
+        downloadLabel={
+          sheets ? tr("export.nupDownload", { count: nup.count }) : tr("export.downloadPdf")
+        }
         disabled={disabled}
       />
     </>
@@ -241,7 +279,7 @@ function PdfActions({
       </button>
       {filePicker && (
         <button className="button secondary" onClick={actions.direct} disabled={disabled}>
-          <Save size={16} /> Save to file…
+          <Save size={16} /> {tr("export.direct")}
         </button>
       )}
       <button className="button primary" onClick={() => actions.exportFile()} disabled={disabled}>
@@ -265,22 +303,16 @@ function FlattenField({
           checked={flatten}
           onChange={(event) => onChange(event.target.checked)}
         />
-        Flatten form fields
+        {tr("export.flatten")}
       </label>
-      <p className="field-note">
-        Flattening keeps the filled appearance and removes interactive fields. Save an editing
-        project to continue moving added objects.
-      </p>
+      <p className="field-note">{tr("export.flattenHint")}</p>
     </>
   );
 }
 function ProtectionNotice() {
   const editor = useEditor();
   return hasEncryptedSources(editor.document) ? (
-    <p className="inline-warning">
-      This document was encrypted. Choose PDF and enable protection below to encrypt the new file.
-      Editing projects, images, print and split files contain decrypted content.
-    </p>
+    <p className="inline-warning">{tr("export.encryptedNotice")}</p>
   ) : null;
 }
 function RequiredFields() {
@@ -294,7 +326,7 @@ function RequiredFields() {
   if (!required.length) return null;
   return (
     <div className="inline-warning">
-      Unfilled required fields: {required.map((field) => field.name).join(", ")}
+      {tr("export.requiredFields", { fields: required.map((field) => field.name).join(", ") })}
     </div>
   );
 }

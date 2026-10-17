@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useRef } from "react";
 import { useEditor } from "../hooks/editorContext";
 import { useElementSize } from "../hooks/useElementSize";
@@ -36,14 +37,14 @@ export function ReferencePageView() {
         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabIndex={0}
         role="region"
-        aria-label="Pinned page viewport"
+        aria-label={tr("reference.viewport")}
         onScroll={remember}
         {...pan}
       >
         <div
           className="page-surface tool-select reference-surface"
           role="region"
-          aria-label="Pinned PDF page"
+          aria-label={tr("reference.pdfPage")}
           style={{
             "--page-width": `${dimensions.width * scale}px`,
             "--page-height": `${dimensions.height * scale}px`,

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useEditor } from "./editorContext";
-import { fontData } from "../services/resources";
+import { fontData, documentFontOptions } from "../services/resources";
 import { runPdfWorker } from "../services/workerClient";
 import { runSecurityWorker } from "../services/securityClient";
 import { type PdfSecurity } from "../core/pdfSecurity";
@@ -8,6 +8,7 @@ import { type SecuritySettings, hasSecurity, securityCredentials } from "../core
 import { type CompressionOptions, type CompressionResult } from "../core/compressPdf";
 import { runProcessingWorker } from "../services/workerClient";
 import { type NupOptions } from "../core/nupPdf";
+import { AbortMessageError } from "../i18n/messages";
 
 export type ExportProcessing = { compression?: CompressionOptions; nup?: NupOptions };
 
@@ -34,7 +35,7 @@ export function useExportPdf(
   }, []);
   return async (secured = true) => {
     const active = secured && hasSecurity(security);
-    if (!mounted.current) throw new DOMException("Signing/protection canceled.", "AbortError");
+    if (!mounted.current) throw new AbortMessageError();
     const current = new AbortController();
     controller.current = current;
     let options: PdfSecurity | null = null;
@@ -45,9 +46,9 @@ export function useExportPdf(
         document: editor.document,
         flatten: flatten || isNup(processing),
         pageIds,
-        fonts: await fontData(),
+        fonts: await fontData(documentFontOptions(editor.document, pageIds)),
       });
-      if (current.signal.aborted) throw new DOMException("Export canceled.", "AbortError");
+      if (current.signal.aborted) throw new AbortMessageError();
       bytes = await processExport(bytes, processing, current.signal);
       if (!options) return bytes;
       return await runSecurityWorker(bytes, options, current!.signal);

@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { hasEncryptedSources, type EditorDocument } from "../core/model";
 
 const key = "pdfree-settings-v1:disable-protected-autosave";
@@ -17,7 +18,7 @@ export function setProtectedAutosaveDisabled(disabled: boolean) {
   try {
     localStorage.setItem(key, String(disabled));
   } catch {
-    throw new Error("This browser could not save the setting. Your previous choice is unchanged.");
+    throw failure("errors.settingSave");
   }
   lastKnownValue = disabled;
   window.dispatchEvent(new Event(changed));

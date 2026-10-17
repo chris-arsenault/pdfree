@@ -1,3 +1,7 @@
+import { useMessageState } from "../i18n/react";
+import { message, errorMessage } from "../i18n/messages";
+import { formatNumber } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
@@ -34,11 +38,11 @@ function BookmarkOutline({ onEdit }: { onEdit: () => void }) {
   return (
     <div className="bookmark-outline">
       <button className="button secondary full" onClick={onEdit}>
-        <Pencil size={15} aria-hidden="true" /> Edit bookmarks
+        <Pencil size={15} aria-hidden="true" /> {tr("bookmarks.edit")}
       </button>
-      {items === null && <p className="field-note">Reading bookmarks…</p>}
-      {items?.length === 0 && <p className="field-note">This document has no bookmarks.</p>}
-      <ul aria-label="Document outline">
+      {items === null && <p className="field-note">{tr("bookmarks.reading")}</p>}
+      {items?.length === 0 && <p className="field-note">{tr("bookmarks.emptyDocument")}</p>}
+      <ul aria-label={tr("bookmarks.outline")}>
         {items?.map((item, index) => (
           <li key={`${item.pageId}-${index}`}>
             <button
@@ -51,7 +55,9 @@ function BookmarkOutline({ onEdit }: { onEdit: () => void }) {
             >
               <span>{item.title}</span>
               <small>
-                {editor.document.pages.findIndex((page) => page.id === item.pageId) + 1}
+                {formatNumber(
+                  editor.document.pages.findIndex((page) => page.id === item.pageId) + 1
+                )}
               </small>
             </button>
           </li>
@@ -64,14 +70,12 @@ function useBookmarkDraft(onDone: () => void) {
   const editor = useEditor(),
     [bookmarks, setBookmarks] = useState(editor.document.bookmarks ?? []);
   const [dragged, setDragged] = useState(""),
-    [error, setError] = useState("");
+    [error, setError] = useMessageState();
   const unsupported = editor.document.sources
     .filter((source) => editor.document.pages.some((page) => page.sourceId === source.id))
     .some((source) =>
       source.structuralWarnings.some((warning) =>
-        ["document bookmarks", "internal page links", "named destinations or attachments"].includes(
-          warning
-        )
+        ["bookmarks", "links", "destinations"].includes(warning)
       )
     );
   const change = (id: string, update: Partial<Bookmark>) =>
@@ -102,7 +106,9 @@ function useBookmarkDraft(onDone: () => void) {
       {
         id: newId(),
         parentId: null,
-        title: `Page ${editor.document.pages.findIndex((page) => page.id === editor.page?.id) + 1}`,
+        title: tr("common.pageNumber", {
+          number: editor.document.pages.findIndex((page) => page.id === editor.page?.id) + 1,
+        }),
         destination: { pageId: editor.page!.id, mode: "Fit", coordinates: [] },
       },
     ]);
@@ -113,7 +119,7 @@ function useBookmarkDraft(onDone: () => void) {
       editor.commit(next);
       onDone();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Invalid bookmarks.");
+      setError(errorMessage(error, message("bookmarks.invalid")));
     }
   };
   return {
@@ -135,20 +141,13 @@ function useBookmarkDraft(onDone: () => void) {
 function BookmarkEditor({ onDone }: { onDone: () => void }) {
   const draft = useBookmarkDraft(onDone);
   return (
-    <div className="bookmark-editor" role="group" aria-label="Edit bookmarks">
-      <p className="field-note">
-        Bookmarks follow their target page when pages move. Deleting a target removes its bookmark
-        and disables links to it. Duplicating a page keeps existing bookmarks pointing to the
-        original.
-      </p>
+    <div className="bookmark-editor" role="group" aria-label={tr("bookmarks.edit")}>
+      <p className="field-note">{tr("bookmarks.description")}</p>
       {draft.unsupported ? (
         <>
-          <p className="inline-warning">
-            This source contains unsupported navigation or catalog structures. Keep its original
-            outline intact; editing bookmarks is unavailable.
-          </p>
+          <p className="inline-warning">{tr("bookmarks.unsupported")}</p>
           <button className="button secondary" onClick={onDone}>
-            Back to outline
+            {tr("bookmarks.back")}
           </button>
         </>
       ) : (
@@ -188,10 +187,10 @@ function BookmarkRows({
           }}
         />
       ))}
-      {!bookmarks.length && <p className="field-note">No bookmarks yet.</p>}
+      {!bookmarks.length && <p className="field-note">{tr("bookmarks.empty")}</p>}
       <button className="button secondary" onClick={add}>
         <Plus size={16} />
-        Add current page
+        {tr("bookmarks.addPage")}
       </button>
       {error && (
         <p role="alert" className="inline-warning">
@@ -200,10 +199,10 @@ function BookmarkRows({
       )}
       <div className="bookmark-actions">
         <button className="button secondary" onClick={onDone}>
-          Cancel
+          {tr("common.cancel")}
         </button>
         <button className="button primary" onClick={save}>
-          Save bookmarks
+          {tr("bookmarks.save")}
         </button>
       </div>
     </>
@@ -246,24 +245,28 @@ function BookmarkRow({
       style={{ "--bookmark-depth": depth }}
     >
       <input
-        aria-label={`Bookmark ${index + 1} title`}
+        aria-label={tr("bookmarks.titleLabel", { number: index + 1 })}
         value={bookmark.title}
         onChange={(event) => change(bookmark.id, { title: event.target.value })}
       />
       <BookmarkTargets bookmark={bookmark} index={index} change={change} parents={parents} />
       <IconButton
-        label={`Move bookmark ${index + 1} up`}
+        label={tr("bookmarks.moveUp", { number: index + 1 })}
         icon={ArrowUp}
         disabled={!index}
         onClick={() => reorder(bookmark.id, bookmarks[index - 1].id)}
       />
       <IconButton
-        label={`Move bookmark ${index + 1} down`}
+        label={tr("bookmarks.moveDown", { number: index + 1 })}
         icon={ArrowDown}
         disabled={index === bookmarks.length - 1}
         onClick={() => reorder(bookmarks[index + 1].id, bookmark.id)}
       />
-      <IconButton label={`Delete bookmark ${index + 1}`} icon={Trash2} onClick={remove} />
+      <IconButton
+        label={tr("bookmarks.deleteNamed", { number: index + 1 })}
+        icon={Trash2}
+        onClick={remove}
+      />
     </div>
   );
 }
@@ -277,7 +280,7 @@ function BookmarkTargets({
   return (
     <>
       <select
-        aria-label={`Bookmark ${index + 1} page`}
+        aria-label={tr("bookmarks.pageLabel", { number: index + 1 })}
         value={bookmark.destination.pageId}
         onChange={(event) =>
           change(bookmark.id, {
@@ -287,16 +290,16 @@ function BookmarkTargets({
       >
         {editor.document.pages.map((page, number) => (
           <option key={page.id} value={page.id}>
-            Page {number + 1}
+            {tr("common.pageNumber", { number: number + 1 })}
           </option>
         ))}
       </select>
       <select
-        aria-label={`Bookmark ${index + 1} parent`}
+        aria-label={tr("bookmarks.parentLabel", { number: index + 1 })}
         value={bookmark.parentId ?? ""}
         onChange={(event) => change(bookmark.id, { parentId: event.target.value || null })}
       >
-        <option value="">Root</option>
+        <option value="">{tr("common.root")}</option>
         {parents.map((item) => (
           <option key={item.id} value={item.id}>
             {item.title}

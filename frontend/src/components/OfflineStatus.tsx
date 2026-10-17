@@ -1,3 +1,6 @@
+import { formatNumber } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
+import { message } from "../i18n/messages";
 import { useEditor } from "../hooks/editorContext";
 import { useOffline } from "../hooks/useOffline";
 import {
@@ -17,47 +20,43 @@ export function OfflineStatus() {
   const editor = useEditor(),
     offline = useOffline();
   const apply = () =>
-    editor.task.run("Updating editor", async () => {
+    editor.task.run(message("task.updatingEditor"), async () => {
       if (
         editor.document.pages.length &&
         !(await editor.confirmation.ask({
-          title: "Update and reload?",
-          message:
-            "Updating reloads the editor. Download an editing project first to keep movable objects and other edits.",
-          confirmLabel: "Update and reload",
+          title: message("offline.updateQuestion"),
+          message: message("offline.updateDescription"),
+          confirmLabel: message("offline.updateConfirm"),
           tone: "primary",
         }))
       )
         return;
-      await offline
-        .update(true)
-        .catch(() =>
-          offline.setError("The update could not load. Your current editor remains available.")
-        );
+      await offline.update(true).catch(() => offline.setError(message("offline.updateFailed")));
     });
   return (
     <div className="offline-status" role="status">
       {offline.error ? (
-        <ActionPopover label="Offline unavailable" icon={TriangleAlert} className="status-warning">
+        <ActionPopover
+          label={tr("offline.unavailable")}
+          icon={TriangleAlert}
+          className="status-warning"
+        >
           {() => <p>{offline.error}</p>}
         </ActionPopover>
       ) : (
         offline.mode !== "unsupported" && <OfflineAccess offline={offline} />
       )}
       {offline.waiting && (
-        <Tooltip
-          label="Update available"
-          detail="Save your editing project before updating. Updating reloads the editor."
-        >
+        <Tooltip label={tr("offline.updateAvailable")} detail={tr("offline.updateHint")}>
           <button
             type="button"
             className="popover-trigger status-warning"
-            aria-label="Update"
+            aria-label={tr("offline.update")}
             onClick={apply}
             disabled={!!editor.task.busy}
           >
             <RefreshCw size={17} aria-hidden="true" />
-            <span>Update</span>
+            <span>{tr("offline.update")}</span>
           </button>
         </Tooltip>
       )}
@@ -65,26 +64,26 @@ export function OfflineStatus() {
   );
 }
 
-const megabytes = (bytes: number) => `${Math.round(bytes / 1024 / 1024)} MB`;
+const megabytes = (bytes: number) =>
+  formatNumber(bytes / 1024 / 1024, { style: "unit", unit: "megabyte", maximumFractionDigits: 0 });
 function triggerLabel(offline: Offline) {
-  if (offline.mode === "on") return "Works offline";
+  if (offline.mode === "on") return tr("offline.on");
   if (offline.mode === "saving")
     return offline.progress === null
-      ? "Saving for offline…"
-      : `Saving for offline ${Math.round(offline.progress * 100)}%`;
-  return "Use offline";
+      ? tr("offline.saving")
+      : tr("offline.savingPercent", { percent: Math.round(offline.progress * 100) });
+  return tr("offline.use");
 }
 
 function OfflineAccess({ offline }: { offline: Offline }) {
   const editor = useEditor();
   const remove = () =>
-    editor.task.run("Removing offline copy", async () => {
+    editor.task.run(message("task.removingOffline"), async () => {
       if (
         await editor.confirmation.ask({
-          title: "Remove offline copy?",
-          message:
-            "PDFree will load from the internet again and stop working without a connection. Documents saved in your Library stay on this device.",
-          confirmLabel: "Remove offline copy",
+          title: message("offline.removeQuestion"),
+          message: message("offline.removeDescription"),
+          confirmLabel: message("offline.remove"),
           tone: "danger",
         })
       )
@@ -102,17 +101,17 @@ function OfflineAccess({ offline }: { offline: Offline }) {
           <div className="offline-actions">
             {offline.installable && (
               <button className="button secondary" onClick={offline.install}>
-                <MonitorDown size={16} aria-hidden="true" /> Install app
+                <MonitorDown size={16} aria-hidden="true" /> {tr("offline.install")}
               </button>
             )}
             {offline.mode === "off" && (
               <button className="button primary" onClick={offline.enable}>
-                Make available offline
+                {tr("offline.makeAvailable")}
               </button>
             )}
             {offline.mode === "on" && (
               <button className="button secondary" onClick={remove}>
-                Remove offline copy
+                {tr("offline.remove")}
               </button>
             )}
           </div>
@@ -123,28 +122,20 @@ function OfflineAccess({ offline }: { offline: Offline }) {
 }
 
 function OfflineDetails({ offline }: { offline: Offline }) {
-  const size = offline.size ? megabytes(offline.size.bytes) : "about 30 MB";
+  const size = offline.size ? megabytes(offline.size.bytes) : tr("offline.sizeUnknown");
   if (offline.mode === "saving")
     return (
       <>
-        <p>Saving PDFree to this device ({size})…</p>
-        <progress aria-label="Offline copy saved" max={1} value={offline.progress ?? undefined} />
+        <p>{tr("offline.savingSize", { size })}</p>
+        <progress aria-label={tr("offline.saved")} max={1} value={offline.progress ?? undefined} />
       </>
     );
   if (offline.mode === "on")
     return (
       <p>
-        PDFree is saved on this device and opens without a connection, including text recognition.
-        Updates appear here when available.
-        {!offline.kept &&
-          " The browser may clear the offline copy if the device runs low on space."}
+        {tr("offline.savedDescription")}
+        {!offline.kept && tr("offline.eviction")}
       </p>
     );
-  return (
-    <p>
-      PDFree loads from the internet on each visit. Save it to this device ({size}, including text
-      recognition) to open and use it without a connection. Your documents stay on this device
-      either way.
-    </p>
-  );
+  return <p>{tr("offline.availableDescription", { size })}</p>;
 }

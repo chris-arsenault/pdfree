@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import forge from "node-forge";
 import { type EnvelopedData, RSAESOAEPParams } from "pkijs";
 import { OctetString, Sequence, Integer, ObjectIdentifier } from "asn1js";
@@ -23,7 +24,7 @@ export function oaepOptions(params: RSAESOAEPParams) {
     params.maskGenAlgorithm.algorithmId !== "1.2.840.113549.1.1.8" ||
     params.pSourceAlgorithm.algorithmId !== "1.2.840.113549.1.1.9"
   )
-    throw new Error("Unsupported RSA-OAEP parameters");
+    throw failure("errors.oaepParameters");
   const label =
     params.pSourceAlgorithm.algorithmParams instanceof OctetString
       ? binary(new Uint8Array(params.pSourceAlgorithm.algorithmParams.getValue()))
@@ -42,9 +43,9 @@ function rc2Cipher(parameters: Sequence, key: string) {
       ? 32
       : (({ 58: 128, 120: 64, 160: 40 } as Record<number, number>)[version] ?? version);
   if (version !== undefined && version < 256 && ![58, 120, 160].includes(version))
-    throw new Error("Unsupported RC2 effective key length");
+    throw failure("errors.rc2KeyLength");
   const iv = values.at(-1);
-  if (!(iv instanceof OctetString)) throw new Error("Missing RC2 IV");
+  if (!(iv instanceof OctetString)) throw failure("errors.rc2Iv");
   const cipher = forge.rc2.createDecryptionCipher(key, bits);
   cipher.start(binary(new Uint8Array(iv.getValue())));
   return cipher;
@@ -60,8 +61,7 @@ function contentCipher(algorithm: string, parameters: unknown, key: string) {
     "1.2.840.113549.3.7": "3DES-CBC",
   };
   const name = algorithms[algorithm];
-  if (!name || !(parameters instanceof OctetString))
-    throw new Error("Unsupported recipient content encryption");
+  if (!name || !(parameters instanceof OctetString)) throw failure("errors.recipientEncryption");
   const cipher = forge.cipher.createDecipher(name, key);
   cipher.start({ iv: binary(new Uint8Array(parameters.getValue())) });
   return cipher;
@@ -84,12 +84,12 @@ function rc4(data: Uint8Array, key: Uint8Array) {
 }
 export function decryptRecipientContent(envelope: EnvelopedData, key: string) {
   const info = envelope.encryptedContentInfo;
-  if (!info.encryptedContent) throw new Error("Missing encrypted envelope content");
+  if (!info.encryptedContent) throw failure("errors.envelopeContent");
   const data = new Uint8Array(info.getEncryptedContent());
   const algorithm = info.contentEncryptionAlgorithm;
   if (algorithm.algorithmId === "1.2.840.113549.3.4") return rc4(data, bytesOf(key));
   const cipher = contentCipher(algorithm.algorithmId, algorithm.algorithmParams, key);
   cipher.update(forge.util.createBuffer(binary(data)));
-  if (!cipher.finish()) throw new Error("Invalid recipient envelope padding");
+  if (!cipher.finish()) throw failure("errors.envelopePadding");
   return bytesOf(cipher.output.getBytes());
 }

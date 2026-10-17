@@ -1,11 +1,13 @@
+import { failure, AbortMessageError, type UiMessage } from "../i18n/messages";
 import { type EditorDocument } from "../core/model";
-import { appendSource, type importPdf } from "../core/importPdf";
+import { type importPdf } from "../core/importPdf";
+import { appendSource } from "../core/appendSource";
 import { runPdfWorker } from "./workerClient";
 import { runImportWorker } from "./securityClient";
 import { PdfPasswordError, PdfRecipientError, type PdfCredential } from "../core/pdfCredentials";
 export type PasswordPrompt = (
   name: string,
-  message: string,
+  message: UiMessage,
   kind: "password" | "recipient"
 ) => Promise<PdfCredential | null>;
 export async function openFiles(
@@ -16,12 +18,12 @@ export async function openFiles(
 ) {
   const project = files.find((file) => file.name.toLowerCase().endsWith(".pdfree"));
   if (project) {
-    if (files.length !== 1) throw new Error("Open one editing project at a time.");
+    if (files.length !== 1) throw failure("errors.openProjectSingle");
     const opened = await runPdfWorker<EditorDocument>({
       kind: "project-open",
       bytes: new Uint8Array(await project.arrayBuffer()),
     });
-    if (signal?.aborted) throw new DOMException("Opening PDF canceled.", "AbortError");
+    if (signal?.aborted) throw new AbortMessageError();
     return opened;
   }
   let next = current;
@@ -35,7 +37,7 @@ export async function openFiles(
           mime: file.type,
         })
       : await importWithPassword(bytes, file.name, prompt, signal);
-    if (signal?.aborted) throw new DOMException("Opening PDF canceled.", "AbortError");
+    if (signal?.aborted) throw new AbortMessageError();
     next = appendSource(next, imported);
   }
   return next;
@@ -58,14 +60,10 @@ async function importWithPassword(
         throw error;
       const answer = await prompt(
         name,
-        error.message,
+        error.ui,
         error instanceof PdfRecipientError ? "recipient" : "password"
       );
-      if (answer === null || signal?.aborted)
-        throw new DOMException(
-          "Opening PDF canceled. Your current document is unchanged.",
-          "AbortError"
-        );
+      if (answer === null || signal?.aborted) throw new AbortMessageError();
       credential = answer;
     }
   }

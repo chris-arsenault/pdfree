@@ -1,3 +1,5 @@
+import { useMessageState } from "../i18n/react";
+import { failure, message, type UiMessage } from "../i18n/messages";
 import {
   useEffect,
   useContext,
@@ -20,20 +22,20 @@ import {
 import { type EditorDocument } from "../core/model";
 import { canSaveDraft } from "../services/settings";
 import { useProtectedAutosaveDisabled } from "./useSettings";
-import { releaseViewers } from "../services/viewer";
+import { releaseViewers } from "../services/viewerCache";
 import { SessionContext } from "./sessionContext";
 import { DraftContext } from "./draftContext";
 
 export function useDraft() {
   const draft = useContext(DraftContext);
-  if (!draft) throw new Error("The document draft provider is missing.");
+  if (!draft) throw failure("errors.draftProvider");
   return draft;
 }
 export function useDraftState(active = true) {
   const editor = useEditor();
   const sessions = useContext(SessionContext);
   const disableProtectedAutosave = useProtectedAutosaveDisabled();
-  const [status, setStatus] = useState("");
+  const [status, setStatus, statusMessage] = useMessageState();
   const [recoveries, setRecoveries] = useRecoveries(setStatus);
   const { document: doc, history, savedRevision } = editor;
   const opened = useRef<{ id: string; revision: string } | null>(null);
@@ -62,10 +64,10 @@ export function useDraftState(active = true) {
     releaseViewers(doc.sources.map((source) => source.id));
   }, [doc.sources, active]);
   const restore = (draft: Draft) =>
-    editor.task.run("Opening saved document", async () => {
+    editor.task.run(message("task.openingSaved"), async () => {
       if (sessions) {
         const saved = (await loadDrafts()).find((item) => item.id === draft.id);
-        if (!saved) throw new Error("This saved document was deleted.");
+        if (!saved) throw failure("errors.savedDeleted");
         editor.setDialog("");
         sessions.openDocument(saved.document, saved.id);
         return;
@@ -74,15 +76,15 @@ export function useDraftState(active = true) {
         doc.pages.length &&
         editor.savedRevision !== editor.history.revision &&
         !(await editor.confirmation.ask({
-          title: "Open a saved document?",
-          message: "Download an editing project first if you need to keep your current edits.",
-          confirmLabel: "Open document",
+          title: message("confirmation.openSaved"),
+          message: message("confirmation.keepCurrentEdits"),
+          confirmLabel: message("common.openDocument"),
           tone: "primary",
         }))
       )
         return;
       const saved = (await loadDrafts()).find((item) => item.id === draft.id);
-      if (!saved) throw new Error("This saved document was deleted. Choose another document.");
+      if (!saved) throw failure("errors.savedChooseAnother");
       opened.current = { id: saved.id, revision: saved.revision };
       editor.replace(saved.document);
       editor.setDraftId(draft.id);
@@ -91,12 +93,13 @@ export function useDraftState(active = true) {
   return {
     recoveries,
     status,
+    statusKind: statusMessage?.key ?? null,
     restore,
     autosaveOff: !!doc.pages.length && !canSaveDraft(doc),
   };
 }
 
-function useRecoveries(setStatus: Dispatch<SetStateAction<string>>) {
+function useRecoveries(setStatus: Dispatch<SetStateAction<UiMessage | null>>) {
   const [recoveries, setRecoveries] = useState<Draft[]>([]);
   useEffect(() => {
     let cancelled = false;
@@ -105,8 +108,7 @@ function useRecoveries(setStatus: Dispatch<SetStateAction<string>>) {
         if (!cancelled) setRecoveries(drafts);
       })
       .catch(() => {
-        if (!cancelled)
-          setStatus("Draft storage is unavailable. Download an editing project to keep your work.");
+        if (!cancelled) setStatus(message("draft.unavailable"));
       });
     return () => {
       cancelled = true;
@@ -120,7 +122,7 @@ function useDraftSync(
   doc: EditorDocument,
   { id, opened }: { id: string; opened: RefObject<{ id: string; revision: string } | null> },
   epoch: number,
-  setStatus: Dispatch<SetStateAction<string>>,
+  setStatus: Dispatch<SetStateAction<UiMessage | null>>,
   setRecoveries: Dispatch<SetStateAction<Draft[]>>,
   setDraftId: Dispatch<SetStateAction<string>>,
   active: boolean,
@@ -150,21 +152,19 @@ function useDraftSync(
         if (removed !== null && removed !== current.current.id) return;
         paused.current = current.current.document;
         session.current = draftSession(current.current.id);
-        setStatus(
-          "Removed from library. This document stays open; saving resumes after your next edit."
-        );
+        setStatus(message("draft.removed"));
       }),
     [setRecoveries, setStatus]
   );
   useEffect(() => {
     if (!doc.pages.length || paused.current === doc) return;
     if (!canSaveDraft(doc)) {
-      setStatus("Autosave off for protected documents. Change this in Settings.");
+      setStatus(message("draft.disabled"));
       return;
     }
     const writer = (session.current ??= draftSession(id));
     const permitted = () => maySave(current.current, id, epoch);
-    setStatus("Saving draft…");
+    setStatus(message("draft.saving"));
     const timer = setTimeout(() => {
       writes.current = writes.current
         .catch(() => {})
@@ -175,19 +175,15 @@ function useDraftSync(
             if (!permitted()) return;
             paused.current = current.current.document;
             session.current = draftSession(id);
-            setStatus(
-              "Removed from library. This document stays open; saving resumes after your next edit."
-            );
+            setStatus(message("draft.removed"));
             return;
           }
           if (!permitted()) return;
           if (active.id !== id) setDraftId(active.id);
-          setStatus("Draft saved on this device");
+          setStatus(message("draft.savedAccessible"));
         })
         .catch(() => {
-          setStatus(
-            "Draft could not be saved. Download an editing project; browser storage may be full."
-          );
+          setStatus(message("draft.failed"));
         });
     }, 600);
     return () => clearTimeout(timer);

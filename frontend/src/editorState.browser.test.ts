@@ -1,3 +1,4 @@
+import { message } from "./i18n/messages";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -33,7 +34,7 @@ function BusyProbe() {
       {
         onClick: () =>
           editor.task.run(
-            "Waiting",
+            message("task.openingFiles"),
             () =>
               new Promise<void>((resolve) => {
                 finishTask = resolve;

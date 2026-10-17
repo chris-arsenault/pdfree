@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { PDF, PdfArray, PdfDict, PdfName, PdfNumber, PdfString } from "@libpdf/core";
 import { Certificate, ContentInfo, EnvelopedData, KeyTransRecipientInfo } from "pkijs";
 import { type PdfRecipientProtection, type PdfPermissions } from "./pdfSecurity";
@@ -11,15 +12,13 @@ function recipientCertificate(bytes: Uint8Array) {
     const base64 = text
       .match(/-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----/)?.[1]
       .replace(/\s/g, "");
-    if (!base64) throw new Error("The recipient PEM certificate could not be read.");
+    if (!base64) throw failure("errors.recipientPem");
     der = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
   }
   try {
     return Certificate.fromBER(bufferOf(der));
   } catch {
-    throw new Error(
-      "Choose X.509 recipient certificates (.cer, .crt or .pem), without private keys."
-    );
+    throw failure("errors.recipientCertificate");
   }
 }
 export function recipientPermissionWord(permissions: PdfPermissions) {
@@ -48,7 +47,7 @@ async function envelopes(certificates: Uint8Array[], payload: Uint8Array) {
           kdfAlgorithm: "SHA-256",
         })
       )
-        throw new Error("This recipient's encryption key is unsupported.");
+        throw failure("errors.recipientKeyUnsupported");
       const algorithm: AesKeyGenParams = { name: "AES-CBC", length: 256 };
       await envelope.encrypt(algorithm, bufferOf(payload));
       for (const recipient of envelope.recipientInfos) {
@@ -56,7 +55,7 @@ async function envelopes(certificates: Uint8Array[], payload: Uint8Array) {
           recipient.value instanceof KeyTransRecipientInfo &&
           !recipient.value.encryptedKey.valueBlock.valueHexView.length
         )
-          throw new Error("The recipient key could not encrypt this PDF.");
+          throw failure("errors.recipientEncrypt");
       }
       return new Uint8Array(
         new ContentInfo({ contentType: ContentInfo.ENVELOPED_DATA, content: envelope.toSchema() })

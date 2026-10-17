@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import {
   Copy,
   Trash2,
@@ -49,16 +50,16 @@ export function ObjectActions({ objects }: { objects: PlacedObject[] }) {
     <>
       <div className="object-actions">
         <IconButton
-          label="Duplicate objects"
+          label={tr("objects.duplicate")}
           icon={Copy}
-          detail={`Duplicate ${objects.length} selected object(s).`}
+          detail={tr("objects.duplicateDetail", { count: objects.length })}
           onClick={copy}
         />
         <IconButton
-          label="Delete objects"
+          label={tr("objects.delete")}
           icon={Trash2}
-          detail="Remove selected objects. You can undo this."
-          shortcut="Delete"
+          detail={tr("objects.deleteHint")}
+          shortcut={tr("common.delete")}
           className="danger"
           onClick={remove}
         />
@@ -66,12 +67,12 @@ export function ObjectActions({ objects }: { objects: PlacedObject[] }) {
       {editor.objectIds.length > 1 && (
         <div className="object-actions">
           <IconButton
-            label="Align objects left"
+            label={tr("objects.alignLeft")}
             icon={AlignStartVertical}
             onClick={() => align("x")}
           />
           <IconButton
-            label="Align objects bottom"
+            label={tr("objects.alignBottom")}
             icon={AlignEndHorizontal}
             onClick={() => align("y")}
           />
@@ -79,7 +80,7 @@ export function ObjectActions({ objects }: { objects: PlacedObject[] }) {
       )}
       {objects.length === 1 && object.kind !== "field" && (
         <div className="object-actions">
-          <IconButton label="Bring to front" icon={BringToFront} onClick={front} />
+          <IconButton label={tr("objects.front")} icon={BringToFront} onClick={front} />
         </div>
       )}
       {objects.length === 1 && object.kind === "field" && <FieldTabOrder object={object} />}
@@ -103,18 +104,20 @@ function FieldTabOrder({ object }: { object: PlacedObject }) {
     editor.commit(replaceObjects(editor.document, page.id, objects));
   };
   return (
-    <div className="object-actions field-tab-order" role="group" aria-label="Field tab order">
-      <span>
-        Tab order {position + 1} of {fields.length}
-      </span>
+    <div
+      className="object-actions field-tab-order"
+      role="group"
+      aria-label={tr("objects.tabOrder")}
+    >
+      <span>{tr("objects.tabPosition", { number: position + 1, total: fields.length })}</span>
       <IconButton
-        label="Move earlier in tab order"
+        label={tr("objects.earlier")}
         icon={ChevronUp}
         disabled={position <= 0}
         onClick={() => move(-1)}
       />
       <IconButton
-        label="Move later in tab order"
+        label={tr("objects.later")}
         icon={ChevronDown}
         disabled={position >= fields.length - 1}
         onClick={() => move(1)}

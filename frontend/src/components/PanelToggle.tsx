@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { Bookmark, PanelLeft, SlidersHorizontal, MessagesSquare } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { IconButton } from "./ui/IconButton";
@@ -5,27 +6,43 @@ import { IconButton } from "./ui/IconButton";
 type Panel = "pages" | "bookmarks" | "properties" | "comments";
 const panels = {
   pages: {
-    label: "Pages",
+    get label() {
+      return tr("common.pagesLabel");
+    },
     icon: PanelLeft,
-    detail: "Show thumbnails and page operations.",
+    get detail() {
+      return tr("panels.pagesHint");
+    },
     controls: "pages-panel",
   },
   bookmarks: {
-    label: "Bookmarks",
+    get label() {
+      return tr("common.bookmarks");
+    },
     icon: Bookmark,
-    detail: "Navigate and edit the document outline.",
+    get detail() {
+      return tr("panels.bookmarksHint");
+    },
     controls: "pages-panel",
   },
   comments: {
-    label: "Comments",
+    get label() {
+      return tr("common.comments");
+    },
     icon: MessagesSquare,
-    detail: "Browse document comments and replies.",
+    get detail() {
+      return tr("panels.commentsHint");
+    },
     controls: "comments-panel",
   },
   properties: {
-    label: "Properties",
+    get label() {
+      return tr("common.properties");
+    },
     icon: SlidersHorizontal,
-    detail: "Show properties for added objects.",
+    get detail() {
+      return tr("panels.propertiesHint");
+    },
     controls: "properties-panel",
   },
 };

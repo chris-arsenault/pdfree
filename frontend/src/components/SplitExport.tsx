@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useState, useMemo } from "react";
 import { useEditor } from "../hooks/editorContext";
 import { splitGroups, outputName, type SplitMode } from "../core/pageRanges";
@@ -19,24 +20,19 @@ export function SplitExport({ prefix, flatten }: { prefix: string; flatten: bool
   const exports = useSplitExport(groups, name, flatten);
   return (
     <>
-      <p className="field-note">
-        Use physical page numbers from the Pages panel. Your current fields and edits are included
-        in every output. Split files are not signed or protected.
-      </p>
+      <p className="field-note">{tr("split.description")}</p>
       <label>
-        Split method
+        {tr("split.method")}
         <select value={mode} onChange={(event) => setMode(event.target.value as SplitMode)}>
-          <option value="after">After page numbers</option>
-          <option value="every">Every N pages</option>
-          <option value="individual">One PDF per page</option>
-          <option value="ranges">Explicit output ranges</option>
+          <option value="after">{tr("split.after")}</option>
+          <option value="every">{tr("split.every")}</option>
+          <option value="individual">{tr("split.individual")}</option>
+          <option value="ranges">{tr("split.ranges")}</option>
         </select>
       </label>
       {mode !== "individual" && (
         <label>
-          {mode === "ranges"
-            ? "Ranges separated by semicolons (1-3; 5-end)"
-            : "Page numbers / group size"}
+          {mode === "ranges" ? tr("split.rangeInput") : tr("split.sizeInput")}
           <input value={input} onChange={(event) => setInput(event.target.value)} />
         </label>
       )}
@@ -47,7 +43,7 @@ export function SplitExport({ prefix, flatten }: { prefix: string; flatten: bool
           onClick={exports.save}
           disabled={!!error || !!editor.task.busy}
         >
-          Download {groups.length} PDFs as ZIP
+          {tr("split.downloadZip", { count: groups.length })}
         </button>
       </div>
     </>
@@ -78,19 +74,19 @@ function SplitPreview({
   return (
     <>
       {omitted.length > 0 && (
-        <p className="inline-warning">Pages omitted from these outputs: {omitted.join(", ")}</p>
+        <p className="inline-warning">{tr("export.omitted", { pages: omitted.join(", ") })}</p>
       )}
       <ol className="split-preview">
         {groups.map((group, index) => (
           <li key={outputName(name, index)}>
             <strong>{outputName(name, index)}</strong>
-            <span>Pages {group.join(", ")}</span>
+            <span>{tr("split.pageList", { pages: group.join(", ") })}</span>
             <button
               disabled={!!editor.task.busy}
               onClick={() => exports.saveOne(index)}
-              aria-label={`Download ${outputName(name, index)}`}
+              aria-label={tr("common.downloadNamed", { name: outputName(name, index) })}
             >
-              Download PDF
+              {tr("export.downloadPdf")}
             </button>
           </li>
         ))}

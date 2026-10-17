@@ -1,3 +1,5 @@
+import { renderMessage } from "../i18n/runtime";
+import { text as tr } from "../i18n/runtime";
 import { useState } from "react";
 import {
   type BatchOptions,
@@ -33,20 +35,16 @@ export function BatchDialog() {
   };
   return (
     <Modal
-      title="Process multiple PDFs"
+      title={tr("batch.title")}
       onClose={() => {
         task.cancel();
         editor.setDialog("");
       }}
     >
-      <p className="field-note">
-        Files are processed one at a time on this device. Successful outputs remain available if
-        another file fails or you cancel. Open protected documents individually to unlock them
-        first.
-      </p>
+      <p className="field-note">{tr("batch.description")}</p>
       <fieldset className="utility-fields" disabled={task.busy}>
         <label>
-          PDF files
+          {tr("batch.pdfFiles")}
           <input
             type="file"
             accept="application/pdf,.pdf"
@@ -67,10 +65,10 @@ export function BatchDialog() {
           disabled={task.busy || !outputs.some((output) => output.bytes)}
           onClick={() => download(batchArchive(outputs), "processed-pdfs.zip", "application/zip")}
         >
-          Download ZIP
+          {tr("common.downloadZip")}
         </button>
         <button className="button primary" disabled={task.busy || !files.length} onClick={run}>
-          Process {files.length} file(s)
+          {tr("batch.processCount", { count: files.length })}
         </button>
       </div>
     </Modal>
@@ -86,16 +84,16 @@ function BatchFields({
   return (
     <>
       <label>
-        Operation
+        {tr("common.operation")}
         <select
           value={options.operation}
           onChange={(event) =>
             setOptions({ ...options, operation: event.target.value as BatchOptions["operation"] })
           }
         >
-          <option value="rule">Numbering, watermark or stamp</option>
-          <option value="ocr">Recognize scanned text</option>
-          <option value="compress">Compress images</option>
+          <option value="rule">{tr("batch.rule")}</option>
+          <option value="ocr">{tr("batch.recognize")}</option>
+          <option value="compress">{tr("batch.compress")}</option>
         </select>
       </label>
       {options.operation === "rule" && (
@@ -108,14 +106,14 @@ function BatchFields({
                 checked={options.continuing}
                 onChange={(event) => setOptions({ ...options, continuing: event.target.checked })}
               />
-              Continue numbering across successful files
+              {tr("batch.continueNumbering")}
             </label>
           )}
         </>
       )}
       {options.operation === "compress" && (
         <label>
-          Image quality
+          {tr("common.imageQuality")}
           <select
             value={options.compression.preset}
             onChange={(event) =>
@@ -128,9 +126,9 @@ function BatchFields({
               })
             }
           >
-            <option value="screen">Screen</option>
-            <option value="balanced">Balanced</option>
-            <option value="print">Print</option>
+            <option value="screen">{tr("common.screen")}</option>
+            <option value="balanced">{tr("common.balanced")}</option>
+            <option value="print">{tr("common.print")}</option>
           </select>
         </label>
       )}
@@ -148,10 +146,10 @@ function BatchOutputs({ outputs }: { outputs: BatchOutput[] }) {
               className="button secondary"
               onClick={() => download(output.bytes!, output.name, "application/pdf")}
             >
-              Download
+              {tr("common.download")}
             </button>
           ) : (
-            <p role="status">{output.error}</p>
+            <p role="status">{output.error && renderMessage(output.error)}</p>
           )}
         </div>
       ))}

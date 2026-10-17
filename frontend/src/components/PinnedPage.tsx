@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useEffect, useRef, type ReactNode, type KeyboardEvent } from "react";
 import { ArrowUpRight, Maximize2, PanelRightClose, PinOff, X } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
@@ -37,8 +38,9 @@ export function PinnedPage({ size, narrow }: ViewerProps) {
       <ReferenceModal close={close}>{content}</ReferenceModal>
     ) : (
       <button className="reference-reopen" onClick={() => pinned.pin(pinned.page!.id)}>
-        Show pinned page{" "}
-        {editor.document.pages.findIndex((page) => page.id === pinned.page!.id) + 1}
+        {tr("reference.showNumber", {
+          number: editor.document.pages.findIndex((page) => page.id === pinned.page!.id) + 1,
+        })}
       </button>
     );
   return (
@@ -50,7 +52,7 @@ export function PinnedPage({ size, narrow }: ViewerProps) {
       className={`pinned-page ${floating ? "floating" : "docked"}`}
       role={floating ? "dialog" : "region"}
       aria-modal={floating ? false : undefined}
-      aria-label="Pinned page"
+      aria-label={tr("reference.title")}
       onKeyDown={keyboard}
       style={{
         "--reference-x": `${frame.x}px`,
@@ -85,11 +87,11 @@ function ReferenceHeader({
   return (
     <div className="reference-header">
       {children}
-      <strong>Pinned page {number}</strong>
-      <IconButton label="Go to pinned page" icon={ArrowUpRight} onClick={go} />
+      <strong>{tr("reference.numberedTitle", { number })}</strong>
+      <IconButton label={tr("reference.go")} icon={ArrowUpRight} onClick={go} />
       {!narrow && (
         <IconButton
-          label={pinned.view.floating ? "Dock pinned page" : "Pop out pinned page"}
+          label={pinned.view.floating ? tr("reference.dock") : tr("reference.popOut")}
           icon={pinned.view.floating ? PanelRightClose : Maximize2}
           onClick={() =>
             pinned.setView((previous) => ({ ...previous, floating: !previous.floating }))
@@ -97,14 +99,14 @@ function ReferenceHeader({
         />
       )}
       <IconButton
-        label="Unpin page"
+        label={tr("reference.unpin")}
         icon={PinOff}
         onClick={() => {
           pinned.reset();
           document.querySelector<HTMLElement>("[data-pin-current]")?.focus();
         }}
       />
-      {narrow && <IconButton label="Close pinned viewer" icon={X} onClick={close} />}
+      {narrow && <IconButton label={tr("reference.close")} icon={X} onClick={close} />}
     </div>
   );
 }
@@ -127,7 +129,7 @@ function ReferenceModal({ close, children }: { close: () => void; children: Reac
     <dialog
       ref={ref}
       className="reference-modal"
-      aria-label="Pinned page"
+      aria-label={tr("reference.title")}
       onCancel={(event) => {
         event.preventDefault();
         close();

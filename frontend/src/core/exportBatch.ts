@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { PDFDocument } from "pdf-lib";
 import { zipSync } from "fflate";
 import { type EditorDocument } from "./model";
@@ -6,14 +7,13 @@ import { exportPdf } from "./exportPdf";
 import { outputName } from "./pageRanges";
 
 export function splitPageIds(document: EditorDocument, groups: number[][]) {
-  if (!groups.length) throw new Error("Choose at least one split output.");
+  if (!groups.length) throw failure("errors.splitOutputRequired");
   return groups.map((group) => {
-    if (!group.length) throw new Error("Each split output must contain at least one page.");
-    if (new Set(group).size !== group.length)
-      throw new Error("Choose each page only once per output.");
+    if (!group.length) throw failure("errors.splitPagesRequired");
+    if (new Set(group).size !== group.length) throw failure("errors.splitPageDuplicate");
     return group.map((number) => {
       if (!Number.isInteger(number) || number < 1 || number > document.pages.length)
-        throw new Error("A split page is outside the document.");
+        throw failure("errors.splitPageOutside");
       return document.pages[number - 1].id;
     });
   });

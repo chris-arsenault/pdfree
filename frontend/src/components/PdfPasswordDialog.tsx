@@ -1,78 +1,90 @@
+import { message } from "../i18n/messages";
+import { useMessageState } from "../i18n/react";
+import { renderMessage } from "../i18n/runtime";
+import { text as tr } from "../i18n/runtime";
 import { useState, useCallback } from "react";
 import { useEditor } from "../hooks/editorContext";
 import { Modal } from "./Modal";
 
 export function PdfPasswordDialog() {
   const editor = useEditor();
-  const [password, setPassword] = useState("");
-  const [identity, setIdentity] = useState<File | null>(null);
-  const [error, setError] = useState("");
-  const request = editor.password.request;
   const close = useCallback(() => editor.password.answer(null), [editor.password]);
+  const request = editor.password.request;
   if (!request) return null;
   return (
-    <Modal title="Unlock PDF" onClose={close}>
+    <Modal title={tr("password.title")} onClose={close}>
       <p className="modal-description">{request.name}</p>
-      <form
-        onSubmit={async (event) => {
-          event.preventDefault();
-          if (request.kind === "recipient") {
-            if (!identity || identity.size > 2 * 1024 * 1024) {
-              setError("Choose a .p12 or .pfx identity smaller than 2 MB.");
-              return;
-            }
-            try {
-              const bytes = new Uint8Array(await identity.arrayBuffer());
-              editor.password.answer({ bytes, password });
-            } catch {
-              setError("The recipient identity could not be read. Choose the file again.");
-              return;
-            }
-          } else editor.password.answer(password);
-          setPassword("");
-          setIdentity(null);
-        }}
-      >
-        <p role="status">{request.message}</p>
-        {request.kind === "recipient" && (
-          <label>
-            Recipient identity (.p12 or .pfx)
-            <input
-              type="file"
-              accept=".p12,.pfx"
-              onChange={(event) => setIdentity(event.target.files?.[0] ?? null)}
-            />
-          </label>
-        )}
-        {error && <p role="alert">{error}</p>}
+      <PasswordForm request={request} answer={editor.password.answer} />
+    </Modal>
+  );
+}
+type PasswordApi = ReturnType<typeof import("../hooks/usePdfPassword").usePdfPassword>;
+function PasswordForm({
+  request,
+  answer,
+}: {
+  request: NonNullable<PasswordApi["request"]>;
+  answer: PasswordApi["answer"];
+}) {
+  const [password, setPassword] = useState(""),
+    [identity, setIdentity] = useState<File | null>(null);
+  const [error, setError] = useMessageState();
+  return (
+    <form
+      onSubmit={async (event) => {
+        event.preventDefault();
+        if (request.kind === "recipient") {
+          if (!identity || identity.size > 2 * 1024 * 1024) {
+            setError(message("password.identitySize"));
+            return;
+          }
+          try {
+            const bytes = new Uint8Array(await identity.arrayBuffer());
+            answer({ bytes, password });
+          } catch {
+            setError(message("password.identityRead"));
+            return;
+          }
+        } else answer(password);
+        setPassword("");
+        setIdentity(null);
+      }}
+    >
+      <p role="status">{renderMessage(request.message)}</p>
+      {request.kind === "recipient" && (
         <label>
-          {request.kind === "recipient" ? "Identity password" : "PDF password"}
+          {tr("password.identity")}
           <input
-            type="password"
-            value={password}
-            autoComplete="off"
-            onChange={(event) => setPassword(event.target.value)}
+            type="file"
+            accept=".p12,.pfx"
+            onChange={(event) => setIdentity(event.target.files?.[0] ?? null)}
           />
         </label>
-        <p className="field-note">
-          {request.kind === "recipient"
-            ? "Use a matching recipient identity. Its private key and password are never saved."
-            : "Use the opening or owner password. It stays on this device and is never saved."}{" "}
-          Decrypted drafts are disabled until you enable them.
-        </p>
-        <div className="modal-actions">
-          <button
-            type="button"
-            className="button secondary"
-            onClick={() => editor.password.answer(null)}
-          >
-            Cancel opening
-          </button>
-          <button type="submit" className="button primary">
-            Unlock PDF
-          </button>
-        </div>
-      </form>
-    </Modal>
+      )}
+      {error && <p role="alert">{error}</p>}
+      <label>
+        {request.kind === "recipient"
+          ? tr("password.identityPassword")
+          : tr("password.pdfPassword")}
+        <input
+          type="password"
+          value={password}
+          autoComplete="off"
+          onChange={(event) => setPassword(event.target.value)}
+        />
+      </label>
+      <p className="field-note">
+        {request.kind === "recipient" ? tr("password.recipientHint") : tr("password.passwordHint")}{" "}
+        {tr("password.draftsDisabled")}
+      </p>
+      <div className="modal-actions">
+        <button type="button" className="button secondary" onClick={() => answer(null)}>
+          {tr("notifications.cancelOpening")}
+        </button>
+        <button type="submit" className="button primary">
+          {tr("password.title")}
+        </button>
+      </div>
+    </form>
   );
 }

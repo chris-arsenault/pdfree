@@ -1,12 +1,12 @@
+import { failure } from "../i18n/messages";
 import { createStore, entries, get, promisifyRequest } from "idb-keyval";
 import { newId, type EditorDocument } from "../core/model";
-import { refreshSources } from "../core/refreshSources";
 import { normalizeUtilities } from "../core/utilityModel";
 import { canSaveDraft } from "./settings";
 
 export type Draft = {
   version: 1;
-  modelRevision: 5;
+  modelRevision: 6;
   id: string;
   revision: string;
   document: EditorDocument;
@@ -69,7 +69,7 @@ export async function loadDrafts(): Promise<Draft[]> {
       )
       .map(async ([key, draft]) => ({
         ...draft,
-        modelRevision: 5 as const,
+        modelRevision: 6 as const,
         document: await migrateDraft(draft),
         id: key === legacyKey ? "legacy" : key.slice(prefix.length),
         revision: typeof draft.revision === "string" ? draft.revision : "",
@@ -84,7 +84,8 @@ export async function loadDrafts(): Promise<Draft[]> {
 
 export const loadDraft = async () => (await loadDrafts())[0] ?? null;
 async function migrateDraft(draft: Draft) {
-  if (draft.modelRevision >= 5) return normalizeDraft(draft.document);
+  if (draft.modelRevision >= 6) return normalizeDraft(draft.document);
+  const { refreshSources } = await import("../core/refreshSources");
   const refreshed = await refreshSources(
     draft.document.sources,
     draft.document.pages,
@@ -119,8 +120,7 @@ export async function saveDraft(
   session: DraftSession | null = null,
   permitted = () => true
 ) {
-  if (!canSaveDraft(document))
-    throw new Error("Autosave for protected documents is disabled in Settings.");
+  if (!canSaveDraft(document)) throw failure("errors.autosaveDisabled");
   const current = session ?? (await draftSession());
   return store("readwrite", (objects) => {
     let saved = false;
@@ -146,7 +146,7 @@ export async function saveDraft(
       objects.put(
         {
           version: 1,
-          modelRevision: 5,
+          modelRevision: 6,
           id: next.id,
           revision: next.revision,
           document,

@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { type useProcessing } from "../hooks/useProcessing";
 export function ProcessingStatus({ task }: { task: ReturnType<typeof useProcessing> }) {
   return (
@@ -7,7 +8,7 @@ export function ProcessingStatus({ task }: { task: ReturnType<typeof useProcessi
           <span className="spinner" />
           {task.message}
           <button className="button secondary" onClick={task.cancel}>
-            Cancel
+            {tr("common.cancel")}
           </button>
         </div>
       )}

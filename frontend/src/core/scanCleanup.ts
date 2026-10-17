@@ -1,3 +1,4 @@
+import { failure, message, errorMessage, type UiMessage } from "../i18n/messages";
 import {
   PDFDocument,
   PDFDict,
@@ -21,6 +22,8 @@ import {
 } from "./model";
 
 import { adjustPixels, type CleanupOptions } from "./scanAnalysis";
+import { deskewMatrix } from "./scanGeometry";
+export { deskewMatrix } from "./scanGeometry";
 
 export type { CleanupOptions };
 /** Settings for one stable page; pages in one run may each use their own detected values. */
@@ -29,21 +32,18 @@ export type PageCleanup = { pageId: string; options: CleanupOptions };
  * Why a page cannot take image corrections or straightening (empty strings mean
  * supported), and whether earlier cleanup or trimming is in effect.
  */
-export type ScanSupport = { pageId: string; image: string; straighten: string; cleaned: boolean };
-export function deskewMatrix(page: Page) {
-  const radians = ((page.scan?.angle ?? 0) * Math.PI) / 180;
-  const cos = Math.cos(radians),
-    sin = Math.sin(radians);
-  const x = page.box.x + page.box.width / 2,
-    y = page.box.y + page.box.height / 2;
-  return [cos, sin, -sin, cos, x - cos * x + sin * y, y - sin * x - cos * y] as const;
-}
+export type ScanSupport = {
+  pageId: string;
+  image: UiMessage | null;
+  straighten: UiMessage | null;
+  cleaned: boolean;
+};
 /** Each source is parsed once per run, however many of its pages are processed. */
 function sourceLoader(document: EditorDocument) {
   const loaded = new Map<string, Promise<PDFDocument>>();
   return (page: Page) => {
     const source = document.sources.find((source) => source.id === page.sourceId);
-    if (!source) throw new Error("Scan cleanup requires a source page.");
+    if (!source) throw failure("errors.scanSource");
     if (!loaded.has(source.id)) loaded.set(source.id, PDFDocument.load(sourceBytes(source)));
     return loaded.get(source.id)!;
   };
@@ -54,16 +54,16 @@ export async function scanSupport(document: EditorDocument, ids: string[]) {
   const reason = (work: () => void) => {
     try {
       work();
-      return "";
+      return null;
     } catch (error) {
-      return (error as Error).message;
+      return errorMessage(error);
     }
   };
   for (const id of ids) {
     const page = document.pages.find((page) => page.id === id);
-    if (!page) throw new Error("A selected page no longer exists.");
+    if (!page) throw failure("errors.selectedPageMissing");
     if (!page.sourceId) {
-      const blank = "Inserted blank pages have no scan image.";
+      const blank = message("errors.blankScanImage");
       results.push({ pageId: id, image: blank, straighten: blank, cleaned: false });
       continue;
     }
@@ -84,17 +84,17 @@ export async function scanSupport(document: EditorDocument, ids: string[]) {
 export async function cleanupPages(
   document: EditorDocument,
   requests: PageCleanup[],
-  progress: (message: string) => void = () => {}
+  progress: (ui: UiMessage) => void = () => {}
 ) {
   requests.forEach((request) => cleanupSchema.parse(request.options));
   const assets: Asset[] = [],
     pages = [...document.pages],
     load = sourceLoader(document);
   for (const [index, { pageId: id, options }] of requests.entries()) {
-    progress(`Page ${index + 1} of ${requests.length}`);
+    progress(message("progress.page", { index: index + 1, count: requests.length }));
     const position = pages.findIndex((page) => page.id === id),
       page = pages[position];
-    if (!page) throw new Error("A selected page no longer exists.");
+    if (!page) throw failure("errors.selectedPageMissing");
     const pdf = await load(page);
     let scan: ScanAdjustment | null = null;
     if (options.angle || options.contrast !== 1 || options.background) {
@@ -111,7 +111,7 @@ export async function cleanupPages(
     const original = visiblePageBox(pdf.getPage(page.sourceIndex));
     const { left, right, top, bottom } = options.crop;
     if (left + right >= original.width || top + bottom >= original.height)
-      throw new Error("Crop margins must leave visible page content.");
+      throw failure("errors.cropMargins");
     pages[position] = {
       ...page,
       scan,
@@ -149,9 +149,7 @@ const cleanupSchema = scanSchema
 function validateDeskew(page: Page, pdf: PDFDocument, document: EditorDocument, angle: number) {
   if (!angle) return;
   if (page.comments.length || (pdf.getPage(page.sourceIndex).node.Annots()?.size() ?? 0) > 0)
-    throw new Error(
-      "Deskew pages before adding comments or fields; their annotation geometry cannot safely be rotated."
-    );
+    throw failure("errors.deskewAnnotations");
   const rotated = { ...page, scan: { assetId: "preview", angle, contrast: 1, background: 0 } };
   for (const destination of [
     ...(document.bookmarks ?? []).map((bookmark) => bookmark.destination),
@@ -188,7 +186,7 @@ export async function applyScan(
   if (!page.scan) return;
   const image = scanImage(pdf, index),
     asset = document.assets.find((asset) => asset.id === page.scan!.assetId);
-  if (!asset) throw new Error("Missing cleaned scan image.");
+  if (!asset) throw failure("errors.cleanedImageMissing");
   const embedded = await pdf.embedJpg(asset.data);
   // A resource can be shared by several original pages. Cleanup belongs to one
   // stable page, so give it a private resource dictionary and image reference.

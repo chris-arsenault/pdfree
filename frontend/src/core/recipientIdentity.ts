@@ -1,3 +1,4 @@
+import { failure, message } from "../i18n/messages";
 import forge from "node-forge";
 import { Certificate } from "pkijs";
 import { fromBER } from "asn1js";
@@ -24,7 +25,7 @@ export function recipientIdentities(input: PdfRecipientIdentity): RecipientIdent
       .filter((bag) => bag.type === forge.pki.oids.certBag)
       .map((bag) => {
         const asn = bag.cert ? forge.pki.certificateToAsn1(bag.cert) : bag.asn1;
-        if (!asn) throw new Error("Missing certificate");
+        if (!asn) throw failure("errors.certificateMissing");
         return new Certificate({
           schema: fromBER(bufferOf(bytesOf(forge.asn1.toDer(asn).getBytes()))).result,
         });
@@ -39,12 +40,10 @@ export function recipientIdentities(input: PdfRecipientIdentity): RecipientIdent
       const privateKey = bufferOf(bytesOf(forge.asn1.toDer(asn).getBytes()));
       return certificates.map((certificate) => ({ certificate, privateKey, rsa }));
     });
-    if (!identities.length) throw new Error("Missing certificate or private key");
+    if (!identities.length) throw failure("errors.certificateKeyMissing");
     // Decryption does not require a currently valid signing certificate or a network trust lookup.
     return identities;
   } catch {
-    throw new PdfRecipientError(
-      "The recipient identity could not be unlocked. Check its password and certificate/private key."
-    );
+    throw new PdfRecipientError(message("errors.recipientUnlock"));
   }
 }

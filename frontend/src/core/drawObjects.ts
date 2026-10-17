@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import {
   PDFDocument,
   PDFFont,
@@ -14,8 +15,13 @@ import {
 } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { type EditorDocument, type Page, type PlacedObject } from "./model";
-export type FontData = { sans: Uint8Array; signature: Uint8Array };
-export type Fonts = { sans: PDFFont; signature: PDFFont };
+export type FontData = { sans: Uint8Array; signature: Uint8Array | null };
+export type Fonts = { sans: PDFFont; signature: PDFFont | null };
+export function fontFor(fonts: Fonts, family: PlacedObject["font"]) {
+  const font = fonts[family];
+  if (!font) throw failure("errors.bundledFont");
+  return font;
+}
 export function pdfColor(hex: string) {
   return rgb(
     parseInt(hex.slice(1, 3), 16) / 255,
@@ -31,7 +37,7 @@ export async function embedFonts(pdf: PDFDocument, data: FontData | null): Promi
   pdf.registerFontkit(fontkit);
   return {
     sans: await pdf.embedFont(data.sans, { subset: true }),
-    signature: await pdf.embedFont(data.signature, { subset: true }),
+    signature: data.signature ? await pdf.embedFont(data.signature, { subset: true }) : null,
   };
 }
 export function wrapText(text: string, font: PDFFont, size: number, width: number) {
@@ -50,7 +56,7 @@ export function wrapText(text: string, font: PDFFont, size: number, width: numbe
   });
 }
 function drawText(page: PDFPage, object: PlacedObject, fonts: Fonts) {
-  const font = fonts[object.font];
+  const font = fontFor(fonts, object.font);
   const lines = wrapText(object.text, font, object.fontSize, object.width);
   page.pushOperators(
     pushGraphicsState(),
@@ -167,7 +173,7 @@ async function drawImage(
   document: EditorDocument
 ) {
   const asset = document.assets.find((item) => item.id === object.assetId);
-  if (!asset) throw new Error("An image is missing from this project.");
+  if (!asset) throw failure("errors.imageMissing");
   const image =
     asset.mime === "image/jpeg" ? await pdf.embedJpg(asset.data) : await pdf.embedPng(asset.data);
   page.drawImage(image, {

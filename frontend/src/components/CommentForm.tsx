@@ -1,15 +1,16 @@
+import { text as tr } from "../i18n/runtime";
 import { useEffect, useRef, useState } from "react";
 import { useEditor } from "../hooks/editorContext";
 
 export function CommentForm({
   text = "",
-  label,
+  mode,
   author = false,
   onSave,
   onCancel,
 }: {
   text?: string;
-  label: string;
+  mode: "edit" | "reply" | "new";
   author?: boolean;
   onSave: (text: string) => void;
   onCancel: () => void;
@@ -20,11 +21,12 @@ export function CommentForm({
   useEffect(() => {
     ref.current?.focus();
   }, []);
-  const buttons: Record<string, string> = {
-    "Edit comment": "Save comment",
-    Reply: "Post reply",
-    "New comment": "Post comment",
-  };
+  const label = tr(
+    ({ edit: "comments.edit", reply: "common.reply", new: "comments.new" } as const)[mode]
+  );
+  const button = tr(
+    ({ edit: "comments.save", reply: "comments.postReply", new: "comments.post" } as const)[mode]
+  );
   return (
     <form
       className="comment-form"
@@ -45,7 +47,7 @@ export function CommentForm({
       </label>
       {author && (
         <label>
-          Name (optional)
+          {tr("comments.authorOptional")}
           <input
             value={editor.commentAuthor}
             maxLength={200}
@@ -55,10 +57,10 @@ export function CommentForm({
       )}
       <div className="comment-form-actions">
         <button type="button" className="button secondary" onClick={onCancel}>
-          Cancel
+          {tr("common.cancel")}
         </button>
         <button type="submit" className="button primary" disabled={!value.trim()}>
-          {buttons[label]}
+          {button}
         </button>
       </div>
     </form>

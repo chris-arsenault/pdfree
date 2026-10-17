@@ -1,3 +1,4 @@
+import { failure, message } from "../i18n/messages";
 import {
   ContentInfo,
   EnvelopedData,
@@ -24,13 +25,12 @@ function matches(info: KeyTransRecipientInfo, identity: RecipientIdentity) {
   return rid instanceof OctetString && ski instanceof OctetString && ski.isEqual(rid);
 }
 function rsaKey(info: KeyTransRecipientInfo, identity: RecipientIdentity) {
-  if (!identity.rsa) throw new Error("RSA private key required");
+  if (!identity.rsa) throw failure("errors.rsaPrivateKey");
   const ciphertext = binary(new Uint8Array(info.encryptedKey.getValue()));
   const algorithm = info.keyEncryptionAlgorithm;
   if (algorithm.algorithmId === "1.2.840.113549.1.1.1")
     return identity.rsa.decrypt(ciphertext, "RSAES-PKCS1-V1_5");
-  if (algorithm.algorithmId !== "1.2.840.113549.1.1.7")
-    throw new Error("Unsupported recipient key transport");
+  if (algorithm.algorithmId !== "1.2.840.113549.1.1.7") throw failure("errors.recipientTransport");
   const params = new RSAESOAEPParams(
     algorithm.algorithmParams ? { schema: algorithm.algorithmParams } : {}
   );
@@ -55,8 +55,7 @@ async function decryptEntry(
 }
 export async function recipientSeed(encoded: Uint8Array, identities: RecipientIdentity[]) {
   const content = ContentInfo.fromBER(bufferOf(encoded));
-  if (content.contentType !== ContentInfo.ENVELOPED_DATA)
-    throw new Error("Recipient entry is not CMS EnvelopedData");
+  if (content.contentType !== ContentInfo.ENVELOPED_DATA) throw failure("errors.envelopeType");
   const envelope = new EnvelopedData({ schema: content.content });
   let cause: unknown;
   for (const identity of identities)
@@ -65,7 +64,7 @@ export async function recipientSeed(encoded: Uint8Array, identities: RecipientId
         const plaintext = await decryptEntry(envelope, recipient, index, identity);
         if (!plaintext) continue;
         if (plaintext.length !== 20 && plaintext.length !== 24)
-          throw new Error("Invalid recipient seed size");
+          throw failure("errors.recipientSeed");
         const seed = plaintext.slice(0, 20);
         plaintext.fill(0);
         return seed;
@@ -73,8 +72,5 @@ export async function recipientSeed(encoded: Uint8Array, identities: RecipientId
         cause = error;
       }
     }
-  throw new PdfRecipientError(
-    "This identity could not decrypt a recipient entry. Select the matching recipient identity.",
-    { cause }
-  );
+  throw new PdfRecipientError(message("errors.recipientDecrypt"), { cause });
 }

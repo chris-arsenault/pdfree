@@ -1,3 +1,4 @@
+import { failure, message, type UiMessage } from "../i18n/messages";
 import { PDFDocument } from "pdf-lib";
 import { imageCanvas, imageResources, replaceImage, supportedImage } from "./pdfImages";
 
@@ -15,7 +16,7 @@ export type CompressionResult = {
 export async function compressPdf(
   bytes: Uint8Array,
   options: CompressionOptions,
-  progress: (message: string) => void = () => {}
+  progress: (ui: UiMessage) => void = () => {}
 ): Promise<CompressionResult> {
   if (options.preset === "original")
     return {
@@ -26,7 +27,7 @@ export async function compressPdf(
       targetReached: !options.targetBytes || bytes.length <= options.targetBytes,
     };
   if (!Number.isFinite(options.targetBytes) || options.targetBytes < 0)
-    throw new Error("Choose a valid target size.");
+    throw failure("errors.compressionTarget");
   const pdf = await PDFDocument.load(bytes, { updateMetadata: false });
   const images = imageResources(pdf);
   const settings = { screen: [1400, 0.6], balanced: [2200, 0.78], print: [3600, 0.9] }[
@@ -35,7 +36,7 @@ export async function compressPdf(
   let processed = 0,
     skipped = 0;
   for (const [index, image] of images.entries()) {
-    progress(`Image ${index + 1} of ${images.length}`);
+    progress(message("progress.image", { index: index + 1, count: images.length }));
     if (!supportedImage(image.stream)) {
       skipped++;
       continue;

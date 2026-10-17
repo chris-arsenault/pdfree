@@ -25,7 +25,7 @@ it("recovers legacy choice descriptors and visible boxes without changing edits 
   const snapshot = { version: 1, revision: "old-revision", document: doc, savedAt: 123 };
   await set("pdfree-draft-v1", snapshot);
   const [draft] = await loadDrafts();
-  expect(draft.modelRevision).toBe(5);
+  expect(draft.modelRevision).toBe(6);
   expect(draft.id).toBe("legacy");
   expect(draft.revision).toBe("old-revision");
   expect(draft.document.pages[0].box).toEqual({ x: 0, y: 0, width: 450, height: 550 });
@@ -61,6 +61,36 @@ it("normalizes revision 2 drafts without refreshing geometry or mutating stored 
   expect(draft.document.pages).toEqual(doc.pages);
   expect(await get("pdfree-draft-v2:prior")).toEqual(snapshot);
 });
+it("regenerates revision 5 warning prose without changing encrypted bytes, geometry or edits", async () => {
+  const working = await choiceFixture("dropdown");
+  const doc = appendSource(emptyDocument(), await importPdf(working, "protected.pdf"));
+  const cipher = new Uint8Array([83, 65, 70, 69]);
+  doc.sources[0].bytes = cipher;
+  doc.sources[0].decryptedBytes = working;
+  doc.sources[0].encryption = { algorithm: "AES-256", revision: 6, authenticatedAs: "owner" };
+  Reflect.set(doc.sources[0], "warnings", ["An old English warning"]);
+  Reflect.set(doc.sources[0], "structuralWarnings", ["document bookmarks"]);
+  doc.pages[0].box = { x: 10, y: 20, width: 500, height: 700 };
+  doc.pages[0].objects.push({ ...defaultObject("text", { x: 20, y: 200 }), text: "Retained 東京" });
+  const snapshot = {
+    version: 1,
+    modelRevision: 5,
+    revision: "legacy-warnings",
+    document: doc,
+    savedAt: 123,
+  };
+  await set("pdfree-draft-v2:legacy-warnings", snapshot);
+  const [draft] = await loadDrafts();
+  expect(draft.modelRevision).toBe(6);
+  expect(draft.document.sources[0].warnings).toEqual([]);
+  expect(draft.document.sources[0].structuralWarnings).toEqual([]);
+  expect(draft.document.sources[0].bytes).toEqual(cipher);
+  expect(draft.document.sources[0].decryptedBytes).toEqual(working);
+  expect(draft.document.sources[0].encryption).toEqual(doc.sources[0].encryption);
+  expect(draft.document.pages).toEqual(doc.pages);
+  expect(draft.document.values).toEqual(doc.values);
+  expect(await get("pdfree-draft-v2:legacy-warnings")).toEqual(snapshot);
+});
 it("recovers comments from revision 3 drafts while retaining page identities and saved geometry", async () => {
   const doc = appendSource(emptyDocument(), await importPdf(await commentFixture(), "notes.pdf"));
   const pageId = doc.pages[0].id;
@@ -75,7 +105,7 @@ it("recovers comments from revision 3 drafts while retaining page identities and
   };
   await set("pdfree-draft-v2:prior-notes", snapshot);
   const [draft] = await loadDrafts();
-  expect(draft.modelRevision).toBe(5);
+  expect(draft.modelRevision).toBe(6);
   expect(draft.document.pages[0].id).toBe(pageId);
   expect(draft.document.pages[0].box).toEqual(doc.pages[0].box);
   expect(draft.document.pages[0].comments.map((comment) => comment.text)).toContain(

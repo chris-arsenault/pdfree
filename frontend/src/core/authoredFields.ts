@@ -1,3 +1,4 @@
+import { failure, MessageError } from "../i18n/messages";
 import {
   PDFDocument,
   PDFPage,
@@ -15,9 +16,8 @@ import { objectRotationError } from "./editorValidation";
 function createField(pdf: PDFDocument, object: PlacedObject) {
   const form = pdf.getForm(),
     name = object.fieldName.trim();
-  if (!name) throw new Error("Give each new form field a name.");
-  if (form.getFieldMaybe(name))
-    throw new Error(`Field name ${name} already exists. Choose a unique name.`);
+  if (!name) throw failure("validation.fieldNameRequired");
+  if (form.getFieldMaybe(name)) throw failure("validation.fieldDuplicate", { name });
   if (object.fieldKind === "checkbox") return form.createCheckBox(name);
   if (object.fieldKind === "radio") return form.createRadioGroup(name);
   if (object.fieldKind === "dropdown") return form.createDropdown(name);
@@ -25,18 +25,18 @@ function createField(pdf: PDFDocument, object: PlacedObject) {
   return form.createTextField(name);
 }
 function addOptions(field: PDFDropdown | PDFOptionList, object: PlacedObject) {
-  if (!object.options.length) throw new Error(`Add options to ${object.fieldName}, one per line.`);
+  if (!object.options.length) throw failure("validation.fieldOptions", { name: object.fieldName });
   field.addOptions(object.options);
   if (object.text) {
     if (!object.options.includes(object.text)) {
-      throw new Error(`The value of ${object.fieldName} is not one of its options.`);
+      throw failure("validation.fieldChoice", { name: object.fieldName });
     }
     field.select(object.text);
   }
 }
 function writeField(pdf: PDFDocument, page: PDFPage, object: PlacedObject, fonts: Fonts) {
   const error = objectRotationError(object);
-  if (error) throw new Error(error);
+  if (error) throw new MessageError(error);
   const field = createField(pdf, object);
   const appearance = {
     x: object.x,
@@ -66,15 +66,11 @@ function writeField(pdf: PDFDocument, page: PDFPage, object: PlacedObject, fonts
   if (field instanceof PDFRadioGroup) addRadio(field, page, object, fonts);
 }
 function addRadio(field: PDFRadioGroup, page: PDFPage, object: PlacedObject, fonts: Fonts) {
-  if (!object.options.length)
-    throw new Error(`Add radio options to ${object.fieldName}, one per line.`);
-  if (object.rotation % 360)
-    throw new Error(
-      "Radio groups currently require zero object rotation. Page rotation is supported."
-    );
+  if (!object.options.length) throw failure("validation.radioOptions", { name: object.fieldName });
+  if (object.rotation % 360) throw failure("validation.radioUnsupported");
   const height = object.height / object.options.length,
     size = Math.min(16, height - 2);
-  if (size < 8) throw new Error(`Enlarge the radio group ${object.fieldName} to fit its options.`);
+  if (size < 8) throw failure("validation.radioEnlarge", { name: object.fieldName });
   object.options.forEach((option, index) => {
     const y = object.y + object.height - height * (index + 1);
     field.addOptionToPage(option, page, {
@@ -94,7 +90,7 @@ function addRadio(field: PDFRadioGroup, page: PDFPage, object: PlacedObject, fon
   });
   if (object.text) {
     if (!object.options.includes(object.text)) {
-      throw new Error(`The value of ${object.fieldName} is not one of its options.`);
+      throw failure("validation.fieldChoice", { name: object.fieldName });
     }
     field.select(object.text);
   }

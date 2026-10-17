@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { text as tr } from "../i18n/runtime";
+import { message } from "../i18n/messages";
+import { useMessageState } from "../i18n/react";
+import { useEffect, useRef } from "react";
 import { sourcePage } from "../services/viewer";
 import { usePageBackground } from "../hooks/usePageBackground";
 import { type Page, type Source } from "../core/model";
@@ -18,7 +21,7 @@ export function PageCanvas({
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const { background, assets } = usePageBackground(page);
-  const [error, setError] = useState("");
+  const [error, setError] = useMessageState();
   useEffect(() => {
     let cancelled = false;
     let task: { cancel: () => void } | null = null;
@@ -37,7 +40,7 @@ export function PageCanvas({
           context.fillStyle = "white";
           context.fillRect(0, 0, canvas.width, canvas.height);
         }
-        setError("");
+        setError(null);
         return;
       }
       const view = await sourcePage(source, background, assets),
@@ -54,10 +57,10 @@ export function PageCanvas({
       const rendering = original.render({ canvas, viewport, annotationMode: thumbnail ? 1 : 2 });
       task = rendering;
       await rendering.promise;
-      if (!cancelled) setError("");
+      if (!cancelled) setError(null);
     };
-    render().catch((error: Error) => {
-      if (!cancelled) setError(`Page rendering failed: ${error.message}`);
+    render().catch(() => {
+      if (!cancelled) setError(message("preview.renderFailed"));
     });
     return () => {
       cancelled = true;
@@ -70,7 +73,7 @@ export function PageCanvas({
       <canvas
         ref={ref}
         className="pdf-canvas"
-        aria-label={thumbnail ? "Page thumbnail" : "PDF page"}
+        aria-label={thumbnail ? tr("pages.thumbnail") : tr("pages.pdf")}
       />
       {error && (
         <span role="alert" className="page-render-error">

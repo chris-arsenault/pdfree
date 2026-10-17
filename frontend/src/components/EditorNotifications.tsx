@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { X } from "lucide-react";
 import { useEditor } from "../hooks/editorContext";
 import { IconButton } from "./ui/IconButton";
@@ -8,9 +9,9 @@ export function EditorNotifications() {
     <div className="editor-notifications">
       {editor.pinned.view.removed && (
         <div className="busy-banner" role="status">
-          <span>The pinned page was deleted.</span>
+          <span>{tr("notifications.pinnedRemoved")}</span>
           <IconButton
-            label="Dismiss pinned page notification"
+            label={tr("notifications.dismissPinned")}
             icon={X}
             onClick={() => editor.pinned.setView((previous) => ({ ...previous, removed: false }))}
           />
@@ -20,7 +21,7 @@ export function EditorNotifications() {
         <div className="busy-banner" role="status">
           <span className="spinner" />
           <span>{editor.task.busy}…</span>
-          {editor.task.busy === "Opening files" && (
+          {editor.task.kind === "task.openingFiles" && (
             <button
               className="button secondary"
               onClick={() => {
@@ -28,7 +29,7 @@ export function EditorNotifications() {
                 editor.password.cancel();
               }}
             >
-              Cancel opening
+              {tr("notifications.cancelOpening")}
             </button>
           )}
         </div>
@@ -36,13 +37,17 @@ export function EditorNotifications() {
       {editor.task.error && (
         <div className="error-banner" role="alert">
           <span>{editor.task.error}</span>
-          <IconButton label="Dismiss error" icon={X} onClick={editor.task.dismiss} />
+          <IconButton
+            label={tr("notifications.dismissError")}
+            icon={X}
+            onClick={editor.task.dismiss}
+          />
         </div>
       )}
       {editor.task.message && (
         <div className="busy-banner" role="status">
           <span>{editor.task.message}</span>
-          <IconButton label="Dismiss notification" icon={X} onClick={editor.task.dismiss} />
+          <IconButton label={tr("notifications.dismiss")} icon={X} onClick={editor.task.dismiss} />
         </div>
       )}
     </div>

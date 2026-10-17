@@ -1,5 +1,30 @@
 # Using PDFree
 
+## Choose a language
+
+Click the flag at the end of the bottom status bar and select a language by its
+native name. The interface supports English, Spanish, French, German, Italian,
+Brazilian Portuguese, Russian, Simplified Chinese, Traditional Chinese, Japanese,
+Korean, Hindi, Arabic, Bengali, Indonesian, Turkish and Vietnamese.
+
+The first visit follows your browser's language preferences, falling back to
+English. A choice you make takes precedence on later visits and updates other
+open PDFree tabs. Switching keeps open documents, selections, undo history and
+running work. If loading fails, the current language stays active. If saving the
+preference fails, the new language works for the current page and the picker
+explains that it could not be remembered. An installed offline copy includes
+every interface language.
+
+Only application text changes. Filenames, form values, comments, bookmarks and
+existing document text remain your content. OCR still recognizes English.
+Layout and reading direction remain unchanged, including for Arabic; RTL and
+vertical layouts are deferred. UI text uses browser font fallback. PDF export
+still has the [existing font limits](compatibility.md#limitations).
+New dates use local numeric date order with Latin digits. New stamps use a
+translated template where the PDF font supports it; Chinese, Japanese, Korean,
+Hindi, Arabic and Bengali retain the editable document template `APPROVED`.
+Switching languages never rewrites an existing date or stamp.
+
 ## Open and fill
 
 Open a local PDF through the file picker or drag/drop. Click native text,
@@ -260,9 +285,9 @@ Rename the document in place by editing its name in the header; Enter keeps the
 name and Escape restores it. The Document action opens source information and
 also offers rename on phones, where the header name is hidden. Storage settings
 apply to this browser and stay outside document undo and editing projects. The
-bottom strip reports status only: brief Saving/Saved feedback, storage failures,
+bottom strip reports brief Saving/Saved feedback, storage failures,
 an Autosave off control (which opens Library storage) when the restriction is
-enabled, and update prompts. Browser-only processing is always active; there is
+enabled, update prompts and the language flag. Browser-only processing is always active; there is
 no cloud mode.
 
 PDFree loads from the internet on each visit and stores nothing for offline use

@@ -1,3 +1,5 @@
+import { renderMessage } from "../i18n/runtime";
+import { text as tr } from "../i18n/runtime";
 import {
   ArrowUpRight,
   Download,
@@ -20,12 +22,12 @@ export function Header() {
   const editor = useEditor();
   return (
     <header className="app-header">
-      <a className="brand" href="/" aria-label="PDFree home">
+      <a className="brand" href="/" aria-label={tr("header.home")}>
         <span className="brand-icon">
           <FileText size={22} />
         </span>
         <span className="brand-wordmark">
-          PDFree<span className="brand-by">by AHARA</span>
+          PDFree<span className="brand-by">{tr("brand.by")}</span>
         </span>
       </a>
       {editor.document.pages.length > 0 && (
@@ -48,7 +50,7 @@ function DocumentName() {
     <>
       <input
         className="document-name"
-        aria-label="Rename document"
+        aria-label={tr("header.rename")}
         value={name}
         maxLength={editorLimits.name}
         aria-invalid={!!error}
@@ -68,7 +70,7 @@ function DocumentName() {
       />
       {error && (
         <span id={errorId} className="document-name-error" role="alert">
-          {error}
+          {renderMessage(error)}
         </span>
       )}
     </>
@@ -81,27 +83,27 @@ function HeaderActions() {
   const showDocument = () => editor.setDialog("properties");
   const showHelp = () => editor.setDialog("help");
   return (
-    <nav className="header-actions" aria-label="Document actions">
+    <nav className="header-actions" aria-label={tr("header.actions")}>
       {editor.document.pages.length > 0 && (
         <IconButton
-          label="Document"
+          label={tr("common.document")}
           className="document-action"
           icon={FileCog}
-          detail="Document details and source information."
+          detail={tr("header.documentHint")}
           onClick={showDocument}
         />
       )}
       <IconButton
-        label="Help"
+        label={tr("common.help")}
         className="help-action"
         icon={HelpCircle}
-        detail="Help and keyboard shortcuts"
+        detail={tr("header.helpHint")}
         onClick={showHelp}
       />
       <div className="open-group">
         <FileButton
           multiple
-          label="Open"
+          label={tr("common.open")}
           icon={FolderOpen}
           accept="application/pdf,.pdf,.pdfree"
           disabled={!!editor.task.busy}
@@ -115,7 +117,7 @@ function HeaderActions() {
           disabled={!!editor.task.busy}
           onClick={() => editor.openExport("document")}
         >
-          <Download size={17} /> Export
+          <Download size={17} /> {tr("common.export")}
         </button>
       )}
       <MobileDocumentMenu />
@@ -130,7 +132,7 @@ function HeaderActions() {
 export function OpenMenu() {
   const editor = useEditor();
   return (
-    <ActionPopover label="Open options" icon={FolderOpen} className="open-menu" compact>
+    <ActionPopover label={tr("header.openOptions")} icon={FolderOpen} className="open-menu" compact>
       {(close) => (
         <>
           <button
@@ -142,8 +144,8 @@ export function OpenMenu() {
           >
             <Library size={17} aria-hidden="true" />
             <span>
-              Library
-              <small aria-hidden="true">Documents and signatures saved on this device</small>
+              {tr("common.library")}
+              <small aria-hidden="true">{tr("header.libraryHint")}</small>
             </span>
           </button>
           <button
@@ -155,8 +157,8 @@ export function OpenMenu() {
           >
             <Files size={17} aria-hidden="true" />
             <span>
-              Process multiple PDFs
-              <small aria-hidden="true">Number, recognize or compress several files</small>
+              {tr("batch.title")}
+              <small aria-hidden="true">{tr("header.batchHint")}</small>
             </span>
           </button>
         </>
@@ -168,7 +170,11 @@ export function OpenMenu() {
 function MobileDocumentMenu() {
   const editor = useEditor();
   return (
-    <ActionPopover label="Document actions" icon={MoreHorizontal} className="mobile-document-menu">
+    <ActionPopover
+      label={tr("header.actions")}
+      icon={MoreHorizontal}
+      className="mobile-document-menu"
+    >
       {(close) => (
         <>
           {editor.document.pages.length > 0 && (
@@ -178,7 +184,7 @@ function MobileDocumentMenu() {
                 close();
               }}
             >
-              <FileCog size={17} aria-hidden="true" /> Document
+              <FileCog size={17} aria-hidden="true" /> {tr("common.document")}
             </button>
           )}
           <button
@@ -187,7 +193,7 @@ function MobileDocumentMenu() {
               close();
             }}
           >
-            <HelpCircle size={17} aria-hidden="true" /> Help
+            <HelpCircle size={17} aria-hidden="true" /> {tr("common.help")}
           </button>
         </>
       )}

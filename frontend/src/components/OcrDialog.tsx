@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import { useState } from "react";
 import { useEditor } from "../hooks/editorContext";
 import { useProcessing } from "../hooks/useProcessing";
@@ -44,8 +45,8 @@ export function OcrDialog() {
       }
     );
   return (
-    <Modal title="Recognize scanned text" onClose={close} className="ocr-dialog">
-      <div className="panel-tabs dialog-tabs" role="tablist" aria-label="Text recognition">
+    <Modal title={tr("batch.recognize")} onClose={close} className="ocr-dialog">
+      <div className="panel-tabs dialog-tabs" role="tablist" aria-label={tr("ocr.tabs")}>
         {(["setup", "results"] as const).map((name) => (
           <button
             key={name}
@@ -54,7 +55,7 @@ export function OcrDialog() {
             disabled={task.busy}
             onClick={() => setView(name)}
           >
-            {name === "setup" ? "Recognize" : "Results"}
+            {name === "setup" ? tr("common.recognize") : tr("common.results")}
           </button>
         ))}
       </div>
@@ -106,10 +107,7 @@ function OcrSetup({
   ).length;
   return (
     <>
-      <p className="modal-description">
-        English recognition runs on this device. The page image stays exactly as it is; recognized
-        words become searchable and selectable text.
-      </p>
+      <p className="modal-description">{tr("ocr.description")}</p>
       <PageScopeField
         scope={scope.scope}
         onChange={scope.setScope}
@@ -126,7 +124,7 @@ function OcrSetup({
             disabled={busy}
             onChange={(event) => setReplace(event.target.checked)}
           />
-          Recognize {recognized} already recognized page(s) again, replacing their text
+          {tr("ocr.replaceCount", { count: recognized })}
         </label>
       )}
       <div className="modal-actions">
@@ -139,8 +137,8 @@ function OcrSetup({
 }
 
 function setupLabel(ready: boolean, queued: number) {
-  if (!ready) return "Checking pages…";
-  return queued ? `Recognize ${queued} page(s)` : "Nothing to recognize";
+  if (!ready) return tr("ocr.checking");
+  return queued ? tr("ocr.recognizeCount", { count: queued }) : tr("ocr.nothing");
 }
 
 /** What a run would do with the chosen pages, before the user starts it. */
@@ -158,7 +156,7 @@ function OcrPlan({
   if (!ready)
     return (
       <p className="ocr-plan" role="status">
-        Checking pages for existing text… {checked} of {rows.length}
+        {tr("ocr.checkingCount", { count: checked, total: rows.length })}
       </p>
     );
   const count = (test: (row: OcrRow) => boolean) => rows.filter(test).length;
@@ -168,25 +166,25 @@ function OcrPlan({
       count: count(
         (row) => !!row.content && recognizable(row.content) && (replace || !row.recognition)
       ),
-      label: "will be recognized",
+      key: "ocr.planRecognize" as const,
     },
     {
       tone: "done",
       count: replace ? 0 : count((row) => !!row.recognition),
-      label: "already recognized, kept",
+      key: "ocr.planKept" as const,
     },
-    { tone: "skip", count: count((row) => row.content === "text"), label: "already have text" },
-    { tone: "skip", count: count((row) => row.content === "empty"), label: "blank, skipped" },
+    { tone: "skip", count: count((row) => row.content === "text"), key: "ocr.planText" as const },
+    { tone: "skip", count: count((row) => row.content === "empty"), key: "ocr.planBlank" as const },
   ].filter((item) => item.count);
   return (
-    <ul className="ocr-plan" aria-label="What recognition will do">
+    <ul className="ocr-plan" aria-label={tr("ocr.plan")}>
       {items.map((item) => (
-        <li key={item.label} className={`tone-${item.tone}`}>
-          <strong>{item.count}</strong> page(s) {item.label}
+        <li key={item.key} className={`tone-${item.tone}`}>
+          {tr(item.key, { count: item.count })}
         </li>
       ))}
       {!items.some((item) => item.tone === "todo") && (
-        <li className="tone-skip">Nothing in these pages needs recognition.</li>
+        <li className="tone-skip">{tr("ocr.noRecognitionNeeded")}</li>
       )}
     </ul>
   );

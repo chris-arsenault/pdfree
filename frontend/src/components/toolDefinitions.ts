@@ -1,3 +1,4 @@
+import { text as tr } from "../i18n/runtime";
 import {
   CalendarDays,
   CaseUpper,
@@ -22,103 +23,179 @@ import {
 export const tools = [
   {
     id: "comment",
-    label: "Comment",
+    get label() {
+      return tr("common.comment");
+    },
     icon: MessageSquarePlus,
     group: "annotate",
-    hint: "Click the page to add a comment.",
+    get hint() {
+      return tr("tools.commentHint");
+    },
   },
   {
     id: "select",
-    label: "Select",
+    get label() {
+      return tr("common.select");
+    },
     icon: MousePointer2,
     group: "select",
-    hint: "Select or move added objects. Shift-click to select several.",
+    get hint() {
+      return tr("tools.selectHint");
+    },
   },
-  { id: "text", label: "Text", icon: Type, group: "fill", hint: "Click the page to add text." },
+  {
+    id: "text",
+    get label() {
+      return tr("common.text");
+    },
+    icon: Type,
+    group: "fill",
+    get hint() {
+      return tr("tools.textHint");
+    },
+  },
   {
     id: "check",
-    label: "Check",
+    get label() {
+      return tr("common.check");
+    },
     icon: Check,
     group: "fill",
-    hint: "Click the page to place a checkmark.",
+    get hint() {
+      return tr("tools.checkHint");
+    },
   },
-  { id: "cross", label: "Cross", icon: X, group: "fill", hint: "Click the page to place a cross." },
+  {
+    id: "cross",
+    get label() {
+      return tr("common.cross");
+    },
+    icon: X,
+    group: "fill",
+    get hint() {
+      return tr("tools.crossHint");
+    },
+  },
   {
     id: "date",
-    label: "Date",
+    get label() {
+      return tr("common.date");
+    },
     icon: CalendarDays,
     group: "fill",
-    hint: "Click the page to add today's date.",
+    get hint() {
+      return tr("tools.dateHint");
+    },
   },
   {
     id: "signature",
-    label: "Sign",
+    get label() {
+      return tr("common.sign");
+    },
     icon: PenLine,
     group: "sign",
-    hint: "Add a visible signature. Certificate signing is available in Export.",
+    get hint() {
+      return tr("tools.signHint");
+    },
   },
   {
     id: "initials",
-    label: "Initials",
+    get label() {
+      return tr("common.initials");
+    },
     icon: CaseUpper,
     group: "sign",
-    hint: "Draw, type or import your initials.",
+    get hint() {
+      return tr("tools.initialsHint");
+    },
   },
   {
     id: "image",
-    label: "Image",
+    get label() {
+      return tr("common.image");
+    },
     icon: Image,
     group: "annotate",
-    hint: "Choose an image, then click the page to place it.",
+    get hint() {
+      return tr("image.placeHint");
+    },
   },
   {
     id: "highlight",
-    label: "Highlight",
+    get label() {
+      return tr("common.highlight");
+    },
     icon: Highlighter,
     group: "annotate",
-    hint: "Drag across PDF text to highlight it, or drag elsewhere to highlight an area.",
+    get hint() {
+      return tr("tools.highlightHint");
+    },
   },
   {
     id: "ink",
-    label: "Draw",
+    get label() {
+      return tr("common.draw");
+    },
     icon: Pencil,
     group: "annotate",
-    hint: "Drag to draw with a mouse, touch or pen.",
+    get hint() {
+      return tr("tools.drawHint");
+    },
   },
   {
     id: "rectangle",
-    label: "Box",
+    get label() {
+      return tr("common.box");
+    },
     icon: Square,
     group: "annotate",
-    hint: "Drag to draw a rectangle. Covering content does not redact it.",
+    get hint() {
+      return tr("tools.boxHint");
+    },
   },
   {
     id: "line",
-    label: "Line",
+    get label() {
+      return tr("common.line");
+    },
     icon: Minus,
     group: "annotate",
-    hint: "Drag from the start to the end of a line.",
+    get hint() {
+      return tr("tools.lineHint");
+    },
   },
   {
     id: "arrow",
-    label: "Arrow",
+    get label() {
+      return tr("common.arrow");
+    },
     icon: MoveUpRight,
     group: "annotate",
-    hint: "Drag from the start to the end of an arrow.",
+    get hint() {
+      return tr("tools.arrowHint");
+    },
   },
   {
     id: "stamp",
-    label: "Stamp",
+    get label() {
+      return tr("common.stamp");
+    },
     icon: Stamp,
     group: "annotate",
-    hint: "Click to add a text stamp, then edit its wording.",
+    get hint() {
+      return tr("tools.stampHint");
+    },
   },
   {
     id: "field",
-    label: "Form field",
+    get label() {
+      return tr("common.formField");
+    },
     icon: TextCursorInput,
     group: "field",
-    hint: "Drag to create a fillable field, then choose its type in Properties.",
+    get hint() {
+      return tr("tools.fieldHint");
+    },
   },
 ] as const;
 
@@ -126,14 +203,22 @@ export const tools = [
 export const scanTools = [
   {
     dialog: "ocr",
-    label: "Recognize text",
+    get label() {
+      return tr("scan.recognize");
+    },
     icon: ScanText,
-    hint: "Make scanned pages searchable and selectable with on-device OCR.",
+    get hint() {
+      return tr("tools.recognizeHint");
+    },
   },
   {
     dialog: "cleanup",
-    label: "Clean up scans",
+    get label() {
+      return tr("cleanup.title");
+    },
     icon: ScanLine,
-    hint: "Detect and fix tilt, grey paper, faded text and dark edges.",
+    get hint() {
+      return tr("tools.cleanupHint");
+    },
   },
 ] as const;

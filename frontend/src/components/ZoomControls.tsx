@@ -1,3 +1,5 @@
+import { formatNumber } from "../i18n/format";
+import { text as tr } from "../i18n/runtime";
 import { Maximize, Minus, Plus, MoveHorizontal } from "lucide-react";
 import { displaySize } from "../core/coordinates";
 import { useEditor } from "../hooks/editorContext";
@@ -21,15 +23,15 @@ export function ZoomControls() {
     );
   };
   return (
-    <div className="zoom-controls" aria-label="Zoom controls">
+    <div className="zoom-controls" aria-label={tr("zoom.controls")}>
       <IconButton
-        label="Zoom out"
+        label={tr("zoom.out")}
         className="zoom-step"
         icon={Minus}
         onClick={() => editor.setZoom(Math.max(0.25, editor.zoom - 0.1))}
       />
       <select
-        aria-label="Zoom"
+        aria-label={tr("zoom.label")}
         value={String(Math.round(editor.zoom * 100))}
         onChange={(event) => editor.setZoom(Number(event.target.value) / 100)}
       >
@@ -37,19 +39,19 @@ export function ZoomControls() {
           .sort((a, b) => a - b)
           .map((value) => (
             <option key={value} value={value}>
-              {value}%
+              {formatNumber(value / 100, { style: "percent", maximumFractionDigits: 0 })}
             </option>
           ))}
       </select>
       <IconButton
-        label="Zoom in"
+        label={tr("zoom.in")}
         className="zoom-step"
         icon={Plus}
         onClick={() => editor.setZoom(Math.min(3, editor.zoom + 0.1))}
       />
-      <IconButton label="Fit page" icon={Maximize} onClick={() => fit(false)} />
+      <IconButton label={tr("zoom.fit")} icon={Maximize} onClick={() => fit(false)} />
       <IconButton
-        label="Fit width"
+        label={tr("zoom.fitWidth")}
         className="fit-width"
         icon={MoveHorizontal}
         onClick={() => fit(true)}

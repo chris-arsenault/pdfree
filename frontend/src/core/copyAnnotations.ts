@@ -1,3 +1,4 @@
+import { failure } from "../i18n/messages";
 import { PDFArray, PDFDict, PDFName, PDFHexString, type PDFPage } from "pdf-lib";
 
 // Page copies use independent object copiers. Rebind relationships to the actual
@@ -29,10 +30,7 @@ function rebindRelationships(
     const related = before.lookupMaybe(PDFName.of(key), PDFDict);
     if (!related) continue;
     const relatedIndex = indices.get(related);
-    if (relatedIndex === undefined)
-      throw new Error(
-        "Page composition cannot preserve annotation relationships across pages. Export the complete original document instead."
-      );
+    if (relatedIndex === undefined) throw failure("errors.annotationComposition");
     after.set(PDFName.of(key), target.get(relatedIndex));
   }
 }
