@@ -1,5 +1,14 @@
 # PDFree internationalization plan
 
+> Historical record, archived 2026-10-20. M0–M5 are complete; the implementation
+> was committed in `536108d` and country-flag artwork followed in `e038d62`.
+> Baseline descriptions, counts, publication statements and implementation
+> instructions below retain their execution-time context. Current contracts live
+> in [architecture](../architecture.md#interface-messages-and-languages),
+> [usage](../user-guide.md#choose-a-language),
+> [development](../development.md#interface-copy) and
+> [ADR 0011](../adr/0011-browser-local-internationalization.md).
+
 Status: M0–M5 complete. Publication authorized on 2026-10-17.
 Prepared: 2026-10-16, against `b06f3a4`.
 Sulion plan: `ee0a1e9d-dbdd-4e1e-a8ef-388cb35b0a25`.

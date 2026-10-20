@@ -3,20 +3,18 @@
 These are future candidates and verification work, not commitments or current
 feature claims. Implementation requires scope and engine compatibility review.
 
-The seven selected M/L utilities have now been implemented locally: OCR,
-compression, outline editing, scan cleanup, repeated operations, N-up and document
-tabs. Their implemented limits are in [compatibility](compatibility.md), and their
-controls are in [the user guide](user-guide.md). The research and estimates below
-remain the original scope rationale. Comparison stays deferred.
+Current features and their limits live in [the user guide](user-guide.md) and
+[compatibility](compatibility.md). This backlog contains extensions to that
+behavior and work requiring further verification.
 
 ## Research and sizing
 
-Reviewed on 2026-10-08 against PDFree's current model, import/export, navigation,
-project format, raster budgets and print flow. Market evidence is qualitative:
+The candidate research dates to 2026-10-08; this list was reconciled with shipped
+behavior on 2026-10-20. Market evidence is qualitative:
 recurring user requests establish useful workflows, not market share or a measured
 popularity ranking. Technical approaches below are proposals based on source
-inspection and primary documentation. Selected implementations now have focused
-processing and persistence checks; the estimates remain provisional historical sizing.
+inspection and linked technical documentation. Estimates are provisional;
+dependency APIs and licensing need verification when a candidate is taken up.
 
 LOE means engineering effort for the stated scope, including UI, integration,
 durable state where needed, documentation and relevant browser/native-reader
@@ -38,87 +36,21 @@ projects/drafts. Export transformations run before signing/encryption. Unsupport
 structures fail explicitly; whole-page rasterization is not a preservation fallback.
 New tools use existing locations, icon tooltips and small dialogs or panels.
 
-| Candidate                                   | LOE | Confidence | Priority / dependency                                          |
-| ------------------------------------------- | --- | ---------- | -------------------------------------------------------------- |
-| Searchable scans / OCR                      | L   | Medium     | Recommended next substantial feature                           |
-| Compression with quality preview            | L   | Medium     | Follow OCR; shares image handling with scan cleanup            |
-| Bookmark and outline editing                | L   | Medium     | Includes the bookmark/destination portion of catalog remapping |
-| True redaction and explicit sanitization    | XL  | Low        | Requires a verified content-removal engine                     |
-| Original-text correction and find/replace   | XXL | Low        | Requires content rewriting and font handling                   |
-| Compare two PDFs                            | L   | Medium     | Independent read-only workflow                                 |
-| Repeated operations across pages/files      | M   | Medium     | Orchestration only; depends on each underlying operation       |
-| Scan cleanup                                | L   | Low        | Shares image decoding and coordinate work with OCR/compression |
-| Multiple pages per printed sheet            | M   | Medium     | Explicit printable derivative                                  |
-| Switch between open documents               | M   | Medium     | Per-document session and lifecycle isolation                   |
-| Word import/export                          | XXL | Low        | Deferred; browser layout/conversion engine unresolved          |
-| General catalog remapping                   | XL  | Low        | Existing backlog; overlaps bookmark work                       |
-| Incremental multiple signatures             | XL  | Low        | Existing backlog; signed-document path required                |
-| Trusted timestamps and long-term validation | XL  | Low        | Existing backlog; network/trust boundary unresolved            |
+| Candidate                                   | LOE | Confidence | Priority / dependency                                 |
+| ------------------------------------------- | --- | ---------- | ----------------------------------------------------- |
+| True redaction and explicit sanitization    | XL  | Low        | Requires a verified content-removal engine            |
+| Original-text correction and find/replace   | XXL | Low        | Requires content rewriting and font handling          |
+| Compare two PDFs                            | L   | Medium     | Independent read-only workflow                        |
+| Word import/export                          | XXL | Low        | Deferred; browser layout/conversion engine unresolved |
+| General catalog remapping                   | XL  | Low        | Extend existing bookmark/destination support          |
+| Incremental multiple signatures             | XL  | Low        | Existing backlog; signed-document path required       |
+| Trusted timestamps and long-term validation | XL  | Low        | Existing backlog; network/trust boundary unresolved   |
 
-Do not add these estimates mechanically: shared image processing, catalog
-remapping and writer capabilities overlap. Batch sizing excludes implementing OCR,
-compression or redaction itself. Recommended sequence remains OCR, compression,
-then bookmark editing; redaction needs a separate engine feasibility decision.
+Do not add these estimates mechanically: content rewriting, catalog remapping
+and writer capabilities overlap. Redaction needs an engine feasibility decision
+before implementation scope can be narrowed.
 
 ## Document capabilities
-
-### Searchable scans / OCR — L
-
-**Scope/design:** Select pages and a supported language, run OCR with progress and
-Cancel, then search/select text and download a searchable PDF. Store word text,
-bounding boxes, confidence and recognition provenance by stable page ID; expose
-results to search/text selection and persist them through projects, drafts and page
-operations. Do not add paragraph editing or promise handwriting recognition.
-
-**Approach/uncertainty:** Render bounded page images with PDF.js, recognize them in
-a dedicated Tesseract.js worker, and add an invisible Unicode text layer without
-replacing original page content. Bundle/cache engine and supported language assets
-on the app origin. Tesseract.js does not accept PDF input directly. Recognition
-coordinates, reading order, fonts, existing text layers and mobile memory drive the
-effort. Initial language coverage follows verified bundled fonts; broader scripts
-need additional font/shaping work. Check exported text extraction and selection
-alignment on cropped/rotated scans; searchable output alone does not imply PDF/UA.
-
-Evidence: [searchable-output request](https://community.pdfgear.com/d/5-ocr-and-making-files-searchable).
-Technical basis: [Tesseract.js scope and worker lifecycle](https://github.com/naptha/tesseract.js),
-[PDF.js page rendering/text APIs](https://mozilla.github.io/pdf.js/api/draft/module-pdfjsLib-PDFPageProxy.html).
-
-### Compression with quality preview — L
-
-**Scope/design:** An Export option with quality presets, optional target size and
-a before/after preview. Display actual size and explain when a target cannot be
-met acceptably. Keep the smaller successful output; never silently discard text,
-forms, comments or vector content to reach a size target.
-
-**Approach/uncertainty:** Inventory image resources and effective resolution, then
-downsample/re-encode supported images on an export copy. Process shared resources
-once; retain unsupported encodings and report limited savings. Browser canvas can
-encode JPEG, but a PDF image decoder/resource rewriter is still needed. Masks,
-colorspaces, nested Form XObjects and highly optimized inputs dominate uncertainty.
-Compare small print/signatures and verify text, fields and comments independently.
-OCR is complementary, not a prerequisite or a guarantee of smaller files.
-
-Evidence: [strict upload-size workflow](https://www.reddit.com/r/pdf/comments/1r0yjm2/how_do_you_reliably_compress_pdfs_to_strict_size/).
-Technical basis: [browser image encoding](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas/convertToBlob).
-
-### Bookmark and outline editing — L
-
-**Scope/design:** Extend the existing outline control with add, rename, delete,
-nest and drag-reorder. Bookmarks target a stable page ID and optional page location;
-edits participate in undo and persistence. Import hierarchy and destination details
-rather than using the current flattened navigation list as the editing model.
-
-**Approach/uncertainty:** Write native outline dictionaries and resolve supported
-named/explicit destinations. Define visible policies for removed targets and
-duplicated sections; remap targets during merge/extract/reorder. Include internal
-links that use the supported destination map. Preserve unsupported catalog
-structures or continue rejecting affected composition. This size includes the
-bookmark/destination subset of general catalog remapping, not tagged-PDF repair,
-attachment merging or automatic heading detection. Verify links in saved PDFs.
-
-Evidence: [persistent research-reader requests](https://forums.zotero.org/discussion/95515/feature-request-create-bookmarks-in-the-integrated-pdf-viewer),
-[visual bookmark-editing request](https://github.com/Stirling-Tools/Stirling-PDF/issues/8086).
-Repo basis: `services/navigation.ts`, `core/importPdf.ts`, `core/exportPdf.ts`.
 
 ### True redaction and explicit sanitization — XL
 
@@ -184,79 +116,6 @@ Evidence: [compare request](https://community.pdfgear.com/d/14-compare-pdfs),
 [visual differences missed by text comparison](https://github.com/Stirling-Tools/Stirling-PDF/issues/6089).
 Technical basis: [PDF.js page APIs](https://mozilla.github.io/pdf.js/api/draft/module-pdfjsLib-PDFPageProxy.html).
 
-### Repeated operations across pages/files — M, plus operation dependencies
-
-**Scope/design:** Apply supported numbering, watermarks or stamps to selected/all
-pages with one preview and one undo action. For multiple PDFs, choose files, apply
-one operation/settings set and download separate outputs or a ZIP. Include start
-number, prefix/padding and continuing/resetting numbering for Bates-style work.
-Keep the UI to an operation dialog rather than a workflow designer.
-
-**Approach/uncertainty:** Store document-level rules with stable page scope;
-derive numbering from current order so page operations do not leave stale labels.
-Reuse worker export and ZIP handling, process files sequentially with per-file
-errors and cancellation, and keep originals unchanged. Do not persist a job queue
-or signing credentials. Underlying OCR/compression/redaction engines and their
-multi-file controls are separate dependencies. Check mixed page boxes, numbering
-boundaries, Unicode fonts and filename collisions.
-
-Evidence: [Bates-numbering and batch-redaction demand](https://github.com/Stirling-Tools/Stirling-PDF/discussions/467),
-[repeated merge/watermark workflow](https://github.com/paperless-ngx/paperless-ngx/discussions/7559).
-Repo basis: `core/exportBatch.ts`, `core/drawObjects.ts`, `core/pageOperations.ts`.
-
-### Scan cleanup — L
-
-**Scope/design:** A page tool for crop, fine deskew, contrast and background cleanup
-with a before/after preview, reset and selected-page application. Save transform
-parameters and processed scan assets through the model/history; preserve existing
-OCR text, bookmarks and page relationships.
-
-**Approach/uncertainty:** Crop using page boxes; crop hides content and is not
-redaction. For scan cleanup, transform supported scan images and the corresponding
-OCR geometry together. Keep image decoding shared with compression and avoid
-rasterizing mixed vector/form pages. Explicitly reject unsupported scan layouts.
-Shared images, masks, artwork, oblique rotations and existing annotations make
-preservation harder than a canvas filter. Validate output appearance and search
-alignment after crop/deskew; reject changes that cannot retain other content.
-
-Evidence: [cleanup without losing text/bookmarks](https://www.reddit.com/r/software/comments/1on3a9a/looking_for_free_software_to_clean_background_of/).
-Technical basis: [browser image encoding](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas/convertToBlob).
-
-### Multiple pages per printed sheet — M
-
-**Scope/design:** Offer 2/4/6 pages per sheet, paper size, orientation, ordering,
-margins and a sheet preview in Print/Export. Produce an explicitly printable PDF;
-the ordinary editable PDF/project remains separate. Booklet and poster printing
-are outside this size.
-
-**Approach/uncertainty:** Prepare current page content, explicitly bake visible
-field/annotation appearances for the print derivative, and place pages as scaled
-Form XObjects on new sheets with pdf-lib. Do not depend on browser-specific print
-settings or use page screenshots. Check mixed sizes, crop/rotation, final partial
-sheets and physical output. New sheet layout does not retain interactive fields,
-comment threads or original navigation; expose that output contract in the dialog.
-
-Evidence: [N-up request](https://community.pdfgear.com/d/13-n-up-pdfs).
-Technical basis: [pdf-lib page embedding](https://pdf-lib.js.org/docs/api/classes/pdfdocument#embedpages).
-Repo basis: `services/print.ts`, `core/exportPdf.ts`.
-
-### Switch between open documents — M
-
-**Scope/design:** A small document-tab strip with names, unsaved indicators and
-close actions. Keep Library for saved documents. Each open document retains its
-history, page position, zoom and selection without adding side-by-side workspaces.
-
-**Approach/uncertainty:** Give each document an isolated editor session and library
-identity. Mount only the active viewer; release inactive canvases and bound cached
-PDF handles. Scope clipboard/assets, pending dialogs, queued autosaves and worker
-responses to the owning session. Preserve the browser close/reload safeguard.
-The existing global editor orchestration makes this more than a visual tab strip;
-check switches during export, credential prompts, autosave and cancellation, and
-close/recovery of several documents without state crossing between them.
-
-Evidence: [tabs request](https://community.pdfgear.com/d/2-open-files-in-tabs).
-Repo basis: `App.tsx`, `hooks/useEditorUi.ts`, `services/drafts.ts`, `services/viewer.ts`.
-
 ### Word import/export — XXL, deferred
 
 **Scope/design:** Import DOCX as rendered PDF pages and export a PDF to DOCX for
@@ -274,19 +133,20 @@ Evidence: [conversion-fidelity request and developer response](https://community
 
 ### General catalog remapping — XL, existing architectural backlog
 
-**Scope/design:** Allow safe merge/extract/duplicate of sources currently blocked
-by bookmarks, named destinations/attachments, internal links, tagged structures
-or cross-page comment relationships. Preserve supported structures explicitly;
-do not remove all composition guards at once.
+**Scope/design:** Extend safe merge/extract/duplicate to unsupported styled or
+structure-linked outlines, name-tree entries such as attachments, tagged
+structures and cross-page comment relationships. Supported plain bookmark
+hierarchies and named/explicit internal destinations already remap. Preserve
+each additional structure explicitly while retaining guards for the rest.
 
-**Approach/uncertainty:** Build a source-object/page-to-output map and typed
-remappers with policies for deleted and duplicated targets. Bookmarks/internal
-destinations are the first subset; attachment name collisions, structure trees
-and cross-page relationships require separate compatibility work. Existing
-guards stay for unsupported structures. Verify live output references and reading
-order with independent readers. This estimate includes bookmark remapping, so do
-not count both estimates in full. Tagged accessibility preservation is the largest
-uncertainty and may expand this to XXL.
+**Approach/uncertainty:** Extend the source-object/page-to-output map and typed
+remappers with policies for deleted and duplicated targets. Attachment name
+collisions, structure trees and cross-page relationships require separate
+compatibility work. Existing guards stay for unsupported structures. Verify live
+output references and reading
+order with independent readers. Reuse the existing bookmark/destination mapping;
+tagged accessibility preservation is the largest uncertainty and may expand this
+to XXL.
 
 Repo basis: `core/importPdf.ts`, `core/exportPdf.ts`, `core/copyForms.ts`,
 `core/copyAnnotations.ts`, [preservation contracts](architecture.md#ordinary-pdf-and-split-export).
@@ -321,19 +181,50 @@ requirements, pause for an architectural decision rather than inventing a servic
 Technical lead: [LibPDF PAdES capabilities](https://libpdf.documenso.com/).
 Repo basis: `core/securePdf.ts`, `core/signatureCms.ts`, `services/securityClient.ts`.
 
-## Workflow and information architecture
+## Languages and document fonts
 
-The 2026-10-09 workflow review is implemented; its findings and region model are
-recorded in [ADR 0008](adr/0008-workflow-regions.md) and the shipped controls in
-the [user guide](user-guide.md). Remaining follow-ups:
+- Review all 17 interface catalogs with native speakers, especially credential,
+  certification and destructive-action terminology.
+- Add RTL mirroring, vertical reading layouts and translated-text layout checks
+  as separately scoped interface work.
+- Add OCR languages with bundled same-origin data and independently verified
+  PDF glyph coverage/shaping. Keep UI language separate from recognition language.
+- Extend PDF font/script support for authored text and translated date/stamp
+  templates. Preserve existing document content when changing interface language.
+- Assess PDF-content translation separately from application localization.
+
+## Document performance measurement
+
+Repeat preserved-baseline/current-build comparisons for real and mixed
+2,000-page documents on the same quiet host, including Firefox and WebKit.
+Investigate real-document opening and first-extraction latency: the existing
+single Chromium samples show about +0.54 seconds for opening and +0.33–0.35
+seconds for first extraction. Full export, project save and split were similar.
+Those samples do not establish a reproducible regression or general acceptance.
+
+Measure completed page rendering and browser/worker memory if assessing those
+properties; the current target measures navigation UI response and does not
+collect total memory. Keep measurements observational and preserve correctness
+checks. Use the existing [performance commands](development.md#production-and-manual-checks)
+and [loading contract](loading.md), without reviving removed hard budgets or
+custom recovery machinery.
+
+## Workflow and information architecture
 
 - Give phones an in-place document rename so the Document dialog no longer
   needs its own rename field.
 - Let the Highlight tool select text by touch; touch drags currently draw area
   highlights because the page surface disables touch scrolling while a tool is
   active.
-- Fit the navigation bar on 320px screens in two rows; page position, zoom and
-  the panel toggles currently wrap to a third row.
+- Fit the navigation bar on 320px screens in two rows while preserving page
+  position, pinning, search, zoom and panel controls.
+
+## Test reliability
+
+Investigate the 5-second timeout in `src/i18n/catalogs.test.ts` for native plural
+forms and digits during combined unit/Chromium `make ci` runs. Two runs on
+2026-10-20 timed out there; all 19 catalog tests passed in isolation. The cause
+is unverified. Preserve the assertions while investigating execution behavior.
 
 ## Manual verification
 

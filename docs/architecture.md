@@ -38,12 +38,13 @@ views and individual expensive dialogs use module-level React.lazy components
 and Suspense. Current drafts do not load PDF
 engines, while legacy draft migration loads its source-refresh code on demand.
 An error boundary offers a normal browser reload after a view fails to load.
-Existing draft saving and browser unsaved-change warnings still apply; there is
-no custom loader, retry protocol or required project download.
+Existing draft saving and browser unsaved-change warnings apply. The
+[loading reference](loading.md) describes resource boundaries and measurement;
+[ADR 0012](adr/0012-standard-deferred-loading.md) records the decisions.
 
 UI typography uses a WOFF2 representation of the original Noto Sans font with
 the same character coverage and metrics. PDF writers retain the original TTF
-and existing subsetting. `fontData()` still loads both document fonts by default;
+and existing subsetting. `fontData()` loads both document fonts by default;
 internal export consumers request Caveat only when selected objects require it.
 Successful font assets are cached across requests. Fonts for other scripts use
 the established browser fallback; no external font service is involved.
@@ -79,8 +80,9 @@ fields, comments and bookmarks never change with the UI locale. New dates use
 locale order with Gregorian dates and Latin digits, keeping them exportable by
 existing PDF fonts. Stamp templates are translated only where those fonts have
 the required glyphs; unsupported scripts use explicit `APPROVED` content.
-Browser UI font fallback is independent of PDF font embedding. RTL layout,
-vertical text, PDF-content translation and additional OCR languages are deferred.
+Browser UI font fallback is independent of PDF font embedding. Interface
+localization preserves the existing layout and reading direction. PDF export
+uses the bundled document fonts and OCR recognizes English.
 See [ADR 0011](adr/0011-browser-local-internationalization.md).
 
 ## Editing model and coordinates
@@ -118,7 +120,8 @@ original ciphertext. `sourceBytes()` selects the working copy for viewers/writer
 Passwords and identity files do not become document state.
 Recipient cryptography loads only after the strict parser identifies its handler.
 Import and secured export share response/credential-erasure handling, while
-their entry points remain separate; both terminate after success or failure.
+their entry points remain separate; both terminate after success, failure or
+cancellation.
 
 `importPdf.ts` parses working sources and rejects unsupported handlers, XFA, existing
 certificate signatures, nonstandard page units and unsupported controls before
@@ -140,11 +143,10 @@ documents change. [Compatibility](compatibility.md) defines the limits.
 
 `pdfWorker.ts` accepts typed requests for PDF export, project save/open,
 image-page conversion and split export. `workerClient.ts` matches request IDs and
-reports startup, transfer or worker failures to the UI. Rendering and writing
-retain a shared persistent worker: separating them made first selected export
-about 40% slower in the paired 2,000-page comparison by losing warm writer
-initialization. Long cancelable operations use disposable workers. A crash
-rejects only requests owned by that worker; a later request creates its
+reports startup, transfer or worker failures to the UI. Rendering preparation
+and ordinary writing use a shared persistent worker; long cancelable operations
+use disposable workers. A crash rejects only requests owned by that worker;
+a later request creates its
 replacement without a stale crash clearing it.
 
 `exportPdf.ts` selects one of two paths:
@@ -301,6 +303,8 @@ signing/encryption; they do not modify the editing document.
 Each document session owns history, selection, clipboard, dialogs, tasks and draft
 identity. Inactive sessions keep autosave mounted; only the active session mounts
 viewers. Session storage remembers saved document IDs and the active ID for reload.
+Recovery considers the first 12 stored IDs and restores those with saved drafts;
+other saved entries remain in Library.
 Encrypted sessions follow the shared browser-wide autosave preference.
 
 Each session also owns a single pinned-page reference through `usePinnedPage.ts`.
@@ -330,7 +334,7 @@ resizing and presentation changes.
 | Encrypted input   | `frontend/src/core/unlockPdf.ts`, `publicKeyPdf.ts`, `recipientIdentity.ts`, `recipientEnvelope.ts`, `recipientCipher.ts`, `recipientKey.ts` |
 | Persistence       | `frontend/src/core/projects.ts`, `projectSchema.ts`; `frontend/src/services/drafts.ts`, `signatures.ts`                                      |
 | UI/orchestration  | `frontend/src/components/`, `frontend/src/hooks/`                                                                                            |
-| Worker protocols  | `frontend/src/services/pdfWorker.ts`, `workerClient.ts`, `securityWorker.ts`, `securityClient.ts`                                            |
+| Worker protocols  | `frontend/src/services/pdfWorker.ts`, `workerClient.ts`, `importWorker.ts`, `credentialWorker.ts`, `securityWorker.ts`, `securityClient.ts`  |
 | Localization      | `frontend/src/i18n/`; `frontend/tooling/uiCopyGuard.ts`, `catalogIntegrity.ts`, `catalogHtml.ts`                                             |
 | Hosting contract  | `frontend/security-headers.json`, `infrastructure/terraform/`, `platform.yml`, `.github/workflows/ci.yml`                                    |
 

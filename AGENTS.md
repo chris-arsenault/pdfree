@@ -17,9 +17,10 @@ Browser PDF editor delivered by Ahara at `pdf.ahara.io`.
 - Preserve field/widget relationships and source content. Reject unsupported
   composition explicitly rather than silently flattening or rasterizing it.
 - Keep opening/signing credentials outside persisted state; retain original
-  ciphertext separately from decrypted working bytes and require consent for
-  plaintext drafts. Terminate each security
-  worker after completion, failure or cancellation.
+  ciphertext separately from decrypted working bytes. Protected PDFs autosave
+  by default; honor the browser-wide protected-document autosave preference.
+  Require confirmation for unprotected projects containing decrypted sources.
+  Terminate each import/security worker after completion, failure or cancellation.
 - Use pnpm, strict TypeScript, shared Ahara ESLint, Prettier and Vitest.
   Run `make ci` before a commit. Verify actual saved bytes with independent
   readers, including parser diagnostics.
@@ -34,6 +35,7 @@ Browser PDF editor delivered by Ahara at `pdf.ahara.io`.
 | Product and quickstart            | [README.md](README.md)                                    |
 | Documentation index               | [docs/README.md](docs/README.md)                          |
 | Runtime and persistence contracts | [Architecture](docs/architecture.md)                      |
+| Loading, fonts and measurement    | [Loading](docs/loading.md)                                |
 | Decisions                         | [ADRs](docs/adr/README.md)                                |
 | Compatibility and limits          | [Compatibility](docs/compatibility.md)                    |
 | Future work                       | [Backlog](docs/backlog.md)                                |
@@ -69,5 +71,6 @@ switches are in [development](docs/development.md).
 | `make test-browser-docker` | Browser interaction checks in the preserved Playwright image                 |
 | `make test-release-docker` | Existing production bundle checks in the Playwright image                    |
 | `make test-sample`         | Private sample regression from `.sulion-paste/s.pdf`                         |
+| `make test-performance`    | Optional real/mixed 2,000-page measurements against an existing build        |
 | `make dev`                 | Interactive server, when requested                                           |
 | `make deploy`              | Authorized manual build/plan/apply; see [deployment](docs/deployment.md)     |

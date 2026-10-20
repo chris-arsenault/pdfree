@@ -52,7 +52,7 @@ skipped. OCR does not provide handwriting guarantees, paragraph editing or PDF/U
 
 The 17 interface languages use browser font fallback and do not extend PDF font
 or OCR language coverage. UI language changes preserve document content and
-reading direction; RTL mirroring and vertical layouts remain deferred. New date
+reading direction. New date
 templates use local date order with Latin digits. Stamp templates remain
 `APPROVED` for scripts that the existing PDF font cannot export.
 
@@ -86,12 +86,13 @@ blocks N-up; links and popup windows do not produce print marks.
 | ZIP entries                      | 2,001                                                      | `projectLimits.ts`                          |
 | Project source PDFs / assets     | 1,000 each                                                 | `projectSchema.ts`                          |
 | Project pages / objects per page | 10,000 each                                                | `projectSchema.ts`                          |
+| Reload session recovery          | First 12 stored document IDs, when saved drafts exist      | `components/DocumentSessions.tsx`           |
 | Comments per page / comment text | 10,000 / 100,000 characters                                | `projectSchema.ts`, `importComments.ts`     |
 | Main viewer canvas longest edge  | 4,096 pixels                                               | `rasterBudget.ts`                           |
 | PNG export                       | 108 dpi; 8,192 pixels per edge; 33,554,432 pixels per page | `rasterBudget.ts`                           |
 | PNG archive image data           | 128 MiB                                                    | `rasterBudget.ts`                           |
 | PKCS#12 identity                 | 2 MiB                                                      | `pdfSecurity.ts`                            |
-| Opening/owner password           | 127 UTF-8 bytes each                                       | `pdfSecurity.ts`                            |
+| Export opening/owner password    | 127 UTF-8 bytes each                                       | `pdfSecurity.ts`                            |
 | Export recipient certificates    | 1–32, each up to 2 MiB                                     | `pdfSecurity.ts`                            |
 | OCR raster                       | 4,096 pixels per edge; 12 Mi pixels; up to 216 dpi         | `services/ocr.ts`                           |
 | Processed scan image             | 8,192 pixels per edge; 32 Mi pixels                        | `core/pdfImages.ts`                         |

@@ -35,7 +35,8 @@ are excluded from application assets.
 | Root, optional font tooling | `make font-ui`                            | Regenerate UI WOFF2 from the original PDF TTF using FontTools/Brotli        |
 | Root, after build/init      | `make terraform-test`                     | Mock-provider hosting checks using actual assets                            |
 
-`make ci` runs unit and Chromium browser tests locally. With `CI` set and no
+`make ci` runs unit and Chromium browser tests locally, plus lint, types,
+frontend formatting and Terraform formatting. With `CI` set and no
 `PDFREE_BROWSER`, Vitest config selects unit tests only, matching Ahara's shared
 coverage job. Ahara's shared workflow detects the `test:browser` package script
 and runs Chromium, Firefox and WebKit in parallel. It provides `BROWSER`; the
@@ -164,7 +165,7 @@ Generated screenshots, accessibility output and scan measurements live in ignore
 `frontend/test-results/`; coverage output is also generated. Synthetic fixtures
 contain no user documents. See [fixture provenance](../frontend/tooling/fixtures/README.md).
 
-The [loading plan](loading-performance-plan.md) describes the loading changes
+The [loading reference](loading.md) describes resource delivery
 and measurement approach. Its redistributable R reference manual contains 3,993
 pages; provenance and checksum live beside the fixture in
 `frontend/tooling/fixtures/performance/README.md`. The performance target generates
@@ -178,7 +179,9 @@ memory measurements or guarantees across devices.
 Use `make test-performance PERF_BUILD=test-results/performance/baseline-dist`
 to measure a preserved build, then `make test-performance` for the current build.
 `BROWSER` selects the engine; `make test-performance-docker` provides the standard
-browser libraries. Run comparisons serially on the same quiet host and repeat
+browser libraries and accepts the same `BROWSER` and `PERF_BUILD` arguments.
+This optional target is separate from `make ci` and the browser/release scripts.
+Run comparisons serially on the same quiet host and repeat
 when differences need investigation. Each run writes ignored
 `frontend/test-results/performance/measurements-<browser>.json`; retain the previous
 file before comparing another build. Existing production/security tests cover

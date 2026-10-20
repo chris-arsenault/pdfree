@@ -17,9 +17,9 @@ every interface language.
 
 Only application text changes. Filenames, form values, comments, bookmarks and
 existing document text remain your content. OCR still recognizes English.
-Layout and reading direction remain unchanged, including for Arabic; RTL and
-vertical layouts are deferred. UI text uses browser font fallback. PDF export
-still has the [existing font limits](compatibility.md#limitations).
+Layout and reading direction remain unchanged, including for Arabic. UI text
+uses browser font fallback. PDF export has the
+[existing font limits](compatibility.md#limitations).
 New dates use local numeric date order with Latin digits. New stamps use a
 translated template where the PDF font supports it; Chinese, Japanese, Korean,
 Hindi, Arabic and Bengali retain the editable document template `APPROVED`.
@@ -266,8 +266,10 @@ view saved documents, reopen one or delete it individually. With no document
 open, the start screen offers the most recent saved document (Recover draft) and
 links to Saved documents and Process multiple PDFs. Opening a replacement keeps
 previously saved documents in the library; reopening updates the same entry.
-Saved open documents and the active tab restore after reload. Download an editing
-project for durable backup because browsers can evict stored data.
+Reload restores saved documents among the first 12 remembered tab entries and
+selects the remembered active entry when available. Other saved documents remain
+in Library. Download an editing project for durable backup because browsers can
+evict stored data.
 
 Protected PDFs also autosave by default; saved drafts contain unlocked content.
 Library's Storage section has “Don't autosave protected documents.” This
@@ -290,19 +292,25 @@ an Autosave off control (which opens Library storage) when the restriction is
 enabled, update prompts and the language flag. Browser-only processing is always active; there is
 no cloud mode.
 
-PDFree loads from the internet on each visit and stores nothing for offline use
-until you ask. To use it without a connection, choose **Use offline** in the
-bottom strip, then **Make available offline**. The panel states the download size
+On an ordinary online visit, PDFree downloads application assets as needed and
+uses the browser's normal HTTP cache. Saving the complete offline copy is a
+separate choice; documents still autosave locally. To use PDFree without a
+connection, choose **Use offline** in the bottom strip, then **Make available
+offline**. The panel states the download size
 (about 29 MB, including text recognition) and shows progress; the strip then
 reads **Works offline**, and editing, English OCR and downloads run without a
 connection. Where the browser supports it, **Install app** adds PDFree as an app
 and saves the offline copy too. **Remove offline copy** in the same panel deletes
 it; documents in your Library stay on the device. Failures appear in the strip.
 With an offline copy, updates prompt before reloading; save an editing project
-before accepting the update.
+before accepting the update. If a deferred editor view or dialog fails to load,
+the error offers **Update and reload**. The browser warns about unsaved edits;
+cancelling that warning keeps the current work open.
 
-Opening a replacement or saved document, deleting pages or a saved document, downloading
-an unprotected project and applying an update use custom confirmation dialogs.
+Closing an edited document, deleting pages or a saved document, downloading a
+project containing decrypted sources and applying an update use custom
+confirmation dialogs. Opening a saved document switches to its existing tab or
+opens a new one.
 Cancel is focused first; Escape cancels and returns to the current work.
 The unsaved-edit warning when closing or reloading the tab remains a
 browser-controlled dialog. File selection, direct file saving and printing also

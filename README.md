@@ -1,85 +1,73 @@
 # PDFree
 
-Fill, sign, annotate and organize PDFs entirely in your browser at
-**https://pdf.ahara.io**. Documents, entered values, signature assets and drafts
-stay on your device. Ahara serves application assets; browser workers process
-PDFs without an application backend or account requirement.
+An open-source PDF editor for filling forms, signing documents, annotating and
+organizing pages in your browser. Your documents, edits and signing credentials
+stay on your device. No account required.
 
-## Use PDFree
+**[Open PDFree](https://pdf.ahara.io)** · [User guide](docs/user-guide.md) ·
+[Changelog](CHANGELOG.md)
 
-Open a PDF, fill its form fields or place text on a scanned form. Add drawn,
-typed or image signatures, annotate, create fillable fields, rotate/reorder
-pages, add comments and replies, merge documents, and split by physical page numbers. Download a PDF or
-save an editable `.pdfree` project. Export supports certificate signing,
-certification and AES-256 password or recipient-certificate protection. Encrypted
-inputs open with an opening/owner password or a local recipient `.p12`/`.pfx`
-identity. Permission-only PDFs with an empty opening password open automatically.
+## Features
 
-Recognize English scanned text, clean up supported scans, compress images, edit
-bookmarks and apply numbering, watermarks or stamps. Process multiple PDFs and
-prepare 2/4/6-up print copies. Document tabs keep each file's edits and undo separate.
+- **Fill and sign:** complete interactive forms, add text to scans, and place
+  drawn, typed or image signatures. Create fillable fields on existing pages.
+- **Annotate and review:** add highlights, shapes, ink, stamps, comments and
+  replies. Keep a page pinned beside your work with independent zoom and scrolling.
+- **Organize pages:** rotate, reorder, merge, extract and split PDFs. Edit
+  bookmarks and work across separate document tabs.
+- **Work with scans:** recognize English text, clean up supported scans and
+  compress images with a size preview.
+- **Prepare and protect:** add numbering or watermarks, process multiple files,
+  arrange pages on printable sheets, and export certificate-signed or encrypted PDFs.
+- **Keep editing:** undo changes, recover local drafts and save portable
+  `.pdfree` projects that retain editable objects and original sources.
 
-Choose from 17 interface languages using the flag in the bottom status bar.
-The choice stays in this browser; switching preserves open documents and edits.
-Document translation, additional OCR languages and RTL layout are outside this feature.
+PDFree supports 17 interface languages and an optional offline copy, including
+text recognition. See [compatibility](docs/compatibility.md) for supported PDF
+formats, fonts and browser coverage, and [signing and protection](docs/security.md)
+for certificate and encryption details.
 
-See the [user guide](docs/user-guide.md) and
-[signing and protection guide](docs/security.md) for workflows and boundaries.
+## Run locally
 
-## Local development
-
-Use Node 24 and pnpm 10.29.3. Install dependencies from `frontend/`:
+Use Node.js 24 and pnpm 10.29.3. From a checkout of this repository:
 
 ```bash
+cd frontend
 pnpm install --frozen-lockfile
-pnpm exec playwright install chromium
+pnpm dev
 ```
 
-From the repository root:
+Open the local URL printed by Vite. To build the static application, run
+`make build` from the repository root; the output is in `frontend/dist/`.
 
-```bash
-make ci
-make build
-make dev
-```
-
-`make dev` starts the interactive Vite server. See
-[development and testing](docs/development.md) for individual checks, independent
-PDF verifiers, other engines and production-bundle tests.
-
-## Architecture and deployment
-
-React/TypeScript uses one versioned editing model with immutable source PDFs.
-PDF.js renders pages; a pdf-lib worker writes PDFs and portable projects.
-A separate worker handles each credential-bearing import or signing/encryption
-operation. Drafts use IndexedDB, including unlocked PDFs by default. A browser-wide
-setting can disable autosave for protected documents.
-See [architecture](docs/architecture.md).
-
-Ahara's standard reusable CI deploys `main` through the registered PDFree OIDC
-role. The shared website module delivers private S3 assets through CloudFront,
-ACM and Route 53 at `pdf.ahara.io`. PDFree selects `PriceClass_All` for worldwide
-edge coverage; the shared module keeps `PriceClass_100` as its default for other
-consumers. See [deployment](docs/deployment.md) for
-registration, state, headers and the authorized manual deployment path.
+See [development and testing](docs/development.md) for test prerequisites,
+`make ci`, browser tests and independent PDF checks.
 
 ## Documentation
 
-| Topic                               | Link                                   |
-| ----------------------------------- | -------------------------------------- |
-| All documentation                   | [docs/README.md](docs/README.md)       |
-| Editing, pages and saving           | [User guide](docs/user-guide.md)       |
-| Certificate signing and encryption  | [Security](docs/security.md)           |
-| Supported PDFs and resource limits  | [Compatibility](docs/compatibility.md) |
-| Runtime and data contracts          | [Architecture](docs/architecture.md)   |
-| Build and test commands             | [Development](docs/development.md)     |
-| Ahara delivery and operations       | [Deployment](docs/deployment.md)       |
-| Design rationale                    | [ADRs](docs/adr/README.md)             |
-| Future work and manual verification | [Backlog](docs/backlog.md)             |
-| Shipped behavior                    | [Changelog](CHANGELOG.md)              |
-| Coding agent rules                  | [AGENTS.md](AGENTS.md)                 |
+| Topic                              | Guide                                  |
+| ---------------------------------- | -------------------------------------- |
+| Editing, pages and saving          | [User guide](docs/user-guide.md)       |
+| Signing, encryption and local data | [Security](docs/security.md)           |
+| Supported documents and browsers   | [Compatibility](docs/compatibility.md) |
+| Building and testing               | [Development](docs/development.md)     |
+| How PDFree works                   | [Architecture](docs/architecture.md)   |
+| Hosting the application            | [Deployment](docs/deployment.md)       |
+| Complete documentation index       | [Documentation](docs/README.md)        |
+
+## Contributing
+
+Bug reports and pull requests are welcome. Include your browser and version,
+steps to reproduce, and the expected result when reporting a problem. Use a
+synthetic sample PDF for document-specific issues.
+
+Start with the [development guide](docs/development.md),
+[project conventions](AGENTS.md) and [feature backlog](docs/backlog.md).
+Architectural decisions are recorded in [ADRs](docs/adr/README.md).
 
 ## License
 
-[MIT](LICENSE). Bundled font, PDF.js, OCR and cryptographic dependency licenses are
-included in the application assets.
+[MIT](LICENSE). Bundled dependencies and fonts retain their own licenses;
+their notices are included in the application assets.
+
+Built by [Ahara](https://ahara.io).

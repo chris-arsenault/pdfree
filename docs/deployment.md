@@ -26,7 +26,7 @@ profiles and `.gz` OCR language data in the MIME map. Gzip files use
 the language data. Static sites skip the dynamic OpenGraph renderer's
 single-entry discovery, so application and worker dependency chunks can retain
 Vite's normal filenames. [ADR 0001](adr/0001-browser-only-static-delivery.md)
-records the hosting choice and the demonstrated MIME failure that required repair.
+records the hosting decision.
 
 `encrypt = false` disables the module's optional new KMS key; a separate bucket
 configuration explicitly uses S3-managed AES256 encryption for assets. This
@@ -35,9 +35,9 @@ bundles remain the platform's existing controls.
 
 OpenGraph and Twitter card metadata live in `frontend/index.html`. The static
 HTML identifies `https://pdf.ahara.io/` and references the public 1200×630 PNG
-at `/og-image.png`; crawlers can read it without running JavaScript. PDFree does
-not enable the shared module's dynamic OpenGraph Lambda because its public
-metadata describes the application, with no server-side document routes.
+at `/og-image.png`; crawlers can read it without running JavaScript. PDFree
+uses static application metadata and leaves the shared module's dynamic
+OpenGraph Lambda disabled.
 The image source is `frontend/tooling/og-image.svg`. Render it locally after
 changing the artwork:
 

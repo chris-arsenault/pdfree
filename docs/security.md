@@ -68,7 +68,9 @@ have the same advisory semantics as password protection.
 
 ## Credentials and output scope
 
-Security settings apply to the Export dialog's PDF download and direct PDF save.
+Security settings apply to downloads and direct saves for the Export dialog's
+PDF and Printable sheets outputs. Compression and sheet layout finish before
+encryption and signing.
 Projects, drafts, PNGs, print and Split outputs are unprotected. Certificate files,
 keys and passwords stay in transient dialog/worker state and are excluded from
 projects, drafts and local storage. Closing the dialog clears settings and cancels
